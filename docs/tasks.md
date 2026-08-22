@@ -162,7 +162,7 @@ setting, and `order_events` logging.
 
 ---
 
-### - [ ] T15 · Menu manager
+### - [x] T15 · Menu manager
 Build `/dashboard/menu` per `docs/ui-spec.md` §6, plus the menu CRUD API routes.
 Include drag-to-reorder, the inline availability toggle, image upload with
 client-side compression, and the item editor sheet.
@@ -173,7 +173,7 @@ still renders its name and price correctly.
 
 ---
 
-### - [ ] T16 · Tables and QR PDF
+### - [x] T16 · Tables and QR PDF
 Build `/dashboard/tables` and `GET /api/qr/[restaurantId]/pdf`. A4, 4 standee
 cards per page, logo + table label + QR + "Scan to order".
 
