@@ -4,9 +4,73 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { priceCart, buildLineId } from "@/lib/pricing";
 import { toOrder, toRestaurantSettings } from "@/lib/mappers";
+import { getStaffSession, requireRole } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import type { CartLine, FoodType } from "@/types";
+import type { CartLine, FoodType, OrderStatus } from "@/types";
 import type { DbOrder, DbRestaurantSettings } from "@/types/db";
+
+// ---------------------------------------------------------------- GET /api/orders  (staff only)
+
+const VALID_STATUSES = new Set<string>([
+  "placed", "accepted", "preparing", "ready", "served", "cancelled",
+]);
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const guard = await requireRole(["owner", "manager", "kitchen", "waiter"]);
+  if (guard) return guard;
+
+  const session = await getStaffSession();
+  const sp = req.nextUrl.searchParams;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dateFrom = sp.get("dateFrom") ?? today.toISOString();
+  const dateTo = sp.get("dateTo");
+  const statusParam = sp.get("status") ?? "all";
+  const search = sp.get("search") ?? "";
+  const page = Math.max(1, Number(sp.get("page") ?? 1));
+  const limit = Math.min(100, Math.max(1, Number(sp.get("limit") ?? 50)));
+
+  const supabase = createServerClient();
+
+  let query = supabase
+    .from("orders")
+    .select("*, restaurant_tables(label)", { count: "exact" })
+    .eq("restaurant_id", session!.restaurantId)
+    .order("placed_at", { ascending: false })
+    .range((page - 1) * limit, page * limit - 1);
+
+  if (dateFrom) query = query.gte("placed_at", dateFrom);
+  if (dateTo) query = query.lte("placed_at", dateTo);
+  if (statusParam !== "all" && VALID_STATUSES.has(statusParam)) {
+    query = query.eq("status", statusParam as OrderStatus);
+  }
+  if (search.trim()) {
+    query = query.or(
+      `order_number.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%`
+    );
+  }
+
+  const { data, count, error } = await query;
+
+  if (error) {
+    console.error("[orders GET]", error);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to load orders." } },
+      { status: 500 }
+    );
+  }
+
+  const orders = (data ?? []).map((row) => ({
+    ...toOrder(row as DbOrder),
+    tableLabel:
+      (row as { restaurant_tables: { label: string } | null })
+        .restaurant_tables?.label ?? null,
+  }));
+
+  return NextResponse.json({ orders, total: count ?? 0, page, limit });
+}
 
 // ---------------------------------------------------------------- zod schema
 // IMPORTANT: `total` and any per-line prices are intentionally absent.

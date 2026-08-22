@@ -182,7 +182,7 @@ opens the correct table's menu.
 
 ---
 
-### - [ ] T17 · Dashboard and orders list
+### - [x] T17 · Dashboard and orders list
 Build `/dashboard` (stat cards, hourly chart, recent orders) and
 `/dashboard/orders` (filter, search, detail slide-over, CSV export).
 
