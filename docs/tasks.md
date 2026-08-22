@@ -87,7 +87,7 @@ adding it with identical options increments quantity, and the cart survives a pa
 
 ---
 
-### - [ ] T08 · Cart and checkout pages
+### - [x] T08 · Cart and checkout pages
 Build the cart page and checkout page per `docs/ui-spec.md` §2–3. Bill summary
 uses `lib/pricing.ts`. Generate an `idempotencyKey` UUID when the cart transitions
 from empty to non-empty and persist it with the cart.
@@ -97,7 +97,7 @@ beverage order, and phone validation rejects fewer than 10 digits.
 
 ---
 
-### - [ ] T09 · Order creation API
+### - [x] T09 · Order creation API
 Implement `POST /api/orders` following the 9-step server behaviour in
 `docs/api-spec.md`. Snapshot everything into `order_items`. Wrap the inserts in
 a Postgres function or a transaction so a partial order can never exist.
