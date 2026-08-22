@@ -110,7 +110,7 @@ a Postgres function or a transaction so a partial order can never exist.
 
 ---
 
-### - [ ] T10 · Order tracker
+### - [x] T10 · Order tracker
 Build `/order/[orderId]` per `docs/ui-spec.md` §4. Subscribe to `order:{id}` via
 Supabase Realtime with a 15s polling fallback. Clear the cart on first load of a
 successful order.
