@@ -143,7 +143,7 @@ Guard `/dashboard/*` in the layout; guard every mutating API route by role.
 
 ---
 
-### - [ ] T13 · Kitchen display
+### - [x] T13 · Kitchen display
 Build `/dashboard/kitchen` per `docs/ui-spec.md` §5. Subscribe to
 `restaurant:{id}:orders`. Implement the chime, the elapsed timer, the amber/red
 escalation, optimistic status updates, and the offline queue with the pending banner.
@@ -154,7 +154,7 @@ syncs all 3 and clears the banner.
 
 ---
 
-### - [ ] T14 · Status transition API
+### - [x] T14 · Status transition API
 Implement `PATCH /api/orders/[id]/status` with transition validation, timestamp
 setting, and `order_events` logging.
 
