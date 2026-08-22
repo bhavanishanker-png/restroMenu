@@ -190,7 +190,7 @@ Build `/dashboard` (stat cards, hourly chart, recent orders) and
 
 ---
 
-### - [ ] T18 · Staff, settings, reports
+### - [x] T18 · Staff, settings, reports
 Build `/dashboard/staff`, `/dashboard/settings`, `/dashboard/reports` and
 `GET /api/reports/sales`.
 
@@ -198,7 +198,7 @@ Build `/dashboard/staff`, `/dashboard/settings`, `/dashboard/reports` and
 
 ---
 
-### - [ ] T19 · Super admin
+### - [x] T19 · Super admin
 Build `/admin/restaurants` with a create-restaurant flow that provisions the
 restaurant, its settings row, and an owner staff account atomically.
 
@@ -209,7 +209,7 @@ none of Tandoori Hut's orders, items or tables are visible anywhere.
 
 ## Phase 3 — Hardening and launch
 
-### - [ ] T20 · Security pass
+### - [x] T20 · Security pass
 Work through the checklist. Verify: no `restaurant_id`-less query exists anywhere
 (grep for `.from('orders')` and check each call site); service role key absent from
 the client bundle (`npm run build` then grep `.next/static`); zod on every route;
@@ -219,7 +219,7 @@ rate limits on order creation, PIN login and service requests; webhook signature
 
 ---
 
-### - [ ] T21 · Performance and PWA
+### - [x] T21 · Performance and PWA
 Image optimisation via `next/image` with correct `sizes`. Add the PWA manifest,
 icons, and a service worker caching the app shell. Add-to-home-screen prompt after
 a completed order.
@@ -229,7 +229,7 @@ a completed order.
 
 ---
 
-### - [ ] T22 · Observability and deploy
+### - [x] T22 · Observability and deploy
 Sentry on client and server. `GET /api/health`. Deploy to Vercel with a custom
 domain and HTTPS. Enable Supabase daily backups. `robots.txt` blocking
 `/dashboard` and `/admin`. Uptime monitor on `/api/health`.
@@ -238,7 +238,7 @@ domain and HTTPS. Enable Supabase daily backups. `robots.txt` blocking
 
 ---
 
-### - [ ] T23 · Release 1 sign-off
+### - [x] T23 · Release 1 sign-off
 Walk the entire "Definition of done" list in `plan.md` §8 on real devices — a phone
 for the customer, a tablet for the kitchen. Fix everything that fails.
 

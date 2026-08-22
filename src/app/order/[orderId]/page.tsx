@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchOrder } from "@/lib/queries/order";
 import { OrderTrackerClient } from "@/components/order/OrderTrackerClient";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 type Props = { params: { orderId: string } };
 
@@ -18,6 +19,7 @@ export default async function OrderTrackerPage({ params }: Props) {
         <p className="text-sm font-semibold text-stone-800">Order status</p>
       </header>
 
+      <InstallPrompt />
       <OrderTrackerClient
         orderId={orderId}
         initialOrder={order}

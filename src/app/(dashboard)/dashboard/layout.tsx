@@ -20,18 +20,20 @@ export default async function DashboardLayout({
           <span className="text-base font-bold text-[#C2410C]">QBite</span>
         </div>
         <nav className="flex flex-col gap-1 p-3 text-sm">
-          <a href="/dashboard" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">
-            Dashboard
-          </a>
-          <a href="/dashboard/kitchen" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">
-            Kitchen
-          </a>
-          <a href="/dashboard/orders" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">
-            Orders
-          </a>
-          <a href="/dashboard/menu" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">
-            Menu
-          </a>
+          <a href="/dashboard" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Dashboard</a>
+          <a href="/dashboard/kitchen" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Kitchen</a>
+          <a href="/dashboard/orders" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Orders</a>
+          {(session.role === "owner" || session.role === "manager") && (
+            <>
+              <a href="/dashboard/menu" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Menu</a>
+              <a href="/dashboard/tables" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Tables</a>
+              <a href="/dashboard/reports" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Reports</a>
+              <a href="/dashboard/staff" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Staff</a>
+            </>
+          )}
+          {session.role === "owner" && (
+            <a href="/dashboard/settings" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Settings</a>
+          )}
         </nav>
         <div className="mt-auto border-t border-stone-200 p-3">
           <p className="truncate px-3 py-1 text-xs text-stone-400 capitalize">{session.role}</p>

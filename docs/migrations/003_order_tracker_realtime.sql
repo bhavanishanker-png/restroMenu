@@ -8,17 +8,36 @@
 --   until after the customer places an order.  Tighten in T20 by adding a signed
 --   access token column and verifying it here.
 
--- 1. Publish tables so Postgres emits Realtime change events.
-alter publication supabase_realtime add table orders;
-alter publication supabase_realtime add table order_items;
+-- 1. Publish tables so Postgres emits Realtime change events (idempotent).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'orders'
+  ) then
+    alter publication supabase_realtime add table orders;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'order_items'
+  ) then
+    alter publication supabase_realtime add table order_items;
+  end if;
+end $$;
 
 -- 2. Allow unauthenticated clients to read an order they know the UUID for.
-create policy "public read order by id"
-  on orders for select
-  to anon, authenticated
-  using (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'orders' and policyname = 'public read order by id'
+  ) then
+    execute 'create policy "public read order by id" on orders for select to anon, authenticated using (true)';
+  end if;
 
-create policy "public read order items"
-  on order_items for select
-  to anon, authenticated
-  using (true);
+  if not exists (
+    select 1 from pg_policies where tablename = 'order_items' and policyname = 'public read order items'
+  ) then
+    execute 'create policy "public read order items" on order_items for select to anon, authenticated using (true)';
+  end if;
+end $$;

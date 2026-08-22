@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({ orderId: z.string().uuid() });
 
@@ -9,6 +10,17 @@ const schema = z.object({ orderId: z.string().uuid() });
 // Creates a Razorpay order for an existing DB order.
 // Called by POST /api/orders (step 9) and by the checkout form on payment retry.
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  if (!checkRateLimit(`razorpay:${ip}`, 10, 60_000)) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
+      { status: 429 }
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();
