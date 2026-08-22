@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import Razorpay from "razorpay";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { priceCart, buildLineId } from "@/lib/pricing";
@@ -369,7 +370,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const result = rpcResult as { order_id: string; order_number: string };
 
-  // Step 9: Fetch the created order to return to the client.
+  // Fetch the created order to return to the client.
   const { data: createdOrder } = await supabase
     .from("orders")
     .select("*")
@@ -383,5 +384,36 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  return NextResponse.json({ order: toOrder(createdOrder as DbOrder) }, { status: 201 });
+  // Step 9: If paymentMethod = 'razorpay', create a Razorpay order and return its details.
+  // The checkout form uses these to open the Razorpay modal without a second round-trip.
+  let razorpayPayload: { orderId: string; amount: number; keyId: string } | null = null;
+  if (body.paymentMethod === "razorpay") {
+    const rzp = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+
+    const rzpOrder = await rzp.orders.create({
+      amount: Math.round(bill.total * 100), // paise
+      currency: "INR",
+      receipt: result.order_id.slice(0, 40),
+    });
+
+    // Store Razorpay order ID in payment_ref so the webhook can look up this order.
+    await supabase
+      .from("orders")
+      .update({ payment_ref: rzpOrder.id })
+      .eq("id", result.order_id);
+
+    razorpayPayload = {
+      orderId: rzpOrder.id,
+      amount: Number(rzpOrder.amount),
+      keyId: process.env.RAZORPAY_KEY_ID!,
+    };
+  }
+
+  const response: Record<string, unknown> = { order: toOrder(createdOrder as DbOrder) };
+  if (razorpayPayload) response.razorpay = razorpayPayload;
+
+  return NextResponse.json(response, { status: 201 });
 }

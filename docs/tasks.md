@@ -120,7 +120,7 @@ the tracker within 2 seconds without a refresh.
 
 ---
 
-### - [ ] T11 · Razorpay
+### - [x] T11 · Razorpay
 Implement `POST /api/payments/razorpay` and the signature-verified webhook.
 Add the Razorpay checkout script to the checkout flow. Handle: success, user
 dismissal, and payment failure.

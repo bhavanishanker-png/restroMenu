@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,16 @@ const checkoutSchema = z.object({
 
 type CheckoutFields = z.infer<typeof checkoutSchema>;
 
+// Razorpay checkout.js injects window.Razorpay.
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: new (options: Record<string, any>) => { open: () => void };
+  }
+}
+
+type RazorpayData = { orderId: string; amount: number; keyId: string };
+
 // ---------------------------------------------------------------- props
 
 type Props = {
@@ -43,6 +53,9 @@ type Props = {
 export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: Props) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [paymentDismissed, setPaymentDismissed] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const scriptLoadedRef = useRef(false);
 
   useEffect(() => {
     useCartStore.persist.rehydrate();
@@ -58,6 +71,7 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFields>({
     resolver: zodResolver(checkoutSchema),
@@ -68,7 +82,51 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
 
   const selectedMethod = watch("paymentMethod");
 
-  // T09 will replace this stub with the real API call
+  // Ensure the Razorpay checkout.js script is loaded before opening the modal.
+  function ensureRazorpayScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (scriptLoadedRef.current || typeof window.Razorpay !== "undefined") {
+        scriptLoadedRef.current = true;
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => { scriptLoadedRef.current = true; resolve(); };
+      script.onerror = () => reject(new Error("Failed to load Razorpay checkout."));
+      document.head.appendChild(script);
+    });
+  }
+
+  function openRazorpayModal(
+    orderId: string,
+    rzpData: RazorpayData,
+    formData: CheckoutFields
+  ) {
+    const rzp = new window.Razorpay({
+      key: rzpData.keyId,
+      amount: rzpData.amount,
+      currency: "INR",
+      order_id: rzpData.orderId,
+      prefill: {
+        name: formData.customerName,
+        contact: formData.customerPhone,
+      },
+      handler: () => {
+        // Payment captured in the frontend; webhook updates DB async.
+        clearCart();
+        router.replace(`/order/${orderId}`);
+      },
+      modal: {
+        ondismiss: () => {
+          setPaymentDismissed(true);
+          setPendingOrderId(orderId);
+        },
+      },
+    });
+    rzp.open();
+  }
+
   async function onSubmit(data: CheckoutFields) {
     if (!idempotencyKey) return;
 
@@ -96,20 +154,86 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
       body: JSON.stringify(body),
     });
 
-    const json = await res.json();
+    const json = await res.json() as {
+      order?: { id: string };
+      razorpay?: RazorpayData;
+      error?: { message: string };
+    };
 
     if (!res.ok) {
-      // Surface error to user — T09 will handle all error codes
       alert(json?.error?.message ?? "Something went wrong. Please try again.");
       return;
     }
 
-    clearCart();
-    // router.replace so Back doesn't re-submit
-    router.replace(`/order/${json.order.id}`);
+    const orderId = json.order!.id;
+
+    if (data.paymentMethod === "razorpay" && json.razorpay) {
+      await ensureRazorpayScript();
+      openRazorpayModal(orderId, json.razorpay, data);
+    } else {
+      clearCart();
+      router.replace(`/order/${orderId}`);
+    }
+  }
+
+  async function retryPayment() {
+    if (!pendingOrderId) return;
+    setPaymentDismissed(false);
+
+    // Request a fresh Razorpay order for the existing DB order.
+    const res = await fetch("/api/payments/razorpay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: pendingOrderId }),
+    });
+
+    const json = await res.json() as {
+      razorpayOrderId?: string;
+      amount?: number;
+      keyId?: string;
+      error?: { message: string };
+    };
+
+    if (!res.ok || !json.razorpayOrderId) {
+      alert(json?.error?.message ?? "Could not start payment. Please try again.");
+      return;
+    }
+
+    const rzpData: RazorpayData = {
+      orderId: json.razorpayOrderId,
+      amount: json.amount!,
+      keyId: json.keyId!,
+    };
+    await ensureRazorpayScript();
+    openRazorpayModal(pendingOrderId, rzpData, getValues());
   }
 
   if (!mounted) return null;
+
+  // Show retry UI when user dismissed the Razorpay modal without paying.
+  if (paymentDismissed && pendingOrderId) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-semibold text-stone-800">Payment not completed</p>
+        <p className="text-sm text-stone-500 max-w-xs">
+          Your order is saved. You can complete payment now or pay at the table.
+        </p>
+        <button
+          onClick={retryPayment}
+          className="flex items-center gap-2 rounded-xl bg-[#C2410C] px-6 py-3 text-sm font-semibold text-white hover:bg-[#9A3412] active:scale-95"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Retry payment
+        </button>
+        <button
+          onClick={() => { clearCart(); router.replace(`/order/${pendingOrderId}`); }}
+          className="text-sm text-stone-500 underline"
+        >
+          Skip — pay at table
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-4 pb-32">
