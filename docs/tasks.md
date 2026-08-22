@@ -132,7 +132,7 @@ to `paid`, and replaying the same webhook payload twice does not double-process.
 
 ## Phase 2 — Restaurant operations
 
-### - [ ] T12 · Staff auth
+### - [x] T12 · Staff auth
 Supabase Auth email/password for owner and manager. A separate 4-digit PIN screen
 for kitchen and waiter, bcrypt-verified, rate limited to 5 attempts per 10 minutes.
 `src/lib/auth.ts` exposes `getStaffSession()` returning `{ staffId, restaurantId, role }`.

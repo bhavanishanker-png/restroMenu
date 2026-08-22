@@ -37,6 +37,7 @@ export type DbStaff = {
   name: string;
   phone: string | null;
   role: string;
+  pin_hash: string | null;
   is_active: boolean;
   created_at: string;
 };
