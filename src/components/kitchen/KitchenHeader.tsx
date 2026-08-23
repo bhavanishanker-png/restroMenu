@@ -31,8 +31,8 @@ export function KitchenHeader({
     <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-2 shadow-sm">
       <span className="text-base font-bold text-[#C2410C]">{restaurantName}</span>
 
-      <span className="font-mono text-sm font-medium text-stone-600">
-        {formatClock(now)}
+      <span className="font-mono text-sm font-medium text-stone-600" suppressHydrationWarning>
+        {now === 0 ? "--:--:-- --" : formatClock(now)}
       </span>
 
       <div className="flex items-center gap-3">

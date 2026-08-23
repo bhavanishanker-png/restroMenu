@@ -42,7 +42,7 @@ function urgencyClasses(elapsed: number): { border: string; header: string } {
 }
 
 export function OrderCard({ order, now, isNew, onAdvance, onCancel }: Props) {
-  const elapsed = elapsedMinutes(order.placedAt, now);
+  const elapsed = now === 0 ? 0 : elapsedMinutes(order.placedAt, now);
   const { border, header } = urgencyClasses(elapsed);
   const action = ACTION_MAP[order.status];
 

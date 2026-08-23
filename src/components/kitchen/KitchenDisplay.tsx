@@ -127,7 +127,7 @@ export function KitchenDisplay({
   const supabase = useMemo(() => createClient(), []);
 
   const [orders, setOrders] = useState<KitchenOrder[]>(initialOrders);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
   const [queue, setQueue] = useState<PendingChange[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -143,6 +143,7 @@ export function KitchenDisplay({
 
   // ---- 1s timer ----
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);

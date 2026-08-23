@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -22,7 +23,19 @@ function formatHour(h: number): string {
 }
 
 export function HourlyChart({ data }: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const labelled = data.map((d) => ({ ...d, label: formatHour(d.hour) }));
+
+  if (!mounted) {
+    return (
+      <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="mb-3 h-4 w-48 animate-pulse rounded bg-stone-100" />
+        <div className="h-[180px] animate-pulse rounded bg-stone-50" />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-stone-200 bg-white p-4">
