@@ -41,6 +41,8 @@ function FieldError({ msg }: { msg?: string }) {
 
 export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlug?: string; nextPath?: string }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const [tab, setTab] = useState<Tab>("email");
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
@@ -52,6 +54,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
   const {
     register: regEmail,
     handleSubmit: handleEmail,
+    setValue: setEmailVal,
     formState: { errors: emailErrors, isSubmitting: emailSubmitting },
   } = useForm<EmailFields>({ resolver: zodResolver(emailSchema) });
 
@@ -108,6 +111,12 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
     router.push(nextPath);
   }
 
+  if (!mounted) {
+    return (
+      <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center min-h-[520px]" />
+    );
+  }
+
   return (
     <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center">
       {/* Branding */}
@@ -127,6 +136,30 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
           QBite
         </h1>
         <h2 className="font-headline-sm text-on-surface-variant">Staff Access</h2>
+      </div>
+
+      {/* Demo credentials */}
+      <div className="w-full mb-md p-sm rounded-xl border border-outline-variant bg-surface-container-low flex items-start justify-between gap-sm">
+        <div>
+          <p className="font-label-bold text-label-bold text-on-surface" style={{ fontSize: 12 }}>Demo Restaurant</p>
+          <p className="font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
+            test-kitchen · testowner@qbite.dev / Test1234!
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setTab("email");
+            setApiError(null);
+            setEmailVal("email", "testowner@qbite.dev");
+            setEmailVal("password", "Test1234!");
+          }}
+          className="flex items-center gap-xs px-sm py-xs rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-label-bold hover:bg-secondary-container/80 transition-colors whitespace-nowrap shrink-0"
+          style={{ fontSize: 12 }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
+          Use Demo
+        </button>
       </div>
 
       {/* Tab switcher */}

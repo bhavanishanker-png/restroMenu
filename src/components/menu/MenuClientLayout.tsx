@@ -10,9 +10,9 @@ import { MenuSection } from "./MenuSection";
 import { useCartStore } from "@/store/cart";
 import type { MenuItem, PublicMenu } from "@/types";
 
-type Props = { menu: PublicMenu };
+type Props = { menu: PublicMenu; token: string };
 
-export default function MenuClientLayout({ menu }: Props) {
+export default function MenuClientLayout({ menu, token }: Props) {
   const [search, setSearch] = useState("");
   const [vegOnly, setVegOnly] = useState(false);
   const [bestsellersOnly, setBestsellersOnly] = useState(false);
@@ -21,7 +21,6 @@ export default function MenuClientLayout({ menu }: Props) {
 
   const init = useCartStore((s) => s.init);
   const slug = menu.restaurant.slug;
-  const token = menu.table?.id ?? "";
 
   // Hydrate cart from localStorage and bind to this table
   useEffect(() => {

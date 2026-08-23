@@ -194,11 +194,11 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <a
-                      href={`/r/${r.slug}`}
+                      href="/login"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
-                      aria-label={`Open ${r.name}`}
+                      aria-label={`Open ${r.name} dashboard`}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 20 }}>open_in_new</span>
                     </a>

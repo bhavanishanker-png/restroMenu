@@ -62,6 +62,23 @@ export default function AdminLoginPage() {
           <h2 className="font-headline-sm text-on-surface-variant">Admin Control</h2>
         </div>
 
+        {/* Demo credentials */}
+        <div className="w-full mb-md p-sm rounded-xl border border-outline-variant bg-surface-container-low flex items-center justify-between gap-sm">
+          <div>
+            <p className="font-label-bold text-label-bold text-on-surface" style={{ fontSize: 12 }}>Demo Access</p>
+            <p className="font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>Super admin secret pre-filled</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSecret("qbite-dev-admin-secret-change-before-prod")}
+            className="flex items-center gap-xs px-sm py-xs rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-label-bold hover:bg-secondary-container/80 transition-colors whitespace-nowrap shrink-0"
+            style={{ fontSize: 12 }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
+            Use Demo
+          </button>
+        </div>
+
         {/* Form */}
         <form onSubmit={submit} className="w-full flex flex-col gap-md">
           <div className="flex flex-col gap-xs">

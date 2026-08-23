@@ -32,5 +32,5 @@ export default async function MenuPage({ params }: Props) {
     notFound();
   }
 
-  return <MenuClientLayout menu={result.menu} />;
+  return <MenuClientLayout menu={result.menu} token={token} />;
 }
