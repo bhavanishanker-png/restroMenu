@@ -1,13 +1,5 @@
 "use client";
 
-import { MoreVertical } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import type { KitchenOrder } from "./types";
 import type { OrderStatus } from "@/types";
 
@@ -19,11 +11,16 @@ type Props = {
   onCancel: () => void;
 };
 
-const ACTION_MAP: Partial<Record<OrderStatus, { label: string }>> = {
-  placed:    { label: "Accept" },
-  accepted:  { label: "Start preparing" },
-  preparing: { label: "Mark ready" },
-  ready:     { label: "Mark served" },
+type ActionConfig = {
+  label: string;
+  variant: "primary" | "outlined" | "secondary";
+};
+
+const ACTION_MAP: Partial<Record<OrderStatus, ActionConfig>> = {
+  placed:    { label: "Accept",          variant: "primary"   },
+  accepted:  { label: "Start Preparing", variant: "primary"   },
+  preparing: { label: "Mark Ready",      variant: "outlined"  },
+  ready:     { label: "Mark Served",     variant: "secondary" },
 };
 
 function elapsedMinutes(placedAt: string, now: number): number {
@@ -35,94 +32,94 @@ function formatElapsed(minutes: number): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-function urgencyClasses(elapsed: number): { border: string; header: string } {
-  if (elapsed >= 25) return { border: "border-red-400", header: "bg-red-50" };
-  if (elapsed >= 15) return { border: "border-amber-400", header: "bg-amber-50" };
-  return { border: "border-stone-200", header: "bg-stone-50" };
+function urgencyBorderClass(elapsed: number): string {
+  if (elapsed >= 25) return "border-l-error";
+  if (elapsed >= 15) return "border-l-[#f59e0b]";
+  return "border-l-surface-container-highest";
 }
 
-export function OrderCard({ order, now, isNew, onAdvance, onCancel }: Props) {
+function elapsedColorClass(elapsed: number): string {
+  if (elapsed >= 25) return "text-error animate-pulse";
+  if (elapsed >= 15) return "text-[#d97706]";
+  return "text-primary";
+}
+
+function actionBtnClass(variant: ActionConfig["variant"]): string {
+  if (variant === "primary")   return "bg-primary text-on-primary hover:bg-primary-container";
+  if (variant === "outlined")  return "border border-primary text-primary hover:bg-primary/5";
+  return "bg-secondary-container text-on-secondary-container hover:bg-secondary-container/80";
+}
+
+export function OrderCard({ order, now, isNew, onAdvance }: Props) {
   const elapsed = now === 0 ? 0 : elapsedMinutes(order.placedAt, now);
-  const { border, header } = urgencyClasses(elapsed);
   const action = ACTION_MAP[order.status];
+  const isServed = order.status === "served";
+  const borderClass = urgencyBorderClass(elapsed);
+
+  if (isServed) {
+    return (
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden opacity-75 hover:opacity-100 transition-opacity border-l-4 border-l-secondary-container">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="font-mono text-on-surface-variant line-through" style={{ fontSize: 18 }}>
+            #{order.orderNumber}
+          </span>
+          <span className="material-symbols-outlined text-secondary-container" style={{ fontSize: 20 }}>
+            done_all
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className={`rounded-xl border-2 bg-white shadow-sm overflow-hidden ${border} ${
-        isNew ? "animate-slide-in ring-2 ring-[#C2410C] ring-offset-1" : ""
+      className={`rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden border-l-4 ${borderClass} ${
+        isNew ? "animate-slide-in ring-2 ring-primary ring-offset-1" : ""
       }`}
     >
       {/* Card header */}
-      <div className={`flex items-center justify-between px-3 py-2 ${header}`}>
+      <div className="flex items-center justify-between px-3 py-2 bg-surface-container border-b border-outline-variant/20">
         <div className="flex items-baseline gap-2">
-          <span className="text-[32px] font-bold leading-none text-stone-900">
+          <span className="font-bold text-on-surface leading-none" style={{ fontSize: 32 }}>
             #{order.orderNumber}
           </span>
           {order.tableLabel && (
-            <span className="text-[20px] font-medium text-stone-600">
+            <span className="font-medium text-on-surface-variant" style={{ fontSize: 18 }}>
               {order.tableLabel}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span
-            className={`text-sm font-semibold tabular-nums ${
-              elapsed >= 25
-                ? "text-red-600"
-                : elapsed >= 15
-                ? "text-amber-700"
-                : "text-stone-500"
-            }`}
-          >
-            {formatElapsed(elapsed)}
-          </span>
-
-          {/* Cancel overflow menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-600"
-                aria-label="Order options"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600"
-                onClick={onCancel}
-              >
-                Cancel order
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <span className={`font-semibold tabular-nums ${elapsedColorClass(elapsed)}`} style={{ fontSize: 15 }}>
+          {formatElapsed(elapsed)}
+        </span>
       </div>
 
       {/* Items */}
-      <div className="px-3 py-2 text-[18px] leading-snug">
+      <div className="px-3 py-2" style={{ fontSize: 18 }}>
         {order.items.map((item) => (
           <div key={item.id} className="mb-2 last:mb-0">
-            <p className="font-medium text-stone-800">
-              <span className="text-stone-500">{item.quantity}×</span>{" "}
+            <p className="font-bold text-on-surface leading-snug">
+              <span className="text-on-surface-variant font-normal">{item.quantity}×</span>{" "}
               {item.itemName}
               {item.variantName && (
-                <span className="text-[15px] text-stone-500">
-                  {" "}
-                  ({item.variantName})
+                <span className="text-on-surface-variant font-normal" style={{ fontSize: 15 }}>
+                  {" "}({item.variantName})
                 </span>
               )}
             </p>
 
             {item.addons.length > 0 && (
-              <p className="ml-4 text-[15px] text-stone-500">
+              <p className="ml-4 text-on-surface-variant" style={{ fontSize: 15 }}>
                 + {item.addons.map((a) => a.name).join(", ")}
               </p>
             )}
 
             {item.notes && (
-              <p className="ml-4 rounded bg-amber-100 px-1 text-[15px] font-medium text-amber-800">
+              <p
+                className="ml-4 mt-xs rounded-md bg-tertiary-container px-2 py-0.5 font-medium text-on-tertiary-container"
+                style={{ fontSize: 15 }}
+              >
                 {item.notes}
               </p>
             )}
@@ -133,12 +130,13 @@ export function OrderCard({ order, now, isNew, onAdvance, onCancel }: Props) {
       {/* Action button */}
       {action && (
         <div className="px-3 pb-3">
-          <Button
-            className="h-[60px] w-full text-base font-semibold"
+          <button
+            className={`w-full h-[60px] rounded-lg font-headline-sm transition-all active:translate-y-[2px] ${actionBtnClass(action.variant)}`}
+            style={{ fontSize: 16 }}
             onClick={onAdvance}
           >
             {action.label}
-          </Button>
+          </button>
         </div>
       )}
     </div>

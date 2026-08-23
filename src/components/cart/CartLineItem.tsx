@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { priceLine, formatMoney } from "@/lib/pricing";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
 import { useCartStore } from "@/store/cart";
@@ -13,62 +13,79 @@ export function CartLineItem({ line }: { line: CartLine }) {
 
   return (
     <div className="flex gap-3 py-3">
-      <div className="flex-1 min-w-0 space-y-1">
-        {/* Name */}
+      {/* Thumbnail */}
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-container-high">
+        {line.imageUrl ? (
+          <Image
+            src={line.imageUrl}
+            alt={line.itemName}
+            fill
+            sizes="80px"
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <span className="material-symbols-outlined text-outline" style={{ fontSize: 28 }}>
+              restaurant
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Details */}
+      <div className="flex flex-1 flex-col gap-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <FoodTypeMarker type={line.foodType} />
-          <span className="text-sm font-medium text-stone-900 truncate">{line.itemName}</span>
+          <span className="text-body-md font-semibold text-on-surface truncate">{line.itemName}</span>
         </div>
 
-        {/* Variant */}
         {line.variantName && (
-          <p className="text-xs text-stone-500 pl-5">{line.variantName}</p>
+          <p className="text-body-sm text-on-surface-variant">{line.variantName}</p>
         )}
-
-        {/* Add-ons */}
         {line.addons.length > 0 && (
-          <p className="text-xs text-stone-400 pl-5">
+          <p className="text-body-sm text-on-surface-variant">
             {line.addons.map((a) => a.name).join(", ")}
           </p>
         )}
-
-        {/* Notes */}
         {line.notes && (
-          <p className="text-xs italic text-stone-400 pl-5">&ldquo;{line.notes}&rdquo;</p>
+          <p className="text-body-sm italic text-on-surface-variant">&ldquo;{line.notes}&rdquo;</p>
         )}
 
-        {/* Quantity stepper */}
-        <div className="flex items-center gap-1 pl-5 pt-1">
-          <button
-            onClick={() => setQuantity(line.lineId, line.quantity - 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50 active:scale-95"
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <span className="w-6 text-center text-sm font-semibold">{line.quantity}</span>
-          <button
-            onClick={() => setQuantity(line.lineId, line.quantity + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 text-stone-500 hover:bg-stone-50 active:scale-95"
-            aria-label="Increase quantity"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
+        {/* Qty stepper + price row */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center rounded-full border border-outline-variant">
+            <button
+              onClick={() => setQuantity(line.lineId, line.quantity - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform"
+              aria-label="Decrease quantity"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>remove</span>
+            </button>
+            <span className="w-7 text-center text-body-md font-semibold text-on-surface">
+              {line.quantity}
+            </span>
+            <button
+              onClick={() => setQuantity(line.lineId, line.quantity + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform"
+              aria-label="Increase quantity"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+            </button>
+          </div>
 
-      {/* Right: price + delete */}
-      <div className="flex flex-col items-end justify-between shrink-0">
-        <button
-          onClick={() => removeLine(line.lineId)}
-          className="text-stone-300 hover:text-red-500 transition-colors"
-          aria-label={`Remove ${line.itemName}`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-        <span className="text-sm font-semibold text-stone-800">
-          {formatMoney(priced.lineTotal)}
-        </span>
+          <div className="flex items-center gap-2">
+            <span className="font-headline-sm text-primary" style={{ fontSize: 16 }}>
+              {formatMoney(priced.lineTotal)}
+            </span>
+            <button
+              onClick={() => removeLine(line.lineId)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-outline hover:text-tertiary hover:bg-tertiary/10 transition-colors"
+              aria-label={`Remove ${line.itemName}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>delete</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

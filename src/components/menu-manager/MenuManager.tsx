@@ -23,20 +23,25 @@ export function MenuManager({ initialCategories, addonGroups }: Props) {
   return (
     <div className="flex h-full gap-0">
       {/* Left pane — categories */}
-      <aside className="w-56 shrink-0 overflow-y-auto border-r border-stone-200 bg-white p-3 md:w-64">
-        <h3 className="mb-2 px-2 text-xs font-bold uppercase tracking-widest text-stone-400">
-          Categories
-        </h3>
-        <CategoryList
-          categories={categories}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onChange={setCategories}
-        />
+      <aside className="hidden lg:flex w-[280px] shrink-0 flex-col border-r border-outline-variant/30 bg-surface-container-lowest overflow-hidden">
+        <div className="flex items-center justify-between px-md py-sm border-b border-outline-variant/30 bg-surface-container-low">
+          <h2 className="font-headline-sm text-on-surface" style={{ fontSize: 15 }}>Categories</h2>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full text-primary hover:bg-primary/10 transition-colors">
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          <CategoryList
+            categories={categories}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onChange={setCategories}
+          />
+        </div>
       </aside>
 
       {/* Right pane — items */}
-      <main className="flex flex-1 flex-col overflow-y-auto p-4">
+      <main className="flex flex-1 flex-col overflow-hidden bg-surface">
         <ItemList
           categoryId={selectedId}
           categoryName={selectedCategory?.name ?? ""}

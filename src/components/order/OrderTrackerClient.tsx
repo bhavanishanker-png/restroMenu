@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/pricing";
 import { useCartStore } from "@/store/cart";
@@ -51,32 +50,35 @@ function FeedbackPrompt() {
 
   if (submitted) {
     return (
-      <p className="text-center text-sm font-medium text-[#C2410C]">
+      <p className="text-center font-body-md font-medium text-primary">
         Thank you for your feedback!
       </p>
     );
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white px-4 py-4 text-center space-y-2">
-      <p className="text-sm font-semibold text-stone-800">How was your experience?</p>
+    <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-4 text-center space-y-2 shadow-level-1">
+      <p className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>How was your experience?</p>
       <div className="flex justify-center gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             onClick={() => { setRating(star); setSubmitted(true); }}
             aria-label={`Rate ${star} stars`}
-            className="p-1"
+            className="p-1 min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <Star
-              className={`h-7 w-7 transition-colors ${
-                star <= rating ? "fill-amber-400 text-amber-400" : "text-stone-300"
+            <span
+              className={`material-symbols-outlined transition-colors ${
+                star <= rating ? "fill text-amber-400" : "text-outline-variant"
               }`}
-            />
+              style={{ fontSize: 28 }}
+            >
+              star
+            </span>
           </button>
         ))}
       </div>
-      <p className="text-xs text-stone-400">Tap a star to rate</p>
+      <p className="text-body-sm text-on-surface-variant">Tap a star to rate</p>
     </div>
   );
 }
@@ -161,63 +163,63 @@ export function OrderTrackerClient({
 
   const paymentColor: Record<string, string> = {
     pending: "bg-amber-50 text-amber-700",
-    paid: "bg-green-50 text-green-700",
-    failed: "bg-red-50 text-red-700",
-    refunded: "bg-stone-100 text-stone-600",
+    paid: "bg-secondary-container text-on-secondary-container",
+    failed: "bg-tertiary/10 text-tertiary",
+    refunded: "bg-surface-container text-on-surface-variant",
   };
 
   return (
-    <div className="space-y-4 p-4 pb-16">
-      {/* Order number + table */}
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-4 space-y-1 text-center">
-        <p className="text-3xl font-bold tracking-tight text-stone-900">
+    <div className="space-y-4 px-4 pt-4 pb-16">
+      {/* Order number + status chip */}
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-4 space-y-1.5 text-center shadow-level-1">
+        <p className="text-[32px] font-bold tracking-tight text-on-surface font-display">
           {order.orderNumber}
         </p>
         {tableLabel && (
-          <p className="text-sm text-stone-500">Table {tableLabel}</p>
+          <p className="text-body-md text-on-surface-variant">Table {tableLabel}</p>
+        )}
+        {estimatedReadyAt && (
+          <EstimatedReady isoString={estimatedReadyAt} />
         )}
         <span
-          className={`inline-block rounded-full px-3 py-0.5 text-xs font-semibold ${
-            paymentColor[order.paymentStatus] ?? "bg-stone-100 text-stone-600"
+          className={`inline-block rounded-full px-3 py-0.5 font-label-bold text-label-bold ${
+            paymentColor[order.paymentStatus] ?? "bg-surface-container text-on-surface-variant"
           }`}
         >
           {paymentLabel[order.paymentStatus] ?? order.paymentStatus}
         </span>
       </div>
 
-      {/* Progress bar */}
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-5">
+      {/* Progress stepper */}
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-6 shadow-level-1">
         <OrderProgressBar status={order.status} />
-        <div className="mt-3">
-          <EstimatedReady isoString={estimatedReadyAt} />
-        </div>
       </div>
 
       {/* Feedback on served */}
       {order.status === "served" && <FeedbackPrompt />}
 
       {/* Order items */}
-      <div className="rounded-xl border border-stone-200 bg-white px-4 divide-y divide-stone-100">
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 divide-y divide-outline-variant/30 shadow-level-1">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-3 py-3">
             <FoodTypeMarker type="veg" />
             <div className="flex-1 min-w-0 space-y-0.5">
-              <p className="text-sm font-medium text-stone-900">
+              <p className="text-body-md font-semibold text-on-surface">
                 {item.quantity}× {item.itemName}
               </p>
               {item.variantName && (
-                <p className="text-xs text-stone-500">{item.variantName}</p>
+                <p className="text-body-sm text-on-surface-variant">{item.variantName}</p>
               )}
               {item.addons.length > 0 && (
-                <p className="text-xs text-stone-400">
+                <p className="text-body-sm text-on-surface-variant">
                   {item.addons.map((a) => a.name).join(", ")}
                 </p>
               )}
               {item.notes && (
-                <p className="text-xs italic text-stone-400">&ldquo;{item.notes}&rdquo;</p>
+                <p className="text-body-sm italic text-on-surface-variant">&ldquo;{item.notes}&rdquo;</p>
               )}
             </div>
-            <p className="shrink-0 text-sm font-semibold text-stone-700">
+            <p className="shrink-0 text-body-md font-semibold text-primary">
               {formatMoney(item.lineTotal)}
             </p>
           </div>
@@ -225,38 +227,38 @@ export function OrderTrackerClient({
       </div>
 
       {/* Bill totals */}
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 space-y-1.5">
-        <div className="flex justify-between text-sm text-stone-600">
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3 space-y-2 shadow-level-1">
+        <div className="flex justify-between text-body-md text-on-surface-variant">
           <span>Subtotal</span>
           <span>{formatMoney(order.subtotal)}</span>
         </div>
         {order.taxTotal > 0 && (
-          <div className="flex justify-between text-sm text-stone-600">
+          <div className="flex justify-between text-body-md text-on-surface-variant">
             <span>Tax</span>
             <span>{formatMoney(order.taxTotal)}</span>
           </div>
         )}
         {order.serviceCharge > 0 && (
-          <div className="flex justify-between text-sm text-stone-600">
+          <div className="flex justify-between text-body-md text-on-surface-variant">
             <span>Service charge</span>
             <span>{formatMoney(order.serviceCharge)}</span>
           </div>
         )}
         {order.packingCharge > 0 && (
-          <div className="flex justify-between text-sm text-stone-600">
+          <div className="flex justify-between text-body-md text-on-surface-variant">
             <span>Packing charge</span>
             <span>{formatMoney(order.packingCharge)}</span>
           </div>
         )}
         {order.discount > 0 && (
-          <div className="flex justify-between text-sm text-green-700">
+          <div className="flex justify-between text-body-md text-[#3f6653]">
             <span>Discount</span>
             <span>−{formatMoney(order.discount)}</span>
           </div>
         )}
-        <div className="flex justify-between border-t border-stone-100 pt-1.5 font-semibold text-stone-900">
-          <span>Total</span>
-          <span>{formatMoney(order.total)}</span>
+        <div className="flex justify-between border-t border-outline-variant/30 pt-2">
+          <span className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>Total</span>
+          <span className="font-headline-sm text-primary" style={{ fontSize: 18 }}>{formatMoney(order.total)}</span>
         </div>
       </div>
     </div>

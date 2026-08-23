@@ -30,7 +30,7 @@ function saveQueue(q: PendingChange[]): void {
 type Column = {
   title: string;
   statuses: OrderStatus[];
-  order: "asc" | "desc"; // ascending = oldest first
+  order: "asc" | "desc";
 };
 
 const COLUMNS: Column[] = [
@@ -40,6 +40,18 @@ const COLUMNS: Column[] = [
   { title: "Served",    statuses: ["served"],                order: "desc" },
 ];
 
+type ColumnBadge = {
+  bg: string;
+  text: string;
+};
+
+const COLUMN_BADGE: Record<string, ColumnBadge> = {
+  New:       { bg: "bg-primary",                    text: "text-on-primary"                    },
+  Preparing: { bg: "bg-surface-container-highest",  text: "text-on-surface-variant"            },
+  Ready:     { bg: "bg-secondary-container",        text: "text-on-secondary-container"        },
+  Served:    { bg: "bg-surface-container-high",     text: "text-on-surface-variant"            },
+};
+
 function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
   const filtered = all.filter((o) => col.statuses.includes(o.status));
   if (col.order === "asc") {
@@ -47,7 +59,7 @@ function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
       (a, b) => new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime()
     );
   }
-  return filtered; // already newest-first from the prepend pattern
+  return filtered;
 }
 
 // ---------------------------------------------------------------- raw order mapper
@@ -133,7 +145,6 @@ export function KitchenDisplay({
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
 
-  // Refs for use inside callbacks without stale closures
   const isOnlineRef = useRef(isOnline);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const soundEnabledRef = useRef(soundEnabled);
@@ -316,7 +327,6 @@ export function KitchenDisplay({
 
     const prevStatus = order.status;
 
-    // Optimistic update
     setOrders((prev) =>
       prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
     );
@@ -344,7 +354,6 @@ export function KitchenDisplay({
         toast.error("Failed to update order. Try again.");
       }
     } catch {
-      // Network failed — roll back and queue
       setOrders((prev) =>
         prev.map((o) => (o.id === order.id ? { ...o, status: prevStatus } : o))
       );
@@ -411,7 +420,7 @@ export function KitchenDisplay({
   const showBanner = !isOnline || queue.length > 0;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-stone-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-surface-container-lowest">
       <KitchenHeader
         restaurantName={restaurantName}
         isOnline={isOnline}
@@ -420,34 +429,50 @@ export function KitchenDisplay({
         now={now}
       />
 
+      {/* Offline / pending banner */}
       {showBanner && (
-        <div className="bg-amber-400 px-4 py-1.5 text-center text-sm font-semibold text-amber-900">
+        <div className="flex items-center justify-center gap-sm bg-error-container border-b border-error/20 px-md py-xs text-on-error-container font-label-bold text-sm">
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            {!isOnline ? "wifi_off" : "sync"}
+          </span>
           {!isOnline
             ? `Offline — ${queue.length} change${queue.length !== 1 ? "s" : ""} pending`
             : `Syncing — ${queue.length} change${queue.length !== 1 ? "s" : ""} pending`}
         </div>
       )}
 
-      <div className="flex flex-1 gap-3 overflow-hidden p-3">
+      {/* 4-column grid */}
+      <div className="flex flex-1 gap-gutter overflow-hidden p-gutter">
         {COLUMNS.map((col) => {
           const colOrders = columnOrders(orders, col);
+          const badge = COLUMN_BADGE[col.title];
+
           return (
-            <div
+            <section
               key={col.title}
-              className="flex flex-1 flex-col gap-2 overflow-hidden"
+              className="flex flex-1 flex-col bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden"
             >
               {/* Column header */}
-              <div className="flex items-center gap-2 px-1">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-stone-500">
+              <div className="flex items-center gap-sm px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
+                <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs flex-1">
                   {col.title}
                 </h2>
-                <span className="rounded-full bg-stone-300 px-2 py-0.5 text-xs font-bold text-stone-700">
-                  {colOrders.length}
-                </span>
+                {col.title === "Served" ? (
+                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>
+                    history
+                  </span>
+                ) : (
+                  <span className={`rounded-full px-2 py-0.5 font-bold text-xs ${badge.bg} ${badge.text}`}>
+                    {colOrders.length}
+                  </span>
+                )}
               </div>
 
               {/* Cards */}
-              <div className="flex flex-col gap-3 overflow-y-auto pb-2">
+              <div
+                className="flex flex-col gap-sm overflow-y-auto p-sm kds-column"
+                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(89,65,57,0.2) transparent" }}
+              >
                 {colOrders.map((order) => (
                   <OrderCard
                     key={order.id}
@@ -460,12 +485,15 @@ export function KitchenDisplay({
                 ))}
 
                 {colOrders.length === 0 && (
-                  <div className="rounded-xl border-2 border-dashed border-stone-200 py-10 text-center text-sm text-stone-400">
-                    Empty
+                  <div className="flex flex-col items-center justify-center flex-1 rounded-xl border-2 border-dashed border-outline-variant/30 py-10 text-center">
+                    <span className="material-symbols-outlined text-on-surface-variant/40 mb-xs" style={{ fontSize: 32 }}>
+                      receipt_long
+                    </span>
+                    <p className="font-body-sm text-on-surface-variant/50">No orders</p>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
           );
         })}
       </div>

@@ -1,16 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
-import { SpiceLevel } from "@/components/ui/SpiceLevel";
 import { formatMoney } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import type { MenuItem } from "@/types";
 
 type Props = {
   item: MenuItem;
-  /** Called when the user taps ADD — wired up in T07 */
   onAdd?: (item: MenuItem) => void;
 };
 
@@ -20,75 +17,89 @@ function getDisplayPrice(item: MenuItem): string {
   return `${formatMoney(item.basePrice + minDelta)} onwards`;
 }
 
+function SpiceIcons({ level }: { level: number }) {
+  if (level === 0) return null;
+  return (
+    <span className="flex items-center gap-0.5" aria-label={`Spice level ${level}`}>
+      {Array.from({ length: Math.min(level, 3) }).map((_, i) => (
+        <span
+          key={i}
+          className="material-symbols-outlined fill"
+          style={{ fontSize: 14, color: "#cc4911" }}
+        >
+          local_fire_department
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function MenuItemCard({ item, onAdd }: Props) {
   const unavailable = !item.isAvailable;
 
   return (
     <div
       className={cn(
-        "flex gap-3 rounded-xl border border-stone-200 bg-white p-3",
+        "flex gap-4 rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 shadow-level-1 tactile-hover",
         unavailable && "pointer-events-none opacity-40"
       )}
       aria-disabled={unavailable}
     >
       {/* Text column */}
-      <div className="flex flex-1 flex-col gap-1 min-w-0">
-        {/* Name row */}
+      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
         <div className="flex items-center gap-1.5">
           <FoodTypeMarker type={item.foodType} />
-          <span className="truncate text-[15px] font-medium text-stone-900">
+          <span className="truncate text-body-md font-semibold text-on-surface">
             {item.name}
           </span>
         </div>
 
-        {/* Price */}
-        <p className="text-sm font-semibold text-stone-800">
+        <p className="font-headline-sm text-primary" style={{ fontSize: 16, lineHeight: "22px" }}>
           {getDisplayPrice(item)}
         </p>
 
-        {/* Description */}
         {item.description && (
-          <p className="line-clamp-2 text-[13px] text-stone-500">
+          <p className="line-clamp-2 text-body-sm text-on-surface-variant">
             {item.description}
           </p>
         )}
 
-        {/* Tags + spice */}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {item.tags.map((tag) => (
-            <Badge
+          {item.tags.slice(0, 2).map((tag) => (
+            <span
               key={tag}
-              variant="secondary"
-              className="h-5 px-1.5 text-[11px] capitalize"
+              className="rounded-full bg-surface-container px-2 py-0.5 font-label-bold text-label-bold text-on-surface-variant capitalize"
             >
               {tag.replace(/_/g, " ")}
-            </Badge>
+            </span>
           ))}
-          <SpiceLevel level={item.spiceLevel} />
+          <SpiceIcons level={item.spiceLevel} />
         </div>
       </div>
 
-      {/* Image + ADD column */}
+      {/* Image + ADD */}
       <div className="relative flex shrink-0 flex-col items-end gap-2">
-        <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-stone-100">
+        <div className="relative h-[100px] w-[100px] overflow-hidden rounded-xl bg-surface-container-high">
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
               alt={item.name}
               fill
-              sizes="96px"
+              sizes="100px"
               className={cn("object-cover", unavailable && "grayscale")}
               loading="lazy"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl text-stone-300">
-              {item.foodType === "veg" ? "🥗" : "🍗"}
+            <div className="flex h-full w-full items-center justify-center">
+              <span className="material-symbols-outlined text-outline" style={{ fontSize: 36 }}>
+                {item.foodType === "veg" ? "eco" : "kebab_dining"}
+              </span>
             </div>
           )}
 
           {unavailable && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-              <span className="rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+            <div className="absolute inset-0 flex items-center justify-center bg-surface-container-lowest/70">
+              <span className="rounded-full bg-surface-container-highest px-2 py-0.5 font-label-bold text-label-bold text-on-surface-variant">
                 Unavailable
               </span>
             </div>
@@ -98,9 +109,10 @@ export function MenuItemCard({ item, onAdd }: Props) {
         {!unavailable && (
           <button
             onClick={() => onAdd?.(item)}
-            className="flex h-8 items-center gap-1 rounded-full border-2 border-[#C2410C] px-3 text-sm font-semibold text-[#C2410C] transition-colors hover:bg-[#C2410C] hover:text-white active:scale-95"
+            className="flex min-h-[36px] items-center gap-1 rounded-full bg-primary-container px-5 py-1.5 font-label-bold text-label-bold text-on-primary-container transition-all active:scale-95 active:translate-y-[2px]"
             aria-label={`Add ${item.name} to cart`}
           >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
             ADD
           </button>
         )}

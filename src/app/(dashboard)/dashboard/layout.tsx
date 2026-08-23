@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
+import { createServerClient } from "@/lib/supabase/server";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 
-// Server-side auth guard for the entire dashboard.
-// The middleware catches most unauthenticated requests; this is the
-// definitive check after cookie signature verification.
 export default async function DashboardLayout({
   children,
 }: {
@@ -12,43 +11,29 @@ export default async function DashboardLayout({
   const session = await getStaffSession();
   if (!session) redirect("/login");
 
-  return (
-    <div className="flex min-h-screen bg-stone-100">
-      {/* Sidebar — full implementation in T17 */}
-      <aside className="hidden w-56 shrink-0 border-r border-stone-200 bg-white md:flex md:flex-col">
-        <div className="flex items-center gap-2 border-b border-stone-200 px-5 py-4">
-          <span className="text-base font-bold text-[#C2410C]">QBite</span>
-        </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm">
-          <a href="/dashboard" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Dashboard</a>
-          <a href="/dashboard/kitchen" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Kitchen</a>
-          <a href="/dashboard/orders" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Orders</a>
-          {(session.role === "owner" || session.role === "manager") && (
-            <>
-              <a href="/dashboard/menu" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Menu</a>
-              <a href="/dashboard/tables" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Tables</a>
-              <a href="/dashboard/reports" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Reports</a>
-              <a href="/dashboard/staff" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Staff</a>
-            </>
-          )}
-          {session.role === "owner" && (
-            <a href="/dashboard/settings" className="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Settings</a>
-          )}
-        </nav>
-        <div className="mt-auto border-t border-stone-200 p-3">
-          <p className="truncate px-3 py-1 text-xs text-stone-400 capitalize">{session.role}</p>
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-stone-600 hover:bg-stone-100"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
+  const supabase = createServerClient();
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("name")
+    .eq("id", session.restaurantId)
+    .single();
 
-      <main className="flex-1 overflow-auto">{children}</main>
+  return (
+    <div className="flex min-h-screen bg-surface">
+      <DashboardNav
+        role={session.role}
+        restaurantName={restaurant?.name ?? "Restaurant"}
+      />
+
+      {/* Mobile top bar */}
+      <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-surface-container-lowest px-4 py-3 border-b border-outline-variant/30 shadow-level-1 md:hidden">
+        <span className="font-headline-sm text-primary" style={{ fontSize: 18 }}>QBite</span>
+        <span className="font-body-sm text-on-surface-variant capitalize">{session.role}</span>
+      </div>
+
+      <main className="flex-1 md:ml-[280px] min-h-screen pt-[56px] md:pt-0 overflow-auto">
+        {children}
+      </main>
     </div>
   );
 }

@@ -2,19 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type DayRow = {
   date: string;
@@ -41,21 +28,22 @@ function fmt(n: number) {
 
 function fmtDate(s: string) {
   return new Date(s + "T00:00:00").toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short",
+    day: "2-digit",
+    month: "short",
   });
 }
 
 export function SalesReport() {
   const today = new Date();
-  const thirtyAgo = new Date(today);
-  thirtyAgo.setDate(thirtyAgo.getDate() - 29);
+  const sevenAgo = new Date(today);
+  sevenAgo.setDate(sevenAgo.getDate() - 6);
 
-  const [dateFrom, setDateFrom] = useState(isoDate(thirtyAgo));
+  const [dateFrom, setDateFrom] = useState(isoDate(sevenAgo));
   const [dateTo, setDateTo] = useState(isoDate(today));
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetch_ = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -63,22 +51,35 @@ export function SalesReport() {
         dateTo: new Date(dateTo + "T23:59:59").toISOString(),
       });
       const res = await fetch(`/api/reports/sales?${params.toString()}`);
-      if (!res.ok) { toast.error("Failed to load report."); return; }
-      setData(await res.json() as ApiResponse);
+      if (!res.ok) {
+        toast.error("Failed to load report.");
+        return;
+      }
+      setData((await res.json()) as ApiResponse);
     } finally {
       setLoading(false);
     }
   }, [dateFrom, dateTo]);
 
-  useEffect(() => { void fetch_(); }, [fetch_]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   function exportCSV() {
     if (!data) return;
     const header = "Date,Orders,Revenue,Subtotal,Tax,Service charge,Packing charge";
     const rows = data.days.map((d) =>
-      [d.date, d.orders, d.revenue.toFixed(2), d.subtotal.toFixed(2),
-       d.tax.toFixed(2), d.serviceCharge.toFixed(2), d.packingCharge.toFixed(2)]
-        .map((v) => `"${v}"`).join(",")
+      [
+        d.date,
+        d.orders,
+        d.revenue.toFixed(2),
+        d.subtotal.toFixed(2),
+        d.tax.toFixed(2),
+        d.serviceCharge.toFixed(2),
+        d.packingCharge.toFixed(2),
+      ]
+        .map((v) => `"${v}"`)
+        .join(",")
     );
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -90,104 +91,215 @@ export function SalesReport() {
     URL.revokeObjectURL(url);
   }
 
-  const chartData = data?.days.map((d) => ({ ...d, label: fmtDate(d.date) })) ?? [];
+  const maxRevenue = Math.max(...(data?.days.map((d) => d.revenue) ?? [0]), 1);
+  const avgRevenue =
+    data && data.days.length > 0 ? data.totals.revenue / data.days.length : 0;
 
   return (
-    <div className="flex flex-col gap-5 p-5">
-      {/* Date filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-36" />
-        <span className="text-stone-400 text-sm">to</span>
-        <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-36" />
-        <Button variant="outline" size="sm" onClick={exportCSV} disabled={!data || data.days.length === 0}>
-          <Download className="mr-1 h-4 w-4" /> Export CSV
-        </Button>
+    <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="font-headline-lg-mobile text-on-surface" style={{ fontSize: 28 }}>
+            Sales Reports
+          </h1>
+          <p className="font-body-md text-on-surface-variant mt-1">
+            Review your daily performance and revenue trends.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 h-12 min-w-0">
+            <span
+              className="material-symbols-outlined text-on-surface-variant shrink-0"
+              style={{ fontSize: 20 }}
+            >
+              calendar_month
+            </span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-transparent font-body-sm text-body-sm text-on-surface outline-none w-28 min-w-0"
+            />
+            <span className="text-on-surface-variant font-body-sm shrink-0">–</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="bg-transparent font-body-sm text-body-sm text-on-surface outline-none w-28 min-w-0"
+            />
+          </div>
+          <button
+            onClick={exportCSV}
+            disabled={!data || data.days.length === 0}
+            className="flex items-center gap-2 px-4 h-12 bg-primary text-on-primary rounded-lg font-label-bold text-label-bold hover:bg-primary-container active:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>download</span>
+            Export CSV
+          </button>
+        </div>
       </div>
 
+      {/* Loading skeleton */}
       {loading ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-48 w-full rounded-xl" />
+        <div className="flex flex-col gap-md">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="bg-surface-container-lowest rounded-xl p-6 shadow-level-1 h-32 animate-pulse"
+              />
+            ))}
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-level-1 h-64 animate-pulse" />
+          <div className="bg-surface-container-lowest rounded-xl shadow-level-1 h-48 animate-pulse" />
         </div>
       ) : (
         <>
-          {/* Summary cards */}
+          {/* KPI cards */}
           {data && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-stone-400 uppercase tracking-wide">Total orders</p>
-                <p className="mt-1 text-2xl font-bold text-stone-900">{data.totals.orders}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-level-1 hover:shadow-level-2 transition-shadow">
+                <div className="flex items-center gap-2 text-on-surface-variant mb-2">
+                  <span className="material-symbols-outlined">payments</span>
+                  <h3 className="font-label-bold text-label-bold">Total Revenue</h3>
+                </div>
+                <div
+                  className="font-display text-primary"
+                  style={{ fontSize: 40, lineHeight: "48px" }}
+                >
+                  ₹{fmt(data.totals.revenue)}
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-secondary font-body-sm text-body-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    trending_up
+                  </span>
+                  <span>Period total</span>
+                </div>
               </div>
-              <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                <p className="text-xs text-stone-400 uppercase tracking-wide">Total revenue</p>
-                <p className="mt-1 text-2xl font-bold text-stone-900">₹{fmt(data.totals.revenue)}</p>
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-level-1 hover:shadow-level-2 transition-shadow">
+                <div className="flex items-center gap-2 text-on-surface-variant mb-2">
+                  <span className="material-symbols-outlined">receipt_long</span>
+                  <h3 className="font-label-bold text-label-bold">Total Orders</h3>
+                </div>
+                <div
+                  className="font-display text-on-surface"
+                  style={{ fontSize: 40, lineHeight: "48px" }}
+                >
+                  {data.totals.orders}
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-secondary font-body-sm text-body-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    trending_up
+                  </span>
+                  <span>Period total</span>
+                </div>
               </div>
-              <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm col-span-2 sm:col-span-1">
-                <p className="text-xs text-stone-400 uppercase tracking-wide">Avg daily revenue</p>
-                <p className="mt-1 text-2xl font-bold text-stone-900">
-                  ₹{fmt(data.days.length > 0 ? data.totals.revenue / data.days.length : 0)}
-                </p>
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-level-1 hover:shadow-level-2 transition-shadow">
+                <div className="flex items-center gap-2 text-on-surface-variant mb-2">
+                  <span className="material-symbols-outlined">shopping_basket</span>
+                  <h3 className="font-label-bold text-label-bold">Avg Daily Revenue</h3>
+                </div>
+                <div
+                  className="font-display text-on-surface"
+                  style={{ fontSize: 40, lineHeight: "48px" }}
+                >
+                  ₹{fmt(avgRevenue)}
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-on-surface-variant font-body-sm text-body-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    trending_flat
+                  </span>
+                  <span>Per day</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Revenue chart */}
-          {chartData.length > 0 && (
-            <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-              <h3 className="mb-3 text-sm font-semibold text-stone-700">Daily revenue</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="rev-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#C2410C" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#C2410C" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#a8a29e" }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#a8a29e" }} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: "#e7e5e4" }}
-                    formatter={(v: number) => [`₹${fmt(v)}`, "Revenue"]}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="#C2410C" strokeWidth={2} fill="url(#rev-grad)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Revenue bar chart */}
+          {data && data.days.length > 0 && (
+            <section className="bg-surface-container-lowest p-6 rounded-xl shadow-level-1">
+              <h2 className="font-headline-sm text-on-surface mb-6">Daily Revenue Trend</h2>
+              <div className="w-full h-48 flex items-end justify-between gap-1 border-b border-outline-variant">
+                {data.days.map((d) => {
+                  const pct = Math.max(2, (d.revenue / maxRevenue) * 100);
+                  const isPeak = d.revenue === maxRevenue;
+                  return (
+                    <div
+                      key={d.date}
+                      title={`${fmtDate(d.date)}: ₹${fmt(d.revenue)}`}
+                      className="flex-1 rounded-t-sm transition-opacity hover:opacity-80 cursor-pointer"
+                      style={{
+                        height: `${pct}%`,
+                        backgroundColor: isPeak ? "#a73400" : "rgba(167,52,0,0.4)",
+                        minWidth: 4,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div className="flex justify-between mt-2 text-on-surface-variant overflow-hidden">
+                {data.days.map((d, i) => (
+                  <span
+                    key={d.date}
+                    className={`flex-1 text-center font-body-sm ${
+                      data.days.length > 14 && i % 2 !== 0 ? "invisible" : ""
+                    }`}
+                    style={{ fontSize: 11 }}
+                  >
+                    {fmtDate(d.date).split(" ")[0]}
+                  </span>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* Daily breakdown table */}
           {data && data.days.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
-                    <th className="px-4 py-2.5">Date</th>
-                    <th className="px-4 py-2.5 text-right">Orders</th>
-                    <th className="px-4 py-2.5 text-right">Revenue</th>
-                    <th className="px-4 py-2.5 text-right hidden sm:table-cell">Tax</th>
-                    <th className="px-4 py-2.5 text-right hidden md:table-cell">Svc charge</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.days.map((d) => (
-                    <tr key={d.date} className="border-b border-stone-50 last:border-0">
-                      <td className="px-4 py-2.5 font-medium text-stone-700">{fmtDate(d.date)}</td>
-                      <td className="px-4 py-2.5 text-right text-stone-500">{d.orders}</td>
-                      <td className="px-4 py-2.5 text-right font-medium text-stone-800">₹{fmt(d.revenue)}</td>
-                      <td className="px-4 py-2.5 text-right text-stone-400 hidden sm:table-cell">₹{fmt(d.tax)}</td>
-                      <td className="px-4 py-2.5 text-right text-stone-400 hidden md:table-cell">₹{fmt(d.serviceCharge)}</td>
+            <section className="bg-surface-container-lowest rounded-xl shadow-level-1 overflow-hidden">
+              <div className="p-6 border-b border-surface-variant">
+                <h2 className="font-headline-sm text-on-surface">Daily Breakdown</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="bg-surface-container-low font-label-bold text-label-bold text-on-surface-variant">
+                      <th className="p-4 font-normal">Date</th>
+                      <th className="p-4 font-normal">Orders</th>
+                      <th className="p-4 font-normal">Gross Revenue</th>
+                      <th className="p-4 font-normal">Tax</th>
+                      <th className="p-4 font-normal">Service Charge</th>
+                      <th className="p-4 font-normal text-right">Net Revenue</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="font-body-md text-body-md text-on-surface">
+                    {data.days.map((d) => (
+                      <tr
+                        key={d.date}
+                        className="border-b border-surface-variant hover:bg-surface-container-highest transition-colors"
+                      >
+                        <td className="p-4">{fmtDate(d.date)}</td>
+                        <td className="p-4">{d.orders}</td>
+                        <td className="p-4">₹{fmt(d.revenue)}</td>
+                        <td className="p-4 text-on-surface-variant">₹{fmt(d.tax)}</td>
+                        <td className="p-4 text-on-surface-variant">₹{fmt(d.serviceCharge)}</td>
+                        <td className="p-4 text-right font-bold text-primary">₹{fmt(d.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           )}
 
+          {/* Empty state */}
           {data && data.days.length === 0 && (
-            <p className="rounded-xl border border-dashed border-stone-200 py-16 text-center text-sm text-stone-400">
-              No completed orders in this date range.
-            </p>
+            <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-outline-variant py-24 text-on-surface-variant">
+              <span className="material-symbols-outlined" style={{ fontSize: 48 }}>
+                receipt_long
+              </span>
+              <p className="font-body-md">No completed orders in this date range.</p>
+            </div>
           )}
         </>
       )}

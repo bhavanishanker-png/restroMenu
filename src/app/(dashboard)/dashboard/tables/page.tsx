@@ -41,9 +41,12 @@ export default async function TablesPage() {
   }));
 
   return (
-    <div className="flex flex-col">
-      <header className="flex items-center border-b border-stone-200 bg-white px-5 py-3 shadow-sm">
-        <h1 className="text-base font-semibold text-stone-900">Tables & QR codes</h1>
+    <div className="flex flex-col min-h-screen bg-surface">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant/30 bg-surface-container-lowest px-md py-sm shadow-level-1">
+        <div>
+          <h1 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Table QR Setup</h1>
+          <p className="font-body-sm text-on-surface-variant">Manage QR codes and print standees</p>
+        </div>
       </header>
       <TablesManager
         initialTables={tables}

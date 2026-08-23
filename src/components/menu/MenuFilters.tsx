@@ -1,6 +1,5 @@
 "use client";
 
-import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,13 +23,13 @@ function FilterChip({ active, onClick, children }: ChipProps) {
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-        active
-          ? "border-[#C2410C] bg-[#C2410C] text-white"
-          : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
-      )}
       aria-pressed={active}
+      className={cn(
+        "shrink-0 rounded-full border px-3 py-1 font-label-bold text-label-bold transition-all active:scale-95",
+        active
+          ? "border-primary bg-primary text-on-primary"
+          : "border-outline-variant bg-surface-container text-on-surface-variant hover:border-outline hover:bg-surface-container-high"
+      )}
     >
       {children}
     </button>
@@ -44,25 +43,27 @@ export function MenuFilters({
   under200, onUnder200Change,
 }: Props) {
   return (
-    <div className="space-y-2 px-4 pt-3 pb-2">
+    <div className="space-y-2 px-margin-mobile pt-sm pb-xs">
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
+      <div className="relative group">
+        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors" style={{ fontSize: 18 }}>
+          search
+        </span>
         <input
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search dishes..."
-          className="h-9 w-full rounded-lg border border-stone-200 bg-stone-50 pl-9 pr-9 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#C2410C] focus:outline-none focus:ring-1 focus:ring-[#C2410C]"
+          placeholder="Search dishes…"
           aria-label="Search dishes"
+          className="h-10 w-full rounded-lg border border-outline-variant bg-surface-container pl-9 pr-9 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
         />
         {search && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
             aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-on-surface transition-colors"
           >
-            <X className="h-4 w-4" />
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
           </button>
         )}
       </div>

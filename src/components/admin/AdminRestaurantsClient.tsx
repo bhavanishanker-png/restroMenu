@@ -2,16 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import type { Restaurant } from "@/types";
 
@@ -25,10 +20,19 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function AdminRestaurantsClient({ initialRestaurants }: Props) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -70,13 +74,21 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
         }),
       });
       if (!res.ok) {
-        const { error } = await res.json() as { error: { message: string } };
+        const { error } = (await res.json()) as { error: { message: string } };
         toast.error(error?.message ?? "Failed to create restaurant.");
         return;
       }
-      const { restaurant } = await res.json() as { restaurant: Restaurant };
+      const { restaurant } = (await res.json()) as { restaurant: Restaurant };
       setRestaurants((p) => [restaurant, ...p]);
-      setForm({ name: "", slug: "", ownerName: "", ownerEmail: "", ownerPassword: "", phone: "", address: "" });
+      setForm({
+        name: "",
+        slug: "",
+        ownerName: "",
+        ownerEmail: "",
+        ownerPassword: "",
+        phone: "",
+        address: "",
+      });
       setOpen(false);
       toast.success(`${restaurant.name} created.`);
     } catch {
@@ -86,140 +98,109 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
     }
   }
 
+  const filtered = search.trim()
+    ? restaurants.filter((r) =>
+        r.name.toLowerCase().includes(search.toLowerCase()) ||
+        r.slug.toLowerCase().includes(search.toLowerCase())
+      )
+    : restaurants;
+
   return (
-    <div className="flex flex-col gap-4 p-5">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-stone-500">{restaurants.length} restaurant{restaurants.length !== 1 ? "s" : ""}</p>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button className="bg-[#C2410C] hover:bg-[#9a3209] text-white">
-              <Plus className="mr-1 h-4 w-4" /> New restaurant
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="overflow-y-auto sm:max-w-md">
-            <SheetHeader>
-              <SheetTitle>Create restaurant</SheetTitle>
-            </SheetHeader>
-            <div className="mt-5 flex flex-col gap-4">
-              {/* Restaurant info */}
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Restaurant</p>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="r-name">Name *</Label>
-                <Input
-                  id="r-name"
-                  placeholder="e.g. Tandoori Hut"
-                  value={form.name}
-                  onChange={(e) => setField("name", e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="r-slug">Slug *</Label>
-                <Input
-                  id="r-slug"
-                  placeholder="e.g. tandoori-hut"
-                  value={form.slug}
-                  onChange={(e) => setField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                />
-                <p className="text-xs text-stone-400">URL: /r/{form.slug || "…"}</p>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="r-phone">Phone</Label>
-                <Input
-                  id="r-phone"
-                  placeholder="10-digit mobile"
-                  value={form.phone}
-                  onChange={(e) => setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="r-address">Address</Label>
-                <Input
-                  id="r-address"
-                  placeholder="Street, city"
-                  value={form.address}
-                  onChange={(e) => setField("address", e.target.value)}
-                />
-              </div>
-
-              {/* Owner account */}
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-stone-400">Owner account</p>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="o-name">Name *</Label>
-                <Input
-                  id="o-name"
-                  placeholder="e.g. Rajesh Sharma"
-                  value={form.ownerName}
-                  onChange={(e) => setField("ownerName", e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="o-email">Email *</Label>
-                <Input
-                  id="o-email"
-                  type="email"
-                  placeholder="owner@example.com"
-                  value={form.ownerEmail}
-                  onChange={(e) => setField("ownerEmail", e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="o-pw">Password *</Label>
-                <Input
-                  id="o-pw"
-                  type="password"
-                  placeholder="Min 8 characters"
-                  value={form.ownerPassword}
-                  onChange={(e) => setField("ownerPassword", e.target.value)}
-                />
-              </div>
-
-              <Button
-                onClick={create}
-                disabled={saving}
-                className="mt-2 bg-[#C2410C] hover:bg-[#9a3209] text-white"
-              >
-                {saving ? "Creating…" : "Create restaurant"}
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+    <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="relative w-full sm:w-96 sm:order-1">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+            search
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by restaurant name or slug…"
+            className="w-full pl-12 pr-4 h-12 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-on-surface"
+          />
+        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container hover:-translate-y-[2px] transition-all h-12 whitespace-nowrap sm:order-2"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+          New Restaurant
+        </button>
       </div>
 
-      {restaurants.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-stone-200 py-16 text-center text-sm text-stone-400">
-          No restaurants yet. Create your first one above.
-        </p>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <table className="w-full text-sm">
+      {/* Table */}
+      <div className="bg-surface-container-lowest rounded-xl shadow-level-1 border border-outline-variant overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
-                <th className="px-4 py-2.5">Name</th>
-                <th className="px-4 py-2.5">Slug</th>
-                <th className="px-4 py-2.5 hidden sm:table-cell">Plan</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5 w-10" />
+              <tr className="bg-surface-container-low border-b border-outline-variant font-label-bold text-label-bold text-on-surface-variant">
+                <th className="py-4 px-6">Name</th>
+                <th className="py-4 px-6">Slug</th>
+                <th className="py-4 px-6 hidden sm:table-cell">Plan</th>
+                <th className="py-4 px-6 hidden md:table-cell">Created</th>
+                <th className="py-4 px-6">Status</th>
+                <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {restaurants.map((r) => (
-                <tr key={r.id} className="border-b border-stone-50 last:border-0">
-                  <td className="px-4 py-3 font-medium text-stone-800">{r.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-stone-500">{r.slug}</td>
-                  <td className="px-4 py-3 text-stone-400 hidden sm:table-cell capitalize">{r.plan}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.isActive ? "bg-green-100 text-green-700" : "bg-stone-100 text-stone-500"}`}>
-                      {r.isActive ? "Active" : "Inactive"}
+            <tbody className="font-body-md text-body-md text-on-surface">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-24 text-center font-body-md text-on-surface-variant">
+                    <span className="material-symbols-outlined block mx-auto mb-2" style={{ fontSize: 40 }}>
+                      restaurant
+                    </span>
+                    {search ? "No matching restaurants." : "No restaurants yet."}
+                  </td>
+                </tr>
+              )}
+              {filtered.map((r) => (
+                <tr
+                  key={r.id}
+                  className={`border-b border-outline-variant/50 last:border-0 hover:bg-surface-container-lowest transition-colors ${
+                    !r.isActive ? "opacity-60" : ""
+                  }`}
+                >
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary font-headline-sm shrink-0">
+                        {r.name.trim()[0]?.toUpperCase()}
+                      </div>
+                      <span className="font-headline-sm text-headline-sm" style={{ fontSize: 16 }}>
+                        {r.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6 text-on-surface-variant font-mono text-sm">
+                    /{r.slug}
+                  </td>
+                  <td className="py-4 px-6 hidden sm:table-cell text-on-surface-variant capitalize">
+                    {r.plan}
+                  </td>
+                  <td className="py-4 px-6 hidden md:table-cell text-on-surface-variant">
+                    {fmtDate(r.createdAt)}
+                  </td>
+                  <td className="py-4 px-6">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-md font-label-bold text-[10px] ${
+                        r.isActive
+                          ? "bg-secondary-container text-on-secondary-container"
+                          : "bg-error-container text-on-error-container"
+                      }`}
+                    >
+                      {r.isActive ? "ACTIVE" : "INACTIVE"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="py-4 px-6 text-right">
                     <a
                       href={`/r/${r.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-stone-400 hover:bg-stone-50 hover:text-stone-600"
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                      aria-label={`Open ${r.name}`}
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
+                      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>open_in_new</span>
                     </a>
                   </td>
                 </tr>
@@ -227,7 +208,113 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
             </tbody>
           </table>
         </div>
-      )}
+
+        {/* Pagination footer */}
+        <div className="bg-surface-container-low px-6 py-4 flex justify-between items-center border-t border-outline-variant">
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Showing {filtered.length} of {restaurants.length} restaurant
+            {restaurants.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Create restaurant sheet */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-md bg-surface-container-lowest border-l border-outline-variant">
+          <SheetHeader className="border-b border-outline-variant/30 pb-sm mb-md">
+            <SheetTitle className="font-headline-sm text-on-surface">Create Restaurant</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-md">
+            <p className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide">
+              Restaurant
+            </p>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Name *</label>
+              <input
+                placeholder="e.g. Tandoori Hut"
+                value={form.name}
+                onChange={(e) => setField("name", e.target.value)}
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Slug *</label>
+              <input
+                placeholder="e.g. tandoori-hut"
+                value={form.slug}
+                onChange={(e) =>
+                  setField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                }
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                URL: /r/{form.slug || "…"}
+              </p>
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Phone</label>
+              <input
+                placeholder="10-digit mobile"
+                value={form.phone}
+                onChange={(e) =>
+                  setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Address</label>
+              <input
+                placeholder="Street, city"
+                value={form.address}
+                onChange={(e) => setField("address", e.target.value)}
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+
+            <p className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide mt-xs">
+              Owner Account
+            </p>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Name *</label>
+              <input
+                placeholder="e.g. Rajesh Sharma"
+                value={form.ownerName}
+                onChange={(e) => setField("ownerName", e.target.value)}
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Email *</label>
+              <input
+                type="email"
+                placeholder="owner@example.com"
+                value={form.ownerEmail}
+                onChange={(e) => setField("ownerEmail", e.target.value)}
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-xs">
+              <label className="font-label-bold text-label-bold text-on-surface-variant">Password *</label>
+              <input
+                type="password"
+                placeholder="Min 8 characters"
+                value={form.ownerPassword}
+                onChange={(e) => setField("ownerPassword", e.target.value)}
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+              />
+            </div>
+
+            <button
+              onClick={create}
+              disabled={saving}
+              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container transition-colors active:translate-y-[2px] disabled:opacity-50 mt-xs"
+            >
+              {saving ? "Creating…" : "Create Restaurant"}
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

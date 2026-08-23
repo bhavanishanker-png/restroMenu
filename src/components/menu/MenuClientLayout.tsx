@@ -55,11 +55,11 @@ export default function MenuClientLayout({ menu }: Props) {
   }, [menu.categories, search, vegOnly, bestsellersOnly, under200]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-background">
       <MenuHeader restaurant={menu.restaurant} table={menu.table} />
 
       {/* Sticky filter + tabs bar */}
-      <div className="sticky top-0 z-20 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-20 border-b border-outline-variant/50 bg-surface/90 backdrop-blur-md">
         <MenuFilters
           search={search}
           onSearchChange={setSearch}
@@ -77,7 +77,7 @@ export default function MenuClientLayout({ menu }: Props) {
       <main className="pb-28">
         {filteredCategories.length === 0 && isFiltering ? (
           <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <p className="text-stone-500">
+            <p className="font-body-md text-on-surface-variant">
               {search
                 ? `Nothing matches "${search}"`
                 : "No items match the active filters"}
@@ -89,7 +89,7 @@ export default function MenuClientLayout({ menu }: Props) {
                 setBestsellersOnly(false);
                 setUnder200(false);
               }}
-              className="text-sm font-medium text-[#C2410C] underline"
+              className="font-label-bold text-label-bold text-primary underline"
             >
               Clear filters
             </button>

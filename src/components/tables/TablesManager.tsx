@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Download, RefreshCw, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,61 +119,57 @@ function TableCard({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-col gap-md rounded-xl border border-outline-variant bg-surface p-md shadow-level-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-level-2">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-lg font-bold text-stone-900">{table.label}</h3>
-          <div className="mt-0.5 flex items-center gap-1.5 text-sm text-stone-500">
-            <Users className="h-3.5 w-3.5" />
+          <h3 className="font-headline-sm text-on-surface">{table.label}</h3>
+          <div className="mt-1 flex items-center gap-xs font-body-sm text-on-surface-variant">
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>group</span>
             <span>{table.seats} seats</span>
           </div>
         </div>
-        {table.hasActiveSession && (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            Active
-          </Badge>
-        )}
+        <span className={`rounded font-label-bold text-[10px] tracking-wider uppercase px-xs py-1 ${
+          table.hasActiveSession
+            ? "bg-secondary-container text-on-secondary-container"
+            : "bg-surface-container-highest text-on-surface-variant"
+        }`}>
+          {table.hasActiveSession ? "Active" : "Empty"}
+        </span>
       </div>
 
       {/* QR preview */}
-      <div className="flex justify-center">
-        <canvas
-          // We overlay a data attribute so downloadQR can find it
-          data-table-id={table.id}
-          className="hidden"
-        />
-        <QRCodeCanvas url={tableUrl} size={96} />
+      <div className="flex w-full aspect-square items-center justify-center rounded-lg border border-outline-variant bg-surface-container overflow-hidden group relative">
+        <canvas data-table-id={table.id} className="hidden" />
+        <QRCodeCanvas url={tableUrl} size={120} />
+        <div className="absolute inset-0 bg-surface/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+          <button
+            onClick={onRegenerate}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-primary shadow-sm hover:bg-surface-container-low transition-colors"
+            title="Regenerate QR"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1"
+      <div className="flex items-center justify-between pt-sm border-t border-outline-variant/30">
+        <button
           onClick={downloadQR}
+          className="flex items-center gap-xs font-label-bold text-label-bold text-primary hover:text-primary-container transition-colors"
         >
-          <Download className="mr-1 h-3.5 w-3.5" />
-          QR
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onRegenerate}
-          aria-label="Regenerate QR"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="text-red-500 hover:border-red-300 hover:text-red-600"
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>
+          Download
+        </button>
+        <button
           onClick={onDelete}
           aria-label="Remove table"
+          className="flex items-center gap-xs font-label-bold text-label-bold text-on-surface-variant hover:text-tertiary transition-colors"
         >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+          Remove
+        </button>
       </div>
     </div>
   );
@@ -247,32 +241,41 @@ export function TablesManager({ initialTables, restaurantId, restaurantSlug }: P
   }
 
   return (
-    <div className="flex flex-col gap-4 p-5">
+    <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
       {/* Action bar */}
-      <div className="flex items-center gap-2">
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Add table
-        </Button>
-        <Button
-          variant="outline"
+      <div className="flex flex-wrap items-center gap-sm">
+        <button
+          onClick={() => setAddOpen(true)}
+          className="flex items-center gap-xs px-md py-sm rounded-lg border border-primary text-primary font-label-bold text-label-bold hover:bg-surface-container-low transition-colors active:translate-y-[2px] min-h-[44px]"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+          Add Table
+        </button>
+        <button
           onClick={handleDownloadAllPDF}
           disabled={downloading || tables.length === 0}
+          className="flex items-center gap-xs px-md py-sm rounded-lg bg-primary text-on-primary font-label-bold text-label-bold hover:bg-primary/90 transition-colors active:translate-y-[2px] shadow-level-1 min-h-[44px] disabled:opacity-50"
         >
-          <Download className="mr-1 h-4 w-4" />
-          {downloading ? "Generating PDF…" : "Print all QR standees"}
-        </Button>
+          <span className="material-symbols-outlined fill" style={{ fontSize: 18 }}>print</span>
+          {downloading ? "Generating…" : "Print All QR Standees"}
+        </button>
       </div>
 
       {/* Grid */}
       {tables.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-stone-200 py-24 text-stone-400">
-          <p className="text-sm">No tables yet.</p>
-          <Button variant="outline" onClick={() => setAddOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" /> Add first table
-          </Button>
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-outline-variant py-24 text-on-surface-variant">
+          <span className="material-symbols-outlined" style={{ fontSize: 48 }}>qr_code_scanner</span>
+          <p className="font-body-md">No tables yet.</p>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-xs px-md py-sm rounded-lg border border-primary text-primary font-label-bold text-label-bold hover:bg-surface-container-low transition-colors"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+            Add first table
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
           {tables.map((table) => (
             <TableCard
               key={table.id}

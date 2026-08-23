@@ -12,8 +12,8 @@ export function BillSummary({ lines, orderType, settings }: Props) {
   const bill = priceCart(lines, { orderType, settings });
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-2 text-sm">
-      <p className="font-semibold text-stone-800 mb-3">Bill summary</p>
+    <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-4 space-y-2 shadow-level-1">
+      <p className="font-headline-sm text-on-surface mb-3" style={{ fontSize: 16 }}>Bill summary</p>
 
       <Row label="Subtotal" value={bill.subtotal} />
       <Row label="GST" value={bill.taxTotal} />
@@ -28,14 +28,14 @@ export function BillSummary({ lines, orderType, settings }: Props) {
         <Row label="Packing charge" value={bill.packingCharge} />
       )}
       {bill.discount > 0 && (
-        <Row label="Discount" value={-bill.discount} className="text-green-600" />
+        <Row label="Discount" value={-bill.discount} className="text-[#3f6653]" />
       )}
 
-      <Separator />
+      <Separator className="bg-outline-variant/50" />
 
       <div className="flex items-center justify-between pt-1">
-        <span className="font-bold text-stone-900">Total</span>
-        <span className="font-bold text-stone-900">{formatMoney(bill.total)}</span>
+        <span className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>Total</span>
+        <span className="font-headline-sm text-primary" style={{ fontSize: 18 }}>{formatMoney(bill.total)}</span>
       </div>
     </div>
   );
@@ -51,7 +51,7 @@ function Row({
   className?: string;
 }) {
   return (
-    <div className={`flex items-center justify-between text-stone-600 ${className ?? ""}`}>
+    <div className={`flex items-center justify-between text-body-md text-on-surface-variant ${className ?? ""}`}>
       <span>{label}</span>
       <span>{value < 0 ? `−${formatMoney(-value)}` : formatMoney(value)}</span>
     </div>

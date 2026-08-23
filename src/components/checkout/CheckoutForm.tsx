@@ -5,12 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { BillSummary } from "@/components/cart/BillSummary";
 import { useCartStore } from "@/store/cart";
 import type { OrderType, PaymentMethod, RestaurantSettings } from "@/types";
@@ -70,7 +64,6 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     register,
     handleSubmit,
     watch,
-    setValue,
     getValues,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFields>({
@@ -80,9 +73,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     },
   });
 
-  const selectedMethod = watch("paymentMethod");
+  watch("paymentMethod");
 
-  // Ensure the Razorpay checkout.js script is loaded before opening the modal.
   function ensureRazorpayScript(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (scriptLoadedRef.current || typeof window.Razorpay !== "undefined") {
@@ -113,7 +105,6 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
         contact: formData.customerPhone,
       },
       handler: () => {
-        // Payment captured in the frontend; webhook updates DB async.
         clearCart();
         router.replace(`/order/${orderId}`);
       },
@@ -180,7 +171,6 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     if (!pendingOrderId) return;
     setPaymentDismissed(false);
 
-    // Request a fresh Razorpay order for the existing DB order.
     const res = await fetch("/api/payments/razorpay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -210,24 +200,27 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
 
   if (!mounted) return null;
 
-  // Show retry UI when user dismissed the Razorpay modal without paying.
   if (paymentDismissed && pendingOrderId) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-lg font-semibold text-stone-800">Payment not completed</p>
-        <p className="text-sm text-stone-500 max-w-xs">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-md p-xl text-center">
+        <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>
+          credit_card_off
+        </span>
+        <p className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Payment not completed</p>
+        <p className="font-body-md text-body-md text-on-surface-variant max-w-xs">
           Your order is saved. You can complete payment now or pay at the table.
         </p>
         <button
           onClick={retryPayment}
-          className="flex items-center gap-2 rounded-xl bg-[#C2410C] px-6 py-3 text-sm font-semibold text-white hover:bg-[#9A3412] active:scale-95"
+          className="flex items-center gap-2 rounded-xl bg-primary text-on-primary px-6 py-3 font-headline-sm active:translate-y-[2px] transition-transform"
+          style={{ fontSize: 16 }}
         >
-          <RefreshCw className="h-4 w-4" />
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span>
           Retry payment
         </button>
         <button
           onClick={() => { clearCart(); router.replace(`/order/${pendingOrderId}`); }}
-          className="text-sm text-stone-500 underline"
+          className="font-body-sm text-body-sm text-on-surface-variant underline"
         >
           Skip — pay at table
         </button>
@@ -236,129 +229,140 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-4 pb-32">
-      {/* Order type — read only */}
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
-        {orderType === "dine_in" ? "Dine-in" : "Takeaway"}
-        {tableLabel && ` · Table ${tableLabel}`}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-md px-margin-mobile pt-md pb-36">
+      {/* Order type chip */}
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 py-3 shadow-level-1">
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          {orderType === "dine_in" ? "Dine-in" : "Takeaway"}
+          {tableLabel && ` · Table ${tableLabel}`}
+        </p>
       </div>
 
-      {/* Name */}
-      <div className="space-y-1.5">
-        <Label htmlFor="customerName">Name</Label>
-        <Input
-          id="customerName"
-          placeholder="Your name"
-          {...register("customerName")}
-          aria-invalid={!!errors.customerName}
-        />
-        {errors.customerName && (
-          <p className="text-xs text-red-600" role="alert">{errors.customerName.message}</p>
-        )}
-      </div>
+      {/* Your details */}
+      <section className="space-y-sm">
+        <h2 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Your Details</h2>
 
-      {/* Phone */}
-      <div className="space-y-1.5">
-        <Label htmlFor="customerPhone">Phone</Label>
-        <Input
-          id="customerPhone"
-          type="tel"
-          inputMode="numeric"
-          placeholder="10-digit mobile number"
-          maxLength={10}
-          {...register("customerPhone")}
-          aria-invalid={!!errors.customerPhone}
-        />
-        {errors.customerPhone && (
-          <p className="text-xs text-red-600" role="alert">{errors.customerPhone.message}</p>
-        )}
-      </div>
+        <div>
+          <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="customerName">
+            Name
+          </label>
+          <input
+            id="customerName"
+            type="text"
+            placeholder="Enter your name"
+            {...register("customerName")}
+            aria-invalid={!!errors.customerName}
+            className="w-full bg-surface-container h-12 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-sm font-body-md text-body-md outline-none transition-all"
+          />
+          {errors.customerName && (
+            <p className="mt-xs font-body-sm text-body-sm text-error flex items-center gap-1" role="alert">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span>
+              {errors.customerName.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="customerPhone">
+            Phone Number
+          </label>
+          <input
+            id="customerPhone"
+            type="tel"
+            inputMode="numeric"
+            placeholder="10-digit mobile number"
+            maxLength={10}
+            {...register("customerPhone")}
+            aria-invalid={!!errors.customerPhone}
+            className="w-full bg-surface-container h-12 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-sm font-body-md text-body-md outline-none transition-all"
+          />
+          {errors.customerPhone && (
+            <p className="mt-xs font-body-sm text-body-sm text-error flex items-center gap-1" role="alert">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span>
+              {errors.customerPhone.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs" htmlFor="notes">
+            Order Notes <span className="font-normal">(Optional)</span>
+          </label>
+          <textarea
+            id="notes"
+            placeholder="Any special requests for the kitchen?"
+            rows={2}
+            {...register("notes")}
+            className="w-full bg-surface-container rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-sm py-sm font-body-md text-body-md outline-none resize-none transition-all"
+          />
+        </div>
+      </section>
 
       {/* Payment method */}
       {(settings.acceptsCash || settings.acceptsOnline) && (
-        <div className="space-y-2">
-          <Label>Payment</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {settings.acceptsCash && (
-              <PaymentCard
-                active={selectedMethod === "cash"}
-                onClick={() => setValue("paymentMethod", "cash")}
-                title="Pay at table"
-                subtitle="Cash"
-              />
-            )}
+        <section className="space-y-sm">
+          <h2 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Payment Method</h2>
+          <div className="space-y-2">
             {settings.acceptsOnline && (
-              <PaymentCard
-                active={selectedMethod === "razorpay"}
-                onClick={() => setValue("paymentMethod", "razorpay")}
-                title="Pay now"
-                subtitle="UPI / Card"
-              />
+              <label className="flex items-center p-sm border border-outline-variant rounded-xl bg-surface-container-lowest cursor-pointer hover:bg-surface-container-low transition-colors shadow-level-1 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  value="razorpay"
+                  {...register("paymentMethod")}
+                  className="text-primary focus:ring-primary border-outline-variant h-5 w-5"
+                />
+                <div className="ml-sm flex flex-1 items-center justify-between">
+                  <span className="font-body-md text-body-md text-on-surface font-semibold">Pay Online (UPI / Card)</span>
+                  <span className="material-symbols-outlined text-primary" style={{ fontSize: 22 }}>credit_card</span>
+                </div>
+              </label>
+            )}
+            {settings.acceptsCash && (
+              <label className="flex items-center p-sm border border-outline-variant rounded-xl bg-surface-container-lowest cursor-pointer hover:bg-surface-container-low transition-colors shadow-level-1 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  value="cash"
+                  {...register("paymentMethod")}
+                  className="text-primary focus:ring-primary border-outline-variant h-5 w-5"
+                />
+                <div className="ml-sm flex flex-1 items-center justify-between">
+                  <span className="font-body-md text-body-md text-on-surface font-semibold">Pay at Counter (Cash)</span>
+                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 22 }}>payments</span>
+                </div>
+              </label>
             )}
           </div>
-        </div>
+
+          <div className="flex items-center justify-center gap-xs py-base bg-secondary-container/30 rounded-lg">
+            <span className="material-symbols-outlined text-[#3f6653]" style={{ fontSize: 18 }}>lock</span>
+            <span className="font-label-bold text-label-bold text-[#3f6653]">Secure encrypted payment</span>
+          </div>
+        </section>
       )}
 
-      {/* Order notes */}
-      <div className="space-y-1.5">
-        <Label htmlFor="notes">Order notes <span className="text-stone-400">(optional)</span></Label>
-        <Textarea
-          id="notes"
-          placeholder="Any special instructions for the kitchen…"
-          rows={2}
-          {...register("notes")}
-          className="resize-none text-sm"
-        />
-      </div>
-
-      <Separator />
+      <div className="h-px bg-outline-variant/50" />
 
       {/* Bill summary */}
       <BillSummary lines={lines} orderType={orderType} settings={settings} />
 
       {/* Sticky place order button */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-stone-200 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-        <Button
+      <div className="fixed bottom-0 left-0 right-0 border-t border-outline-variant/30 bg-surface-container-lowest px-margin-mobile pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(32,26,23,0.08)]">
+        <button
           type="submit"
           disabled={isSubmitting || lines.length === 0}
-          className="w-full bg-[#C2410C] text-white hover:bg-[#9A3412] disabled:opacity-70"
-          size="lg"
+          className="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-[2px] transition-transform disabled:opacity-60"
+          style={{ fontSize: 16 }}
         >
           {isSubmitting ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Placing order…</>
+            <>
+              <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>autorenew</span>
+              Placing order…
+            </>
           ) : (
-            "Place order"
+            "Place Order"
           )}
-        </Button>
+        </button>
       </div>
     </form>
-  );
-}
-
-function PaymentCard({
-  active,
-  onClick,
-  title,
-  subtitle,
-}: {
-  active: boolean;
-  onClick: () => void;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border-2 py-4 text-center transition-colors ${
-        active
-          ? "border-[#C2410C] bg-[#C2410C]/5 text-[#C2410C]"
-          : "border-stone-200 bg-white text-stone-700"
-      }`}
-      aria-pressed={active}
-    >
-      <span className="text-sm font-semibold">{title}</span>
-      <span className="text-xs opacity-70">{subtitle}</span>
-    </button>
   );
 }

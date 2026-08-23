@@ -79,10 +79,10 @@ export function CategoryTabs({ categories }: Props) {
           data-catid={cat.id}
           onClick={() => handleTabClick(cat.id)}
           className={cn(
-            "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2410C]",
+            "shrink-0 rounded-full px-4 py-1.5 font-label-bold text-label-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[36px]",
             activeId === cat.id
-              ? "bg-[#C2410C] text-white"
-              : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              ? "bg-primary-container text-on-primary-container shadow-level-1"
+              : "bg-surface-container-high text-on-surface hover:bg-surface-variant transition-all active:scale-95"
           )}
         >
           {cat.name}

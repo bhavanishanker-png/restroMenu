@@ -1,16 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-
 type HourlyPoint = { hour: number; count: number };
 
 type Props = { data: HourlyPoint[] };
@@ -22,49 +9,62 @@ function formatHour(h: number): string {
   return `${h - 12}p`;
 }
 
+// Pure CSS bar chart — no recharts dependency, no hydration mismatch.
+// Shows hours 10am–10pm (the restaurant window). Bars scale to the max count.
 export function HourlyChart({ data }: Props) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const labelled = data.map((d) => ({ ...d, label: formatHour(d.hour) }));
-
-  if (!mounted) {
-    return (
-      <div className="rounded-xl border border-stone-200 bg-white p-4">
-        <div className="mb-3 h-4 w-48 animate-pulse rounded bg-stone-100" />
-        <div className="h-[180px] animate-pulse rounded bg-stone-50" />
-      </div>
-    );
-  }
+  const window = data.filter((d) => d.hour >= 10 && d.hour <= 22);
+  const maxCount = Math.max(...window.map((d) => d.count), 1);
+  const peakHour = window.reduce((a, b) => (b.count > a.count ? b : a), window[0]);
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold text-stone-700">Orders by hour — today</h3>
-      <ResponsiveContainer width="100%" height={180}>
-        <BarChart data={labelled} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: "#a8a29e" }}
-            tickLine={false}
-            axisLine={false}
-            interval={2}
-          />
-          <YAxis
-            allowDecimals={false}
-            tick={{ fontSize: 11, fill: "#a8a29e" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            cursor={{ fill: "#fef3c7" }}
-            contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: "#e7e5e4" }}
-            formatter={(v: number) => [v, "orders"]}
-            labelFormatter={(l: string) => `Hour: ${l}`}
-          />
-          <Bar dataKey="count" fill="#C2410C" radius={[4, 4, 0, 0]} maxBarSize={32} />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1">
+      <div className="flex items-center justify-between mb-md">
+        <h3 className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>Order Distribution</h3>
+        <span className="font-label-bold text-label-bold text-on-surface-variant">Today</span>
+      </div>
+
+      <div className="relative h-[200px] flex items-end gap-1 md:gap-2 pb-6 border-b border-outline-variant/30">
+        {/* Dashed guide lines */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between pb-6">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="w-full border-t border-dashed border-outline-variant/40" />
+          ))}
+        </div>
+
+        {window.map((d) => {
+          const pct = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
+          const isPeak = peakHour && d.hour === peakHour.hour && d.count > 0;
+          return (
+            <div
+              key={d.hour}
+              className="relative z-10 flex flex-1 flex-col items-center justify-end h-full"
+              title={`${d.count} orders`}
+            >
+              <div
+                className={`w-full max-w-[28px] rounded-t-md transition-all ${
+                  isPeak
+                    ? "bg-primary"
+                    : d.count > 0
+                    ? "bg-secondary-container"
+                    : "bg-surface-container-highest"
+                }`}
+                style={{ height: `${Math.max(pct, d.count > 0 ? 4 : 2)}%` }}
+              />
+              <span
+                className={`absolute -bottom-5 font-label-bold text-[9px] ${
+                  isPeak ? "text-primary font-bold" : "text-on-surface-variant"
+                }`}
+              >
+                {formatHour(d.hour)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {window.every((d) => d.count === 0) && (
+        <p className="mt-3 text-center font-body-sm text-on-surface-variant">No orders yet today</p>
+      )}
     </div>
   );
 }

@@ -46,9 +46,12 @@ export default async function MenuPage() {
   );
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-3 shadow-sm">
-        <h1 className="text-base font-semibold text-stone-900">Menu</h1>
+    <div className="flex h-screen flex-col bg-surface">
+      <header className="flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-lowest px-md py-sm shadow-level-1 shrink-0">
+        <div>
+          <h1 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Menu Management</h1>
+          <p className="font-body-sm text-on-surface-variant">Manage items, categories and availability</p>
+        </div>
       </header>
       <div className="flex flex-1 overflow-hidden">
         <MenuManager initialCategories={categories} addonGroups={addonGroups} />
