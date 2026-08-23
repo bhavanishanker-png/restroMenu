@@ -63,17 +63,17 @@ export function CartPageClient({
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-outline-variant/30 bg-surface-container-lowest px-4 py-3 shadow-level-1">
+      <header className="sticky top-0 z-10 flex h-[64px] items-center gap-3 bg-surface-container-low px-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
         <Link
           href={menuHref}
           aria-label="Back to menu"
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant"
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 24 }}>arrow_back</span>
         </Link>
         <h1 className="font-headline-sm text-on-surface flex-1" style={{ fontSize: 18 }}>Your cart</h1>
         {tableLabel && (
-          <span className="rounded-full bg-primary/10 px-3 py-1 font-label-bold text-label-bold text-primary">
+          <span className="shrink-0 rounded-full bg-primary-container px-3 py-1 font-label-bold text-on-primary-container" style={{ fontSize: 12 }}>
             Table {tableLabel}
           </span>
         )}

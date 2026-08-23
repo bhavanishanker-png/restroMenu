@@ -40,7 +40,7 @@ export function MenuItemCard({ item, onAdd }: Props) {
   return (
     <div
       className={cn(
-        "flex gap-4 rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 shadow-level-1 tactile-hover",
+        "flex gap-4 rounded-xl border border-surface-variant/30 bg-surface-container-lowest p-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] tactile-hover",
         unavailable && "pointer-events-none opacity-40"
       )}
       aria-disabled={unavailable}
@@ -109,7 +109,7 @@ export function MenuItemCard({ item, onAdd }: Props) {
         {!unavailable && (
           <button
             onClick={() => onAdd?.(item)}
-            className="flex min-h-[36px] items-center gap-1 rounded-full bg-primary-container px-5 py-1.5 font-label-bold text-label-bold text-on-primary-container transition-all active:scale-95 active:translate-y-[2px]"
+            className="flex min-h-[36px] items-center gap-1 rounded-full bg-primary-container px-6 py-1.5 font-label-bold text-label-bold text-on-primary-container transition-all active:scale-95 active:translate-y-[2px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
             aria-label={`Add ${item.name} to cart`}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>

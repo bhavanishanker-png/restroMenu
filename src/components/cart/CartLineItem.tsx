@@ -53,20 +53,20 @@ export function CartLineItem({ line }: { line: CartLine }) {
 
         {/* Qty stepper + price row */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center rounded-full border border-outline-variant">
+          <div className="flex items-center rounded-lg border border-outline-variant overflow-hidden h-9">
             <button
               onClick={() => setQuantity(line.lineId, line.quantity - 1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform"
+              className="flex h-full w-9 items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all"
               aria-label="Decrease quantity"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>remove</span>
             </button>
-            <span className="w-7 text-center text-body-md font-semibold text-on-surface">
+            <span className="w-8 text-center text-body-md font-semibold text-on-surface border-x border-outline-variant">
               {line.quantity}
             </span>
             <button
               onClick={() => setQuantity(line.lineId, line.quantity + 1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform"
+              className="flex h-full w-9 items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all"
               aria-label="Increase quantity"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>

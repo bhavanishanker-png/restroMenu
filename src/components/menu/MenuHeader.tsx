@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { Restaurant, RestaurantSettings, RestaurantTable } from "@/types";
 
@@ -7,67 +10,56 @@ type Props = {
 };
 
 export function MenuHeader({ restaurant, table }: Props) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Server + initial client render: empty bar keeps extension injection outside hydration
+  if (!mounted) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-30 h-[64px] bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.08)]" />
+    );
+  }
+
   return (
-    <header className="relative">
-      {/* Cover image */}
-      <div className="relative h-40 w-full bg-surface-container-high">
-        {restaurant.coverUrl ? (
+    <header className="fixed top-0 left-0 right-0 z-30 flex h-[64px] items-center gap-3 bg-surface-container-low px-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+      {/* Logo */}
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-primary-container flex items-center justify-center border border-outline-variant/20">
+        {restaurant.logoUrl ? (
           <Image
-            src={restaurant.coverUrl}
-            alt={`${restaurant.name} cover`}
+            src={restaurant.logoUrl}
+            alt=""
             fill
-            sizes="100vw"
+            sizes="36px"
             className="object-cover"
-            priority
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-primary-container/30 to-surface-container-highest" />
+          <span
+            className="material-symbols-outlined text-on-primary-container"
+            style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
+          >
+            restaurant_menu
+          </span>
         )}
-        {/* Gradient overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent" />
       </div>
 
-      {/* Info bar */}
-      <div className="bg-surface-container-lowest shadow-level-1 px-4 pb-3 pt-3">
-        <div className="flex items-center gap-3">
-          {/* Logo */}
-          {restaurant.logoUrl ? (
-            <div className="relative -mt-8 h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 border-surface-container-lowest shadow-level-1">
-              <Image
-                src={restaurant.logoUrl}
-                alt={`${restaurant.name} logo`}
-                fill
-                sizes="56px"
-                className="object-cover"
-              />
-            </div>
-          ) : (
-            <div className="-mt-8 flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary-container shadow-level-1">
-              <span className="material-symbols-outlined fill text-on-primary-container" style={{ fontSize: 28 }}>
-                restaurant_menu
-              </span>
-            </div>
-          )}
-
-          <div className="flex flex-1 flex-col gap-0.5 min-w-0">
-            <h1 className="font-headline-sm text-on-surface truncate">
-              {restaurant.name}
-            </h1>
-            {restaurant.address && (
-              <p className="flex items-center gap-1 text-body-sm text-on-surface-variant truncate">
-                <span className="material-symbols-outlined sm" aria-hidden>location_on</span>
-                {restaurant.address}
-              </p>
-            )}
-          </div>
-
-          {table && (
-            <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-body-sm font-semibold text-primary">
-              Table {table.label}
-            </span>
-          )}
-        </div>
+      {/* Name */}
+      <div className="flex flex-1 flex-col min-w-0">
+        <h1 className="truncate font-headline-sm text-on-surface leading-tight" style={{ fontSize: 17 }}>
+          {restaurant.name}
+        </h1>
+        {restaurant.address && (
+          <p className="truncate font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
+            {restaurant.address}
+          </p>
+        )}
       </div>
+
+      {/* Table badge */}
+      {table && (
+        <span className="shrink-0 rounded-full bg-primary-container px-3 py-1 font-label-bold text-on-primary-container" style={{ fontSize: 12 }}>
+          Table {table.label}
+        </span>
+      )}
     </header>
   );
 }

@@ -22,36 +22,31 @@ export function CartBar({ slug, token }: Props) {
   const total = lines.reduce((sum, l) => sum + priceLine(l).lineTotal, 0);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-surface to-transparent" />
+    <div className="fixed bottom-[72px] left-0 right-0 z-30 px-4 pb-2">
       <Link
         href={`/r/${slug}/t/${token}/cart`}
-        className="pointer-events-auto relative flex min-h-[56px] items-center justify-between rounded-xl bg-primary px-4 py-3 text-on-primary shadow-level-2 transition-transform active:translate-y-[2px] active:shadow-level-1"
+        className="flex min-h-[56px] items-center justify-between rounded-xl bg-primary px-4 py-3 text-on-primary shadow-[0_8px_24px_rgba(167,52,0,0.28)] transition-transform active:translate-y-[2px]"
         aria-label={`View cart — ${itemCount} items, ${formatMoney(total)}`}
       >
-        {/* Left: icon + count */}
+        {/* Left: count badge */}
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-on-primary/20">
-            <span className="material-symbols-outlined fill" style={{ fontSize: 18 }}>
-              shopping_bag
-            </span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-on-primary/20 font-label-bold text-label-bold text-on-primary">
+            {itemCount}
           </span>
           <span className="font-label-bold text-label-bold">
-            {itemCount} {itemCount === 1 ? "item" : "items"}
+            {itemCount === 1 ? "item" : "items"}
           </span>
         </div>
 
         {/* Centre: total */}
-        <span className="font-headline-sm" style={{ fontSize: 16 }}>
+        <span className="font-headline-sm" style={{ fontSize: 15 }}>
           {formatMoney(total)}
         </span>
 
-        {/* Right: CTA */}
-        <span className="flex items-center gap-1 font-label-bold text-label-bold">
-          View cart
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            chevron_right
-          </span>
+        {/* Right: CTA pill */}
+        <span className="flex items-center gap-0.5 rounded-full bg-on-primary/15 px-3 py-1.5 font-label-bold text-label-bold">
+          View Cart
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
         </span>
       </Link>
     </div>
