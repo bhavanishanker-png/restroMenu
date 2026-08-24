@@ -1,4 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#C2410C"/>
-  <text x="256" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="280" font-weight="700" text-anchor="middle" fill="#ffffff">Q</text>
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="#a73400"/>
+
+  <!-- Fork (left of centre) -->
+  <!-- Handle -->
+  <rect x="148" y="272" width="38" height="172" rx="19" fill="white"/>
+  <!-- Neck joins tines -->
+  <rect x="148" y="204" width="38" height="84" rx="8" fill="white"/>
+  <!-- Left tine -->
+  <rect x="122" y="68" width="26" height="158" rx="13" fill="white"/>
+  <!-- Centre tine -->
+  <rect x="154" y="68" width="26" height="158" rx="13" fill="white"/>
+  <!-- Right tine -->
+  <rect x="186" y="68" width="26" height="158" rx="13" fill="white"/>
+
+  <!-- Spoon (right of centre) -->
+  <!-- Handle -->
+  <rect x="326" y="248" width="38" height="196" rx="19" fill="white"/>
+  <!-- Bowl outer -->
+  <ellipse cx="345" cy="172" rx="56" ry="72" fill="white"/>
+  <!-- Bowl inner (cutout) -->
+  <ellipse cx="345" cy="165" rx="38" ry="52" fill="#a73400"/>
 </svg>
