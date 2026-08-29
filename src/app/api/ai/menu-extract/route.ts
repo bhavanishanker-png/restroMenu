@@ -23,10 +23,6 @@ export const ExtractedMenuSchema = z.object({
 
 export type ExtractedMenu = z.infer<typeof ExtractedMenuSchema>;
 
-// ─── Next.js body size limit ────────────────────────────────────────────────
-
-export const config = { api: { bodyParser: false } };
-
 // ─── POST /api/ai/menu-extract ──────────────────────────────────────────────
 
 const ALLOWED_TYPES = new Set([
