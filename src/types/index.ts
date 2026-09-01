@@ -205,6 +205,9 @@ export type CartState = {
   tableToken: string | null;
   idempotencyKey: string | null;
   lines: CartLine[];
+  sessionId: string | null;
+  joinCode: string | null;
+  personName: string | null;
 };
 
 // ---------------------------------------------------------------- pricing
@@ -295,9 +298,19 @@ export type ServiceRequest = {
   id: string;
   restaurantId: string;
   tableId: string;
+  tableLabel?: string | null;
   type: ServiceRequestType;
   status: 'open' | 'resolved';
   createdAt: string;
+};
+
+export type GroupSession = {
+  id: string;
+  restaurantId: string;
+  tableId: string;
+  joinCode: string;
+  status: 'open' | 'billed' | 'closed';
+  openedAt: string;
 };
 
 export type Feedback = {
@@ -325,6 +338,8 @@ export type CreateOrderRequest = {
   notes?: string;
   idempotencyKey: string;
   paymentMethod: PaymentMethod;
+  sessionId?: string | null;
+  orderedBy?: string | null;
   items: {
     itemId: string;
     variantId: string | null;

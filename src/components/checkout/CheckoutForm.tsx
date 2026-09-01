@@ -59,6 +59,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
   const lines = useCartStore((s) => s.lines);
   const idempotencyKey = useCartStore((s) => s.idempotencyKey);
   const clearCart = useCartStore((s) => s.clearCart);
+  const sessionId = useCartStore((s) => s.sessionId);
+  const personName = useCartStore((s) => s.personName);
 
   const {
     register,
@@ -70,6 +72,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       paymentMethod: settings.acceptsCash ? "cash" : "razorpay",
+      // Pre-fill name from group order person name if set
+      customerName: personName ?? "",
     },
   });
 
@@ -130,6 +134,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
       notes: data.notes ?? "",
       idempotencyKey,
       paymentMethod: data.paymentMethod as PaymentMethod,
+      // Group order fields — included only when in a session
+      ...(sessionId ? { sessionId, orderedBy: personName ?? data.customerName } : {}),
       items: lines.map((l) => ({
         itemId: l.itemId,
         variantId: l.variantId,

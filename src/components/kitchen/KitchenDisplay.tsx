@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import type { OrderStatus } from "@/types";
+import type { OrderStatus, ServiceRequest, ServiceRequestType } from "@/types";
 import type { KitchenItem, KitchenOrder, PendingChange } from "./types";
 import { KitchenHeader } from "./KitchenHeader";
 import { OrderCard } from "./OrderCard";
@@ -105,6 +105,14 @@ function mapRaw(row: RawOrderRow): KitchenOrder {
   };
 }
 
+// ---------------------------------------------------------------- service request labels
+
+const REQUEST_LABELS: Record<ServiceRequestType, { icon: string; label: string }> = {
+  waiter: { icon: "support_agent", label: "Call Waiter" },
+  water:  { icon: "water_drop",    label: "Water" },
+  bill:   { icon: "receipt_long",  label: "Bill" },
+};
+
 // ---------------------------------------------------------------- chime
 
 function buildChime(ctx: AudioContext): void {
@@ -144,6 +152,8 @@ export function KitchenDisplay({
   const [queue, setQueue] = useState<PendingChange[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
+  const [servicesPanelOpen, setServicesPanelOpen] = useState(false);
 
   const isOnlineRef = useRef(isOnline);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -191,6 +201,39 @@ export function KitchenDisplay({
     setIsOnline(navigator.onLine);
   }, []);
 
+  // ---- Load initial open service requests ----
+  useEffect(() => {
+    supabase
+      .from("service_requests")
+      .select("id, restaurant_id, table_id, type, status, created_at, restaurant_tables(label)")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "open")
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (!data) return;
+        type RawSR = {
+          id: string; restaurant_id: string; table_id: string;
+          type: string; status: string; created_at: string;
+          restaurant_tables: { label: string }[] | { label: string } | null;
+        };
+        const mapped: ServiceRequest[] = (data as unknown as RawSR[]).map((r) => {
+          const tableRow = Array.isArray(r.restaurant_tables)
+            ? r.restaurant_tables[0]
+            : r.restaurant_tables;
+          return {
+            id: r.id,
+            restaurantId: r.restaurant_id,
+            tableId: r.table_id,
+            tableLabel: tableRow?.label ?? null,
+            type: r.type as ServiceRequestType,
+            status: r.status as "open" | "resolved",
+            createdAt: r.created_at,
+          };
+        });
+        setServiceRequests(mapped);
+      });
+  }, [supabase, restaurantId]);
+
   // ---- Online / offline listeners + queue flush ----
   useEffect(() => {
     async function flush(q: PendingChange[]): Promise<PendingChange[]> {
@@ -236,7 +279,7 @@ export function KitchenDisplay({
     };
   }, []);
 
-  // ---- Supabase Realtime ----
+  // ---- Supabase Realtime — orders ----
   useEffect(() => {
     const SELECT =
       "id, order_number, status, placed_at, restaurant_tables(label), order_items(id, item_name, variant_name, quantity, addons, notes)";
@@ -301,6 +344,82 @@ export function KitchenDisplay({
     return () => { supabase.removeChannel(channel); };
   }, [supabase, restaurantId]);
 
+  // ---- Supabase Realtime — service requests ----
+  useEffect(() => {
+    const channel = supabase
+      .channel(`kitchen-service-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "service_requests",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        async (payload) => {
+          const inserted = payload.new as {
+            id: string; restaurant_id: string; table_id: string;
+            type: string; status: string; created_at: string;
+          };
+
+          // Fetch with the table label join
+          const { data } = await supabase
+            .from("service_requests")
+            .select("id, restaurant_id, table_id, type, status, created_at, restaurant_tables(label)")
+            .eq("id", inserted.id)
+            .single();
+
+          type RawSRSingle = {
+            id: string; restaurant_id: string; table_id: string;
+            type: string; status: string; created_at: string;
+            restaurant_tables: { label: string }[] | { label: string } | null;
+          };
+          const r = data as unknown as RawSRSingle | null;
+
+          if (!r) return;
+
+          const tableRow = Array.isArray(r.restaurant_tables)
+            ? r.restaurant_tables[0]
+            : r.restaurant_tables;
+
+          const req: ServiceRequest = {
+            id: r.id,
+            restaurantId: r.restaurant_id,
+            tableId: r.table_id,
+            tableLabel: tableRow?.label ?? null,
+            type: r.type as ServiceRequestType,
+            status: r.status as "open" | "resolved",
+            createdAt: r.created_at,
+          };
+
+          setServiceRequests((prev) => [...prev, req]);
+
+          const label = REQUEST_LABELS[req.type as ServiceRequestType];
+          const tableName = req.tableLabel ? `Table ${req.tableLabel}` : "A table";
+          toast.info(`${tableName}: ${label.label}`, { icon: label.icon });
+          setServicesPanelOpen(true);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "service_requests",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; status: string };
+          if (updated.status === "resolved") {
+            setServiceRequests((prev) => prev.filter((r) => r.id !== updated.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, restaurantId]);
+
   // ---- Sound toggle ----
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
@@ -312,6 +431,22 @@ export function KitchenDisplay({
       }
       return next;
     });
+  }, []);
+
+  // ---- Resolve service request ----
+  const handleResolveRequest = useCallback(async (id: string) => {
+    // Optimistic remove
+    setServiceRequests((prev) => prev.filter((r) => r.id !== id));
+
+    const res = await fetch("/api/service-requests", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to resolve request.");
+    }
   }, []);
 
   // ---- Advance status ----
@@ -418,6 +553,7 @@ export function KitchenDisplay({
   // ---------------------------------------------------------------- render
 
   const showBanner = !isOnline || queue.length > 0;
+  const openRequestCount = serviceRequests.filter((r) => r.status === "open").length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface-container-lowest">
@@ -427,6 +563,8 @@ export function KitchenDisplay({
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
         now={now}
+        serviceRequestCount={openRequestCount}
+        onServiceRequestsClick={() => setServicesPanelOpen((v) => !v)}
       />
 
       {/* Offline / pending banner */}
@@ -441,61 +579,123 @@ export function KitchenDisplay({
         </div>
       )}
 
-      {/* 4-column grid */}
-      <div className="flex flex-1 gap-gutter overflow-hidden p-gutter">
-        {COLUMNS.map((col) => {
-          const colOrders = columnOrders(orders, col);
-          const badge = COLUMN_BADGE[col.title];
+      <div className="flex flex-1 overflow-hidden">
+        {/* 4-column grid */}
+        <div className="flex flex-1 gap-gutter overflow-hidden p-gutter">
+          {COLUMNS.map((col) => {
+            const colOrders = columnOrders(orders, col);
+            const badge = COLUMN_BADGE[col.title];
 
-          return (
-            <section
-              key={col.title}
-              className="flex flex-1 flex-col bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden"
-            >
-              {/* Column header */}
-              <div className="flex items-center gap-sm px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
-                <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs flex-1">
-                  {col.title}
-                </h2>
-                {col.title === "Served" ? (
-                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>
-                    history
-                  </span>
-                ) : (
-                  <span className={`rounded-full px-2 py-0.5 font-bold text-xs ${badge.bg} ${badge.text}`}>
-                    {colOrders.length}
-                  </span>
-                )}
-              </div>
-
-              {/* Cards */}
-              <div
-                className="flex flex-col gap-sm overflow-y-auto p-sm kds-column"
-                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(89,65,57,0.2) transparent" }}
+            return (
+              <section
+                key={col.title}
+                className="flex flex-1 flex-col bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden"
               >
-                {colOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    now={now}
-                    isNew={newIds.has(order.id)}
-                    onAdvance={() => handleAdvance(order)}
-                    onCancel={() => handleCancel(order)}
-                  />
-                ))}
-
-                {colOrders.length === 0 && (
-                  <div className="flex flex-col items-center justify-center flex-1 rounded-xl border-2 border-dashed border-outline-variant/30 py-10 text-center">
-                    <span className="material-symbols-outlined text-on-surface-variant/40 mb-xs" style={{ fontSize: 32 }}>
-                      receipt_long
+                {/* Column header */}
+                <div className="flex items-center gap-sm px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
+                  <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs flex-1">
+                    {col.title}
+                  </h2>
+                  {col.title === "Served" ? (
+                    <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>
+                      history
                     </span>
-                    <p className="font-body-sm text-on-surface-variant/50">No orders</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          );
-        })}
+                  ) : (
+                    <span className={`rounded-full px-2 py-0.5 font-bold text-xs ${badge.bg} ${badge.text}`}>
+                      {colOrders.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Cards */}
+                <div
+                  className="flex flex-col gap-sm overflow-y-auto p-sm kds-column"
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(89,65,57,0.2) transparent" }}
+                >
+                  {colOrders.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      now={now}
+                      isNew={newIds.has(order.id)}
+                      onAdvance={() => handleAdvance(order)}
+                      onCancel={() => handleCancel(order)}
+                    />
+                  ))}
+
+                  {colOrders.length === 0 && (
+                    <div className="flex flex-col items-center justify-center flex-1 rounded-xl border-2 border-dashed border-outline-variant/30 py-10 text-center">
+                      <span className="material-symbols-outlined text-on-surface-variant/40 mb-xs" style={{ fontSize: 32 }}>
+                        receipt_long
+                      </span>
+                      <p className="font-body-sm text-on-surface-variant/50">No orders</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        {/* Service requests side panel */}
+        {servicesPanelOpen && (
+          <aside className="w-72 shrink-0 flex flex-col border-l border-outline-variant/30 bg-surface overflow-hidden">
+            <div className="flex items-center justify-between px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
+              <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs">
+                Table Requests
+              </h2>
+              <button
+                onClick={() => setServicesPanelOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-sm space-y-sm">
+              {serviceRequests.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+                  <span className="material-symbols-outlined text-on-surface-variant/40" style={{ fontSize: 32 }}>
+                    notifications_none
+                  </span>
+                  <p className="font-body-sm text-on-surface-variant/50">No pending requests</p>
+                </div>
+              ) : (
+                serviceRequests.map((req) => {
+                  const meta = REQUEST_LABELS[req.type] ?? { icon: "help", label: req.type };
+                  const elapsed = Math.floor((Date.now() - new Date(req.createdAt).getTime()) / 60000);
+                  return (
+                    <div
+                      key={req.id}
+                      className="rounded-xl border border-outline-variant/30 bg-surface-container p-sm space-y-xs"
+                    >
+                      <div className="flex items-center gap-xs">
+                        <span className="material-symbols-outlined text-primary" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>
+                          {meta.icon}
+                        </span>
+                        <span className="font-label-bold text-on-surface flex-1">{meta.label}</span>
+                        <span className="font-body-sm text-on-surface-variant/60" style={{ fontSize: 11 }}>
+                          {elapsed === 0 ? "just now" : `${elapsed}m ago`}
+                        </span>
+                      </div>
+                      {req.tableLabel && (
+                        <p className="font-body-sm text-on-surface-variant" style={{ fontSize: 12 }}>
+                          Table {req.tableLabel}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleResolveRequest(req.id)}
+                        className="w-full h-8 rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-xs hover:bg-secondary/20 transition-colors"
+                      >
+                        Mark resolved
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

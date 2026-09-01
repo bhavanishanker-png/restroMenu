@@ -9,7 +9,6 @@ import {
 import type { ExtractedMenu } from "@/app/api/ai/menu-extract/route";
 
 type ExtractedItem = ExtractedMenu["categories"][number]["items"][number];
-type ExtractedCategory = ExtractedMenu["categories"][number];
 
 type SelectionState = Record<number, Record<number, boolean>>; // catIdx → itemIdx → selected
 

@@ -6,6 +6,8 @@ type Props = {
   soundEnabled: boolean;
   onToggleSound: () => void;
   now: number;
+  serviceRequestCount: number;
+  onServiceRequestsClick: () => void;
 };
 
 function formatClock(ts: number): string {
@@ -24,6 +26,8 @@ export function KitchenHeader({
   soundEnabled,
   onToggleSound,
   now,
+  serviceRequestCount,
+  onServiceRequestsClick,
 }: Props) {
   return (
     <header className="flex items-center justify-between border-b border-outline-variant/30 bg-surface h-16 px-md shadow-level-1 shrink-0">
@@ -54,6 +58,23 @@ export function KitchenHeader({
 
       {/* Controls */}
       <div className="flex items-center gap-sm">
+        {/* Service requests bell */}
+        <button
+          onClick={onServiceRequestsClick}
+          className="relative flex items-center gap-xs rounded-lg px-sm py-xs text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors h-9"
+          aria-label={`Service requests — ${serviceRequestCount} pending`}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20, fontVariationSettings: serviceRequestCount > 0 ? "'FILL' 1" : "'FILL' 0" }}>
+            notifications
+          </span>
+          <span className="hidden sm:inline font-label-bold text-label-bold">Requests</span>
+          {serviceRequestCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-bold" style={{ fontSize: 10 }}>
+              {serviceRequestCount > 9 ? "9+" : serviceRequestCount}
+            </span>
+          )}
+        </button>
+
         {/* Online badge */}
         <div
           className={`flex items-center gap-xs px-sm py-xs rounded-full font-label-bold text-xs ${

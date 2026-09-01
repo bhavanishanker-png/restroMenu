@@ -97,6 +97,9 @@ const createOrderSchema = z.object({
   notes: z.string().max(500).optional(),
   idempotencyKey: z.string().uuid("idempotencyKey must be a UUID"),
   paymentMethod: z.enum(["cash", "razorpay"]),
+  // Group ordering fields (optional — absent for solo orders)
+  sessionId: z.string().uuid().nullable().optional(),
+  orderedBy: z.string().max(100).nullable().optional(),
   items: z.array(orderItemSchema).min(1, "Order must contain at least one item"),
 });
 
@@ -386,13 +389,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     };
   });
 
+  // If a sessionId is provided, verify it belongs to this restaurant and is open.
+  let resolvedSessionId: string | null = null;
+  if (body.sessionId) {
+    const { data: session } = await supabase
+      .from("table_sessions")
+      .select("id")
+      .eq("id", body.sessionId)
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "open")
+      .single();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: { code: "SESSION_NOT_FOUND", message: "Group session not found or has ended." } },
+        { status: 400 }
+      );
+    }
+    resolvedSessionId = session.id;
+  }
+
+  // Tag each item with ordered_by if this is a group order
+  const orderedBy = body.orderedBy?.trim() || null;
+  const itemsPayloadWithOwner = itemsPayload.map((item) => ({
+    ...item,
+    ordered_by: orderedBy,
+  }));
+
   // Steps 7–8: call the atomic Postgres function (orders + order_items + order_events
   // in one transaction — a partial order can never exist).
   const { data: rpcResult, error: rpcError } = await supabase.rpc("create_order", {
     p_data: {
       restaurant_id:  restaurantId,
       table_id:       tableId ?? "",
-      session_id:     "",
+      session_id:     resolvedSessionId ?? "",
       order_type:     body.orderType,
       customer_name:  body.customerName,
       customer_phone: body.customerPhone,
@@ -405,7 +435,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       packing_charge: bill.packingCharge,
       discount:       bill.discount,
       total:          bill.total,
-      items:          itemsPayload,
+      items:          itemsPayloadWithOwner,
     },
   });
 

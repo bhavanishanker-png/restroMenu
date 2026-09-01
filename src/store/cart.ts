@@ -33,6 +33,9 @@ type CartStore = CartState & {
   setQuantity: (lineId: string, quantity: number) => void;
   removeLine: (lineId: string) => void;
   clearCart: () => void;
+  joinGroup: (sessionId: string, joinCode: string, personName: string) => void;
+  leaveGroup: () => void;
+  setPersonName: (name: string) => void;
 };
 
 const EMPTY_STATE: CartState = {
@@ -40,6 +43,9 @@ const EMPTY_STATE: CartState = {
   tableToken: null,
   idempotencyKey: null,
   lines: [],
+  sessionId: null,
+  joinCode: null,
+  personName: null,
 };
 
 export const useCartStore = create<CartStore>()(
@@ -130,7 +136,22 @@ export const useCartStore = create<CartStore>()(
           ...EMPTY_STATE,
           restaurantSlug: state.restaurantSlug,
           tableToken: state.tableToken,
+          sessionId: state.sessionId,
+          joinCode: state.joinCode,
+          personName: state.personName,
         }));
+      },
+
+      joinGroup(sessionId, joinCode, personName) {
+        set({ sessionId, joinCode, personName });
+      },
+
+      leaveGroup() {
+        set({ sessionId: null, joinCode: null, personName: null });
+      },
+
+      setPersonName(name) {
+        set({ personName: name });
       },
     }),
     {

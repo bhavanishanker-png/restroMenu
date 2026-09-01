@@ -246,9 +246,29 @@ for the customer, a tablet for the kitchen. Fix everything that fails.
 
 ---
 
-## Release 2 backlog (do not start before T23)
+## Release 2
 
-T24 Group ordering with split bill · T25 Time-based menus · T26 Waiter/water/bill
-call buttons · T27 Private routing of sub-3 ratings · T28 Loyalty by phone ·
+### - [x] T24 · Group ordering
+Each phone at a table can start or join a shared session via a 6-digit join code.
+Items are tagged with `ordered_by` (person name) and submitted under a shared
+`session_id`. Split bill is visible per-person on the order tracker.
+
+**Done when:** Person A starts a group order, shares the code, Person B joins on
+their phone, both place orders, and the kitchen sees both orders with `ordered_by`
+tags on the items.
+
+---
+
+### - [x] T26 · Waiter/water/bill call buttons
+Customer menu has a "Requests" tab with three large buttons: Call Waiter, Request
+Water, Ask for Bill. Each fires `POST /api/service-requests`. The kitchen display
+subscribes via Realtime and shows a notification bell + side panel.
+
+**Done when:** Tapping "Call Waiter" on the customer phone makes a toast appear on
+the kitchen display within 2 seconds, and "Mark resolved" removes it.
+
+---
+
+T25 Time-based menus · T27 Private routing of sub-3 ratings · T28 Loyalty by phone ·
 T29 Reorder-my-usual · T30 Dead items and turnover reports · T31 WhatsApp bill ·
 T32 Takeaway pre-order with pickup time

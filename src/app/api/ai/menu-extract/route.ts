@@ -17,7 +17,7 @@ const ExtractedCategory = z.object({
   items: z.array(ExtractedItem),
 });
 
-export const ExtractedMenuSchema = z.object({
+const ExtractedMenuSchema = z.object({
   categories: z.array(ExtractedCategory),
 });
 
