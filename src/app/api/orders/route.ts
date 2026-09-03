@@ -108,6 +108,7 @@ const createOrderSchema = z.object({
 type DbItemRow = {
   id: string;
   name: string;
+  image_url: string | null;
   base_price: number;
   tax_rate: number;
   kitchen_station: string;
@@ -248,7 +249,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: dbItemsRaw, error: itemsError } = await supabase
     .from("menu_items")
     .select(
-      `id, name, base_price, tax_rate, kitchen_station, is_available, food_type, prep_minutes,
+      `id, name, image_url, base_price, tax_rate, kitchen_station, is_available, food_type, prep_minutes,
        item_variants(id, name, price_delta, is_default),
        item_addon_groups(
          addon_groups(id, addons(id, name, price))
@@ -352,7 +353,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ),
       itemId: dbItem.id,
       itemName: dbItem.name,
-      imageUrl: null,
+      imageUrl: dbItem.image_url,
       foodType: dbItem.food_type as FoodType,
       basePrice: Number(dbItem.base_price),
       taxRate: Number(dbItem.tax_rate),
@@ -378,6 +379,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return {
       item_id: line.itemId,
       item_name: line.itemName,          // SNAPSHOT
+      // SNAPSHOT — a past order must keep the photo it was bought with, even
+      // if the dish is later re-shot or soft deleted. Never re-read from
+      // menu_items when rendering order history.
+      image_url: dbItem.image_url,
       variant_name: line.variantName,    // SNAPSHOT
       unit_price: pricedLine.unitPrice,  // SNAPSHOT — server-computed
       quantity: line.quantity,

@@ -181,7 +181,12 @@ create table orders (
   accepted_at     timestamptz,
   ready_at        timestamptz,
   served_at       timestamptz,
-  unique (restaurant_id, order_number)
+  -- Business day, derived from placed_at. Order numbers reset daily, so
+  -- uniqueness must be scoped to the day — a plain
+  -- unique (restaurant_id, order_number) collides on day 2. See
+  -- migrations/007_fix_order_number_collision.sql.
+  order_day       date generated always as (((placed_at at time zone 'UTC')::date)) stored,
+  constraint orders_restaurant_day_number_key unique (restaurant_id, order_day, order_number)
 );
 
 create table order_items (
@@ -265,17 +270,25 @@ language plpgsql
 as $$
 declare
   v_prefix text;
-  v_count  int;
+  v_next   int;
+  v_today  date := (now() at time zone 'UTC')::date;
 begin
+  -- Serialise allocation per restaurant so two concurrent orders cannot
+  -- read the same highest number and both claim it.
+  perform pg_advisory_xact_lock(hashtext(p_restaurant_id::text));
+
   select coalesce(order_number_prefix, 'ORD') into v_prefix
     from restaurant_settings where restaurant_id = p_restaurant_id;
 
-  select count(*) + 1 into v_count
+  -- Highest number issued today, not a row count — deleting or cancelling
+  -- an order must never cause a number to be reused.
+  select coalesce(max((substring(order_number from '(\d+)$'))::int), 0) + 1
+    into v_next
     from orders
    where restaurant_id = p_restaurant_id
-     and placed_at >= date_trunc('day', now());
+     and order_day = v_today;
 
-  return coalesce(v_prefix, 'ORD') || '-' || lpad(v_count::text, 4, '0');
+  return coalesce(v_prefix, 'ORD') || '-' || lpad(v_next::text, 4, '0');
 end;
 $$;
 

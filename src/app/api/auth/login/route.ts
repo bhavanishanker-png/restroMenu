@@ -79,13 +79,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Verify the Supabase user has a staff row with an allowed role.
     const supabase = createServerClient();
-    const { data: staffRow } = await supabase
+    const { data: staffRow, error: staffError } = await supabase
       .from("staff")
       .select("id, restaurant_id, role, is_active")
       .eq("auth_user_id", authData.user.id)
       .in("role", ["owner", "manager"])
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
+
+    // PGRST116 = no rows, which is a genuine "not staff". Anything else is a
+    // real database failure and must not be reported as a credentials problem.
+    if (staffError) {
+      console.error("[login] staff lookup failed", staffError);
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Could not verify your account. Please try again." } },
+        { status: 500 }
+      );
+    }
 
     if (!staffRow) {
       return NextResponse.json(

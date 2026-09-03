@@ -227,6 +227,7 @@ export function toOrderItem(r: DbOrderItem): OrderItem {
     orderId: r.order_id,
     itemId: r.item_id,
     itemName: r.item_name,
+    imageUrl: r.image_url,
     variantName: r.variant_name,
     unitPrice: Number(r.unit_price),
     quantity: r.quantity,

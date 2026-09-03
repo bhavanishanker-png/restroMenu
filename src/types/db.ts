@@ -154,6 +154,7 @@ export type DbOrderItem = {
   order_id: string;
   item_id: string | null;
   item_name: string;
+  image_url: string | null;
   variant_name: string | null;
   unit_price: number;
   quantity: number;

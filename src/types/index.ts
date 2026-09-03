@@ -240,6 +240,7 @@ export type OrderItem = {
   orderId: string;
   itemId: string | null;
   itemName: string;
+  imageUrl: string | null;
   variantName: string | null;
   unitPrice: number;
   quantity: number;

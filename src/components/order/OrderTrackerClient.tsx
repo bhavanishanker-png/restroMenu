@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/pricing";
 import { useCartStore } from "@/store/cart";
@@ -202,6 +203,20 @@ export function OrderTrackerClient({
       <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest px-4 divide-y divide-outline-variant/30 shadow-level-1">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-3 py-3">
+            {/* Snapshot image — what the dish looked like when it was ordered,
+                not whatever menu_items holds today. */}
+            {item.imageUrl && (
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-container-high">
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
             <FoodTypeMarker type="veg" />
             <div className="flex-1 min-w-0 space-y-0.5">
               <p className="text-body-md font-semibold text-on-surface">

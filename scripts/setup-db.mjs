@@ -11,15 +11,39 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROJECT_REF = "fvstopmvinuzogaiflfl";
-const SERVICE_ROLE_KEY = "sb_secret_rQk9JnUbXavquVvUjs88PA_WSHuchyN";
-const SUPABASE_URL = "https://fvstopmvinuzogaiflfl.supabase.co";
 
+// Never hardcode credentials here — this file is committed.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PAT = process.env.SUPABASE_ACCESS_TOKEN;
-if (!PAT) {
-  console.error("❌  Missing SUPABASE_ACCESS_TOKEN.");
-  console.error("   Run:  SUPABASE_ACCESS_TOKEN=sbp_xxx node scripts/setup-db.mjs");
+
+const missing = [
+  !SUPABASE_URL && "NEXT_PUBLIC_SUPABASE_URL",
+  !SERVICE_ROLE_KEY && "SUPABASE_SERVICE_ROLE_KEY",
+  !PAT && "SUPABASE_ACCESS_TOKEN",
+].filter(Boolean);
+
+if (missing.length) {
+  console.error(`❌  Missing env var(s): ${missing.join(", ")}`);
+  console.error("   The first two live in .env.local; the PAT comes from");
+  console.error("   https://supabase.com/dashboard/account/tokens");
+  console.error("   Run:  set -a; . ./.env.local; set +a; SUPABASE_ACCESS_TOKEN=sbp_xxx node scripts/setup-db.mjs");
   process.exit(1);
+}
+
+const PROJECT_REF = new URL(SUPABASE_URL).hostname.split(".")[0];
+
+// The service role key must actually carry the service_role claim — the anon
+// key is a valid JWT for the same project and fails silently under RLS.
+try {
+  const claims = JSON.parse(Buffer.from(SERVICE_ROLE_KEY.split(".")[1], "base64url").toString());
+  if (claims.role !== "service_role") {
+    console.error(`❌  SUPABASE_SERVICE_ROLE_KEY has role "${claims.role}", expected "service_role".`);
+    console.error("   Copy the service_role key from Supabase → Settings → API.");
+    process.exit(1);
+  }
+} catch {
+  // Newer sb_secret_* keys are opaque, not JWTs. Nothing to check.
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -113,26 +137,61 @@ if (seedExists) {
   await runSQL("seed.sql", readFileSync(join(docs, "seed.sql"), "utf8"));
 }
 
-// 5. Owner auth user
-await createAuthUser("owner@tandoorihut.com", "Test1234!");
+// 5. is_staff_of recursion fix (idempotent — create or replace)
+await runSQL(
+  "006_fix_is_staff_of_recursion.sql",
+  readFileSync(join(docs, "migrations/006_fix_is_staff_of_recursion.sql"), "utf8")
+);
 
-// 6. Staff row
+// 6. Demo restaurant — the slug the login screen and README advertise.
+const DEMO_SLUG = "test-kitchen";
+const DEMO_EMAIL = "testowner@qbite.dev";
+const DEMO_PASSWORD = "Test1234!";
+
+await runSQL(
+  `Ensure ${DEMO_SLUG} restaurant`,
+  `INSERT INTO restaurants (slug, name, is_active)
+   VALUES ('${DEMO_SLUG}', 'Test Kitchen', true)
+   ON CONFLICT (slug) DO NOTHING;`
+);
+
+// 7. Owner auth user
+await createAuthUser(DEMO_EMAIL, DEMO_PASSWORD);
+
+// 8. Staff row — without this, login fails with "No active owner or
+//    manager account found." even though the password is correct.
 await runSQL(
   "Link owner → staff",
   `INSERT INTO staff (restaurant_id, auth_user_id, name, role, is_active)
-   SELECT r.id, u.id, 'Owner', 'owner', true
+   SELECT r.id, u.id, 'Demo Owner', 'owner', true
    FROM restaurants r, auth.users u
-   WHERE r.slug = 'tandoori-hut' AND u.email = 'owner@tandoorihut.com'
-   ON CONFLICT DO NOTHING;`
+   WHERE r.slug = '${DEMO_SLUG}'
+     AND u.email = '${DEMO_EMAIL}'
+     AND NOT EXISTS (
+       SELECT 1 FROM staff s
+        WHERE s.restaurant_id = r.id AND s.auth_user_id = u.id
+     );`
 );
 
+const linked = await queryOne(
+  `SELECT s.role, s.is_active FROM staff s
+     JOIN restaurants r ON r.id = s.restaurant_id
+     JOIN auth.users u  ON u.id = s.auth_user_id
+    WHERE r.slug = '${DEMO_SLUG}' AND u.email = '${DEMO_EMAIL}';`
+);
+
+if (!linked) {
+  console.error(`\n❌  Owner staff row still missing for ${DEMO_EMAIL} @ ${DEMO_SLUG}.`);
+  process.exit(1);
+}
+
 console.log(`
-✅  All done!
+✅  All done!  Verified owner staff row: role=${linked.role} active=${linked.is_active}
 
 Login:   http://localhost:3000/login
-  Email:    owner@tandoorihut.com
-  Password: Test1234!
+  Email:    ${DEMO_EMAIL}
+  Password: ${DEMO_PASSWORD}
 
 Admin:   http://localhost:3000/admin/login
-  Secret:   qbite-dev-admin-secret-change-before-prod
+  Secret:   value of SUPER_ADMIN_SECRET in .env.local
 `);

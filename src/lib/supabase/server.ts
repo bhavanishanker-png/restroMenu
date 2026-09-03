@@ -29,6 +29,16 @@ export function createServerClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
+      global: {
+        // Next 14's App Router caches GET fetch() responses by default, and
+        // supabase-js reads go out as GETs. Without this the Data Cache pins
+        // the first response forever: an owner changes a price or marks an
+        // item out of stock, and the customer menu keeps serving the old row
+        // until the server restarts. Orders are still priced from the
+        // database, so the visible effect is a menu that disagrees with the
+        // bill. Every read through this client must hit Postgres.
+        fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+      },
     }
   );
 }
