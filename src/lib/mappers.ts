@@ -134,7 +134,9 @@ export function toAddonGroup(r: DbAddonGroup): AddonGroup {
     name: r.name,
     minSelect: r.min_select,
     maxSelect: r.max_select,
-    addons: r.addons.map(toAddon),
+    // A group with no add-ons is legitimate, and PostgREST omits the key
+    // entirely when the embed is empty — do not assume it is present.
+    addons: (r.addons ?? []).map(toAddon),
   };
 }
 
@@ -165,7 +167,15 @@ export function toMenuItem(r: DbMenuItem): MenuItem {
       isDefault: v.is_default,
       sortOrder: v.sort_order,
     })),
-    addonGroups: (r.addon_groups ?? []).map(toAddonGroup),
+    // Each entry is an item_addon_groups join row wrapping the group, not the
+    // group itself. Passing it straight to toAddonGroup crashed the route with
+    // "Cannot read properties of undefined (reading 'map')" for any item that
+    // actually had an add-on group attached.
+    addonGroups: (r.addon_groups ?? []).flatMap((jt) => {
+      const group = jt.addon_groups;
+      if (!group) return [];
+      return (Array.isArray(group) ? group : [group]).map(toAddonGroup);
+    }),
   };
 }
 

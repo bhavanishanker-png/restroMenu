@@ -119,7 +119,16 @@ export type DbMenuItem = {
   is_active: boolean;
   created_at: string;
   item_variants: DbItemVariant[];
-  addon_groups: DbAddonGroup[];
+  // Rows of the item_addon_groups join table, aliased to `addon_groups` by the
+  // select in /api/menu/items. Each element wraps the group — it is NOT a
+  // DbAddonGroup itself. PostgREST returns the embedded to-one as an object,
+  // but has historically returned an array, so both are accepted.
+  addon_groups: DbItemAddonGroupJoin[];
+};
+
+export type DbItemAddonGroupJoin = {
+  group_id: string;
+  addon_groups: DbAddonGroup | DbAddonGroup[] | null;
 };
 
 export type DbOrder = {
