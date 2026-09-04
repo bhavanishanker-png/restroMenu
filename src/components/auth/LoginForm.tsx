@@ -41,8 +41,6 @@ function FieldError({ msg }: { msg?: string }) {
 
 export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlug?: string; nextPath?: string }) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const [tab, setTab] = useState<Tab>("email");
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
@@ -111,12 +109,12 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
     router.push(nextPath);
   }
 
-  if (!mounted) {
-    return (
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center min-h-[520px]" />
-    );
-  }
-
+  // No mount gate here on purpose. This form reads nothing that differs
+  // between server and client — no cart store, no localStorage, no Date — so
+  // gating it behind `mounted` bought nothing and actively caused a hydration
+  // mismatch: the server emitted an empty 520px box while the client rendered
+  // the real form. It also meant the login screen first painted as a blank
+  // card. The cart-backed components still need their gate; this one does not.
   return (
     <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center">
       {/* Branding */}
