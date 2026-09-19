@@ -12,8 +12,8 @@ export default async function LoginPage({ searchParams }: Props) {
     <div
       className="flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop"
       style={{
-        backgroundColor: "#fff8f5",
-        backgroundImage: "radial-gradient(#e1bfb4 1px, transparent 1px)",
+        backgroundColor: "#fafaf9",
+        backgroundImage: "radial-gradient(#e7e5e4 1px, transparent 1px)",
         backgroundSize: "24px 24px",
       }}
     >

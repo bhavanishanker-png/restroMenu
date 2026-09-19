@@ -4,8 +4,8 @@
   "description": "Scan, order, enjoy.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#C2410C",
+  "background_color": "#fafaf9",
+  "theme_color": "#fafaf9",
   "orientation": "portrait",
   "icons": [
     {

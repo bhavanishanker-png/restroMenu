@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Background -->
-  <rect width="512" height="512" rx="108" fill="#a73400"/>
+  <rect width="512" height="512" rx="108" fill="#1c1917"/>
 
   <!-- Fork (left of centre) -->
   <!-- Handle -->
@@ -20,5 +20,5 @@
   <!-- Bowl outer -->
   <ellipse cx="345" cy="172" rx="56" ry="72" fill="white"/>
   <!-- Bowl inner (cutout) -->
-  <ellipse cx="345" cy="165" rx="38" ry="52" fill="#a73400"/>
+  <ellipse cx="345" cy="165" rx="38" ry="52" fill="#1c1917"/>
 </svg>

@@ -104,7 +104,7 @@ export function CartPageClient({
       <div className="fixed bottom-0 left-0 right-0 border-t border-outline-variant/30 bg-surface-container-lowest px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(32,26,23,0.08)]">
         <Link
           href={checkoutHref}
-          className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-headline-sm shadow-[0_8px_24px_rgba(167,52,0,0.3)] hover:bg-primary-container transition-colors active:translate-y-[2px]"
+          className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-headline-sm shadow-[0_8px_24px_rgba(28,25,23,0.3)] hover:bg-primary-container transition-colors active:translate-y-[2px]"
           style={{ fontSize: 16 }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>

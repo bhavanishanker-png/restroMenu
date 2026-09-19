@@ -266,7 +266,7 @@ export function OrderTrackerClient({
           </div>
         )}
         {order.discount > 0 && (
-          <div className="flex justify-between text-body-md text-[#3f6653]">
+          <div className="flex justify-between text-body-md text-success">
             <span>Discount</span>
             <span>−{formatMoney(order.discount)}</span>
           </div>

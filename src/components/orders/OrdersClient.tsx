@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Order, OrderStatus } from "@/types";
+import { ORDER_STATUS_STYLES, ORDER_STATUS_LABELS } from "@/lib/order-status";
+import type { Order } from "@/types";
 
 // ---------------------------------------------------------------- types
 
@@ -33,19 +34,8 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  placed: "bg-blue-100 text-blue-700",
-  accepted: "bg-yellow-100 text-yellow-700",
-  preparing: "bg-orange-100 text-orange-700",
-  ready: "bg-green-100 text-green-700",
-  served: "bg-stone-100 text-stone-600",
-  cancelled: "bg-red-100 text-red-600",
-};
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  placed: "New", accepted: "Accepted", preparing: "Preparing",
-  ready: "Ready", served: "Served", cancelled: "Cancelled",
-};
+const STATUS_COLORS = ORDER_STATUS_STYLES;
+const STATUS_LABELS = ORDER_STATUS_LABELS;
 
 function fmt(n: number) {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });

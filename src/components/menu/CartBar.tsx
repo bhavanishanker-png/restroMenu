@@ -25,7 +25,7 @@ export function CartBar({ slug, token }: Props) {
     <div className="fixed bottom-[72px] left-0 right-0 z-30 px-4 pb-2">
       <Link
         href={`/r/${slug}/t/${token}/cart`}
-        className="flex min-h-[56px] items-center justify-between rounded-xl bg-primary px-4 py-3 text-on-primary shadow-[0_8px_24px_rgba(167,52,0,0.28)] transition-transform active:translate-y-[2px]"
+        className="flex min-h-[56px] items-center justify-between rounded-xl bg-primary px-4 py-3 text-on-primary shadow-[0_8px_24px_rgba(28,25,23,0.28)] transition-transform active:translate-y-[2px]"
         aria-label={`View cart — ${itemCount} items, ${formatMoney(total)}`}
       >
         {/* Left: count badge */}

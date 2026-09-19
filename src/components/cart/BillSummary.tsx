@@ -28,7 +28,7 @@ export function BillSummary({ lines, orderType, settings }: Props) {
         <Row label="Packing charge" value={bill.packingCharge} />
       )}
       {bill.discount > 0 && (
-        <Row label="Discount" value={-bill.discount} className="text-[#3f6653]" />
+        <Row label="Discount" value={-bill.discount} className="text-success" />
       )}
 
       <Separator className="bg-outline-variant/50" />

@@ -35,17 +35,17 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-[#C2410C]/20 bg-orange-50 px-4 py-3">
-      <Download className="h-5 w-5 shrink-0 text-[#C2410C]" />
+    <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container px-4 py-3">
+      <Download className="h-5 w-5 shrink-0 text-on-surface" />
       <div className="flex-1">
-        <p className="text-sm font-medium text-stone-800">Add QBite to your home screen</p>
-        <p className="text-xs text-stone-500">Order faster next time.</p>
+        <p className="text-sm font-medium text-on-surface">Add QBite to your home screen</p>
+        <p className="text-xs text-on-surface-variant">Order faster next time.</p>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" onClick={install} className="bg-[#C2410C] hover:bg-[#9a3209] text-white h-8 text-xs">
+        <Button size="sm" onClick={install} className="bg-on-surface hover:bg-primary-container text-surface-container-lowest h-8 text-xs">
           Add
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setDismissed(true)} className="h-8 text-xs text-stone-400">
+        <Button size="sm" variant="ghost" onClick={() => setDismissed(true)} className="h-8 text-xs text-on-surface-variant">
           Not now
         </Button>
       </div>

@@ -24,8 +24,8 @@ function SpiceIcons({ level }: { level: number }) {
       {Array.from({ length: Math.min(level, 3) }).map((_, i) => (
         <span
           key={i}
-          className="material-symbols-outlined fill"
-          style={{ fontSize: 14, color: "#cc4911" }}
+          className="material-symbols-outlined fill text-warning"
+          style={{ fontSize: 14 }}
         >
           local_fire_department
         </span>

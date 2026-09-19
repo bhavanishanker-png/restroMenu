@@ -32,16 +32,18 @@ function formatElapsed(minutes: number): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
+// Urgency escalates on two axes — colour AND border weight — so it stays
+// readable from three feet away and doesn't depend on colour alone.
 function urgencyBorderClass(elapsed: number): string {
-  if (elapsed >= 25) return "border-l-error";
-  if (elapsed >= 15) return "border-l-[#f59e0b]";
-  return "border-l-surface-container-highest";
+  if (elapsed >= 25) return "border-l-8 border-l-error";
+  if (elapsed >= 15) return "border-l-[6px] border-l-warning";
+  return "border-l-4 border-l-surface-container-highest";
 }
 
 function elapsedColorClass(elapsed: number): string {
-  if (elapsed >= 25) return "text-error animate-pulse";
-  if (elapsed >= 15) return "text-[#d97706]";
-  return "text-primary";
+  if (elapsed >= 25) return "text-error font-bold animate-pulse";
+  if (elapsed >= 15) return "text-warning font-bold";
+  return "text-on-surface-variant";
 }
 
 function actionBtnClass(variant: ActionConfig["variant"]): string {
@@ -58,12 +60,12 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
 
   if (isServed) {
     return (
-      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden opacity-75 hover:opacity-100 transition-opacity border-l-4 border-l-secondary-container">
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden opacity-75 hover:opacity-100 transition-opacity border-l-4 border-l-success">
         <div className="flex items-center justify-between px-3 py-2">
           <span className="font-mono text-on-surface-variant line-through" style={{ fontSize: 18 }}>
             #{order.orderNumber}
           </span>
-          <span className="material-symbols-outlined text-secondary-container" style={{ fontSize: 20 }}>
+          <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>
             done_all
           </span>
         </div>
@@ -73,7 +75,7 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
 
   return (
     <div
-      className={`rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden border-l-4 ${borderClass} ${
+      className={`rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden ${borderClass} ${
         isNew ? "animate-slide-in ring-2 ring-primary ring-offset-1" : ""
       }`}
     >

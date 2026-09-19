@@ -70,7 +70,7 @@ function CategoryRow({
       ref={setNodeRef}
       style={style}
       className={`group flex items-center gap-2 rounded-lg px-2 py-2 transition-colors ${
-        selected ? "bg-[#C2410C]/10 text-[#C2410C]" : "hover:bg-stone-100"
+        selected ? "bg-surface-container-highest text-on-surface font-medium" : "hover:bg-surface-container"
       }`}
     >
       {/* Drag handle */}
@@ -95,7 +95,7 @@ function CategoryRow({
             }}
             className="h-7 text-sm"
           />
-          <button onClick={commitRename} className="text-green-600 hover:text-green-700">
+          <button onClick={commitRename} className="text-success hover:text-on-success-container">
             <Check className="h-4 w-4" />
           </button>
           <button onClick={() => { setDraft(cat.name); setEditing(false); }} className="text-stone-400">

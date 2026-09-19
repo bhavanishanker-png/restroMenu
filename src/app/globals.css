@@ -4,56 +4,65 @@
 
 @layer base {
   :root {
-    /* ── Terracotta & Hearth — shadcn variable mapping ── */
-    --background:            18 100% 98%;      /* #fff8f5 */
-    --foreground:            20 16% 11%;       /* #201a17 */
-    --card:                  0 0% 100%;        /* #ffffff */
-    --card-foreground:       20 16% 11%;       /* #201a17 */
+    /* ── Monochrome (warm stone) — shadcn variable mapping ── */
+    --background:            60 9% 98%;        /* #fafaf9 faded white — the page */
+    --foreground:            24 10% 10%;       /* #1c1917 near-black ink */
+    --card:                  0 0% 100%;        /* #ffffff lifts above the page */
+    --card-foreground:       24 10% 10%;       /* #1c1917 */
     --popover:               0 0% 100%;        /* #ffffff */
-    --popover-foreground:    20 16% 11%;       /* #201a17 */
-    --primary:               19 100% 33%;      /* #a73400 */
+    --popover-foreground:    24 10% 10%;       /* #1c1917 */
+    --primary:               24 10% 10%;       /* #1c1917 near-black, not pure #000 */
     --primary-foreground:    0 0% 100%;        /* #ffffff */
-    --secondary:             22 48% 93%;       /* #f7ece6 surface-container */
-    --secondary-foreground:  20 16% 11%;       /* #201a17 */
-    --muted:                 20 40% 91%;       /* #f2e6e0 surface-container-high */
-    --muted-foreground:      17 22% 29%;       /* #594139 on-surface-variant */
-    --accent:                22 76% 96%;       /* #fdf1eb surface-container-low */
-    --accent-foreground:     20 16% 11%;       /* #201a17 */
-    --destructive:           0 76% 41%;        /* #b6191a tertiary (non-veg red) */
+    --secondary:             60 5% 96%;        /* #f5f5f4 surface-container */
+    --secondary-foreground:  24 10% 10%;       /* #1c1917 */
+    --muted:                 60 5% 96%;        /* #f5f5f4 */
+    --muted-foreground:      25 5% 45%;        /* #78716c secondary text */
+    --accent:                60 9% 98%;        /* #fafaf9 surface-container-low */
+    --accent-foreground:     24 10% 10%;       /* #1c1917 */
+    --destructive:           0 72% 42%;        /* #b91c1c */
     --destructive-foreground: 0 0% 100%;       /* #ffffff */
-    --border:                17 38% 79%;       /* #e1bfb4 outline-variant */
-    --input:                 17 38% 79%;       /* #e1bfb4 */
-    --ring:                  19 100% 33%;      /* #a73400 primary */
+    --border:                20 6% 90%;        /* #e7e5e4 hairline */
+    --input:                 20 6% 90%;        /* #e7e5e4 */
+    --ring:                  24 10% 10%;       /* #1c1917 primary */
     --radius:                0.5rem;           /* 8px base — lg=12px, xl=16px via config */
 
-    /* Chart colors */
-    --chart-1: 19 100% 33%;   /* terracotta primary */
-    --chart-2: 150 24% 32%;   /* forest green */
-    --chart-3: 0 76% 41%;     /* crimson */
-    --chart-4: 18 84% 43%;    /* primary-container */
-    --chart-5: 145 51% 83%;   /* secondary-container */
+    /* Chart colors — monochrome ramp, so charts read as one system */
+    --chart-1: 24 10% 10%;    /* #1c1917 */
+    --chart-2: 33 5% 32%;     /* #57534e */
+    --chart-3: 25 5% 45%;     /* #78716c */
+    --chart-4: 24 5% 64%;     /* #a8a29e */
+    --chart-5: 20 6% 90%;     /* #e7e5e4 */
   }
 
+  /* Kept coherent with the light theme, but currently unreachable:
+     no ThemeProvider is mounted, so the `dark` class is never applied. */
   .dark {
-    --background:            20 16% 17%;
-    --foreground:            18 71% 97%;
-    --card:                  20 16% 11%;
-    --card-foreground:       18 71% 97%;
-    --popover:               20 16% 11%;
-    --popover-foreground:    18 71% 97%;
-    --primary:               14 100% 81%;      /* #ffb59c inverse-primary */
-    --primary-foreground:    20 100% 11%;      /* #390c00 */
-    --secondary:             20 16% 22%;
-    --secondary-foreground:  18 71% 97%;
-    --muted:                 20 16% 22%;
-    --muted-foreground:      17 22% 65%;
-    --accent:                20 16% 22%;
-    --accent-foreground:     18 71% 97%;
-    --destructive:           0 76% 41%;
+    --background:            24 10% 10%;       /* #1c1917 */
+    --foreground:            60 9% 98%;        /* #fafaf9 */
+    --card:                  12 6% 15%;        /* #292524 */
+    --card-foreground:       60 9% 98%;
+    --popover:               12 6% 15%;        /* #292524 */
+    --popover-foreground:    60 9% 98%;
+    --primary:               60 9% 98%;        /* #fafaf9 — inverted */
+    --primary-foreground:    24 10% 10%;       /* #1c1917 */
+    --secondary:             12 6% 15%;        /* #292524 */
+    --secondary-foreground:  60 9% 98%;
+    --muted:                 12 6% 15%;        /* #292524 */
+    --muted-foreground:      24 5% 64%;        /* #a8a29e */
+    --accent:                12 6% 15%;        /* #292524 */
+    --accent-foreground:     60 9% 98%;
+    --destructive:           0 72% 51%;        /* #dc2626 — lifted for dark bg */
     --destructive-foreground: 0 0% 100%;
-    --border:                20 16% 22%;
-    --input:                 20 16% 22%;
-    --ring:                  14 100% 81%;
+    --border:                30 5% 24%;        /* #3f3b38 */
+    --input:                 30 5% 24%;
+    --ring:                  60 9% 98%;
+    --radius:                0.5rem;
+
+    --chart-1: 60 9% 98%;     /* #fafaf9 */
+    --chart-2: 20 6% 90%;     /* #e7e5e4 */
+    --chart-3: 24 5% 64%;     /* #a8a29e */
+    --chart-4: 25 5% 45%;     /* #78716c */
+    --chart-5: 33 5% 32%;     /* #57534e */
   }
 }
 
@@ -66,11 +75,11 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Inter", sans-serif;
+    font-family: var(--font-inter), sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Outfit", sans-serif;
+    font-family: var(--font-outfit), sans-serif;
   }
 }
 
@@ -99,12 +108,13 @@
 }
 
 /* ── Ambient shadow utilities ───────────────────────────────────────────── */
+/* Must stay in sync with theme.extend.boxShadow in tailwind.config.ts. */
 @layer utilities {
   .shadow-level-1 {
-    box-shadow: 0 4px 12px rgba(32, 26, 23, 0.05);
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 1px 3px rgba(28, 25, 23, 0.06);
   }
   .shadow-level-2 {
-    box-shadow: 0 8px 24px rgba(32, 26, 23, 0.08);
+    box-shadow: 0 2px 4px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.06);
   }
 }
 
@@ -115,11 +125,11 @@
 }
 .tactile-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(32, 26, 23, 0.08);
+  box-shadow: 0 2px 4px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.06);
 }
 .tactile-active:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 4px rgba(32, 26, 23, 0.04);
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
   transition: transform 0.1s, box-shadow 0.1s;
 }
 
@@ -127,7 +137,7 @@
 .kds-column::-webkit-scrollbar        { width: 4px; }
 .kds-column::-webkit-scrollbar-track  { background: transparent; }
 .kds-column::-webkit-scrollbar-thumb  {
-  background-color: #e1bfb4;
+  background-color: #d6d3d1;
   border-radius: 20px;
 }
 
@@ -140,11 +150,11 @@
   animation: slide-in-from-top 0.35s ease-out forwards;
 }
 
-/* ── Input focus ring (Terracotta) ──────────────────────────────────────── */
+/* ── Input focus ring ───────────────────────────────────────────────────── */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline: none;
-  border-color: #a73400;
-  box-shadow: 0 0 0 2px rgba(167, 52, 0, 0.18);
+  border-color: #1c1917;
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.12);
 }

@@ -231,7 +231,7 @@ export function SalesReport() {
                       className="flex-1 rounded-t-sm transition-opacity hover:opacity-80 cursor-pointer"
                       style={{
                         height: `${pct}%`,
-                        backgroundColor: isPeak ? "#a73400" : "rgba(167,52,0,0.4)",
+                        backgroundColor: isPeak ? "#1c1917" : "rgba(28,25,23,0.35)",
                         minWidth: 4,
                       }}
                     />

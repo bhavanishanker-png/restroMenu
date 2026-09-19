@@ -30,7 +30,7 @@ type StaffOption = { id: string; name: string; role: string };
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
-    <p className="font-body-sm text-body-sm text-[#ba1a1a] flex items-center gap-1 mt-xs" role="alert">
+    <p className="font-body-sm text-body-sm text-error flex items-center gap-1 mt-xs" role="alert">
       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span>
       {msg}
     </p>
@@ -181,8 +181,8 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
       {/* API error */}
       {apiError && (
         <div className="w-full mb-md px-4 py-3 rounded-lg bg-error-container flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#93000a]" style={{ fontSize: 18 }}>error</span>
-          <p className="font-body-sm text-body-sm text-[#93000a]">{apiError}</p>
+          <span className="material-symbols-outlined text-error" style={{ fontSize: 18 }}>error</span>
+          <p className="font-body-sm text-body-sm text-error">{apiError}</p>
         </div>
       )}
 

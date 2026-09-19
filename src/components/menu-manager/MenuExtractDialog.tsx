@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
 import type { ExtractedMenu } from "@/app/api/ai/menu-extract/route";
 
 type ExtractedItem = ExtractedMenu["categories"][number]["items"][number];
@@ -150,14 +151,11 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
     onImported();
   }
 
+  // Delegates to the shared marker so the veg/non-veg shapes and colours stay
+  // identical to the customer menu — this used to be a divergent copy.
   function foodBadge(type: ExtractedItem["foodType"]) {
-    if (type === "veg")
-      return <span className="inline-block w-3.5 h-3.5 rounded-sm border-2 border-[#388e3c] flex-shrink-0" style={{ backgroundColor: "#388e3c22" }} />;
-    if (type === "non_veg")
-      return <span className="inline-block w-3.5 h-3.5 rounded-sm border-2 border-[#c62828] flex-shrink-0" style={{ backgroundColor: "#c6282822" }} />;
-    if (type === "egg")
-      return <span className="inline-block w-3.5 h-3.5 rounded-sm border-2 border-[#f9a825] flex-shrink-0" style={{ backgroundColor: "#f9a82522" }} />;
-    return null;
+    if (!type) return null;
+    return <FoodTypeMarker type={type} />;
   }
 
   return (
@@ -368,7 +366,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
           {/* ── Done ── */}
           {phase === "done" && (
             <div className="p-10 flex flex-col items-center gap-4">
-              <span className="material-symbols-outlined text-[#388e3c]" style={{ fontSize: 56, fontVariationSettings: "'FILL' 1" }}>
+              <span className="material-symbols-outlined text-success" style={{ fontSize: 56, fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
               <div className="text-center">
@@ -402,7 +400,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
             <button
               onClick={handleImport}
               disabled={selectedItems.length === 0}
-              className="flex items-center gap-2 rounded-full bg-primary text-on-primary font-label-bold px-6 py-2.5 shadow-[0_4px_12px_rgba(167,52,0,0.3)] hover:bg-surface-tint transition-all active:translate-y-[1px] disabled:opacity-40"
+              className="flex items-center gap-2 rounded-full bg-primary text-on-primary font-label-bold px-6 py-2.5 shadow-[0_4px_12px_rgba(28,25,23,0.3)] hover:bg-surface-tint transition-all active:translate-y-[1px] disabled:opacity-40"
               style={{ fontSize: 14 }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>

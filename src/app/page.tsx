@@ -198,7 +198,7 @@ export default function HomePage() {
 
         {/* ── Pricing CTA ── */}
         <section id="pricing" className="px-margin-mobile md:px-margin-desktop py-xl mb-xl scroll-mt-20">
-          <div className="max-w-4xl mx-auto bg-primary text-on-primary rounded-2xl p-lg md:p-xl flex flex-col md:flex-row items-center justify-between gap-lg relative overflow-hidden shadow-[0_20px_60px_rgba(167,52,0,0.3)]">
+          <div className="max-w-4xl mx-auto bg-primary text-on-primary rounded-2xl p-lg md:p-xl flex flex-col md:flex-row items-center justify-between gap-lg relative overflow-hidden shadow-[0_20px_60px_rgba(28,25,23,0.3)]">
             {/* Decorative blurs */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-container rounded-full mix-blend-screen opacity-40 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-surface-tint rounded-full mix-blend-multiply opacity-40 blur-3xl pointer-events-none" />

@@ -14,7 +14,7 @@ export default async function OrderTrackerPage({ params }: Props) {
   const { order, items, tableLabel, estimatedReadyAt } = result;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-surface">
       <header className="border-b border-stone-200 bg-white px-4 py-3 text-center">
         <p className="text-sm font-semibold text-stone-800">Order status</p>
       </header>

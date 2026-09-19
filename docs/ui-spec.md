@@ -6,26 +6,44 @@ Mobile-first. Design at 375px width, scale up. shadcn/ui primitives throughout.
 
 ## Design tokens
 
+Monochrome, built on a warm `stone` ramp. Hierarchy comes from **layering, border and
+weight** — never from hue. Colour is spent only where it carries meaning.
+
 ```
-Primary          #C2410C   (warm terracotta — food, not SaaS blue)
-Primary hover    #9A3412
-Veg marker       #16A34A   green square outline with a filled dot
-Non-veg marker   #DC2626   red square outline with a filled dot
-Egg marker       #CA8A04   amber square outline with a filled dot
-Success          #16A34A
-Warning          #D97706
-Danger           #DC2626
-Surface          #FFFFFF / #FAFAF9
-Border           #E7E5E4
-Text primary     #1C1917
+── Neutrals (the whole UI) ──
+Page             #FAFAF9   the "faded white" ground
+Card / sheet     #FFFFFF   lifts by being brighter than the page
+Container        #F5F5F4
+Container high   #E7E5E4
+Border/hairline  #E7E5E4   1px does the work shadows used to
+Outline          #A8A29E   decorative only — never text (2.3:1)
 Text secondary   #78716C
+Text body        #57534E
+Text primary     #1C1917
+Primary action   #1C1917   near-black fill, white label — not pure #000
+
+── Semantic accents (the only hues) ──
+Veg marker       #15803D   green square outline with a filled dot
+Non-veg marker   #B91C1C   red square outline with a filled triangle
+Egg marker       #CA8A04   amber square outline with a filled dot
+Success          #15803D   on #F0FDF4 — ready, paid
+Warning          #B45309   on #FFFBEB — kitchen 15–25 min
+Danger / error   #B91C1C   on #FEF2F2 — cancelled, errors, kitchen 25 min+
 
 Radius           12px cards, 8px controls, full for pills
-Font             Inter (or system stack)
+Font             Inter body / Outfit headings (next/font)
 Base size        16px customer / 18px kitchen screen
+Elevation        near-hairline; heavy shadows read dated on monochrome
 ```
 
-Never use colour alone. Veg/non-veg always shows the square-dot icon.
+Tokens live in two places and must agree: the named Material-3 set in
+`tailwind.config.ts` (`surface-*`, `on-surface-*`, `primary-*`, `success-*`,
+`warning-*`, `error-*`, `veg`/`non-veg`/`egg`) and the shadcn CSS variables in
+`src/app/globals.css`. Never hardcode a hex in a component.
+
+Never use colour alone. Veg/non-veg always shows the square-dot icon; order status
+badges differ by fill weight and label; kitchen urgency escalates border *weight*
+alongside colour.
 
 ---
 

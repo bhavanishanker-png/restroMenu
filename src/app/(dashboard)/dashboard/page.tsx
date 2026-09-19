@@ -5,27 +5,13 @@ import { createServerClient } from "@/lib/supabase/server";
 import { toOrder } from "@/lib/mappers";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
 import type { DbOrder } from "@/types/db";
+import { ORDER_STATUS_STYLES, ORDER_STATUS_LABELS } from "@/lib/order-status";
 import type { Order, OrderStatus } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  placed: "New",
-  accepted: "Accepted",
-  preparing: "Preparing",
-  ready: "Ready",
-  served: "Served",
-  cancelled: "Cancelled",
-};
-
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  placed: "bg-primary-fixed text-on-primary-fixed-variant",
-  accepted: "bg-surface-container-highest text-on-surface-variant",
-  preparing: "bg-surface-container-highest text-on-surface-variant",
-  ready: "bg-secondary-container text-on-secondary-container",
-  served: "bg-surface-container text-on-surface-variant",
-  cancelled: "bg-tertiary/10 text-tertiary",
-};
+const STATUS_LABELS = ORDER_STATUS_LABELS;
+const STATUS_COLORS = ORDER_STATUS_STYLES;
 
 const STATUS_ICONS: Record<OrderStatus, string> = {
   placed: "fiber_new",
@@ -105,7 +91,7 @@ export default async function DashboardPage() {
         </div>
         {/* Accepting orders status chip */}
         <div className="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full shadow-level-1 border border-outline-variant/30 self-start">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#3f6653] animate-pulse shadow-[0_0_6px_rgba(63,102,83,0.6)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-success animate-pulse shadow-[0_0_6px_rgba(21,128,61,0.5)]" />
           <span className="font-label-bold text-label-bold text-on-surface">Accepting Orders</span>
         </div>
       </div>
@@ -126,7 +112,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-xs rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-label-bold text-label-bold">Revenue Today</span>
-            <span className="material-symbols-outlined text-[#3f6653]" style={{ fontSize: 20 }}>payments</span>
+            <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>payments</span>
           </div>
           <div className="font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(revenueToday)}</div>
           <div className="font-body-sm text-on-surface-variant mt-1">Net sales</div>
@@ -255,7 +241,7 @@ export default async function DashboardPage() {
                 className="flex w-full items-center justify-between p-4 bg-surface-container border border-outline-variant text-on-surface rounded-lg tactile-hover hover:bg-surface-container-high font-body-md font-medium transition-colors"
               >
                 <span className="flex items-center gap-sm">
-                  <span className="material-symbols-outlined text-[#3f6653]" style={{ fontSize: 20 }}>qr_code_scanner</span>
+                  <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>qr_code_scanner</span>
                   Print QR Codes
                 </span>
                 <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>arrow_forward</span>

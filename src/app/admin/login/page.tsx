@@ -37,8 +37,8 @@ export default function AdminLoginPage() {
     <div
       className="flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop font-body-md antialiased"
       style={{
-        backgroundColor: "#fff8f5",
-        backgroundImage: "radial-gradient(#e1bfb4 1px, transparent 1px)",
+        backgroundColor: "#fafaf9",
+        backgroundImage: "radial-gradient(#e7e5e4 1px, transparent 1px)",
         backgroundSize: "24px 24px",
       }}
     >
@@ -117,8 +117,8 @@ export default function AdminLoginPage() {
 
           {error && (
             <div className="px-4 py-3 rounded-lg bg-error-container flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#93000a]" style={{ fontSize: 18 }}>error</span>
-              <p className="font-body-sm text-body-sm text-[#93000a]">{error}</p>
+              <span className="material-symbols-outlined text-error" style={{ fontSize: 18 }}>error</span>
+              <p className="font-body-sm text-body-sm text-error">{error}</p>
             </div>
           )}
 

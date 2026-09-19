@@ -340,8 +340,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
           </div>
 
           <div className="flex items-center justify-center gap-xs py-base bg-secondary-container/30 rounded-lg">
-            <span className="material-symbols-outlined text-[#3f6653]" style={{ fontSize: 18 }}>lock</span>
-            <span className="font-label-bold text-label-bold text-[#3f6653]">Secure encrypted payment</span>
+            <span className="material-symbols-outlined text-success" style={{ fontSize: 18 }}>lock</span>
+            <span className="font-label-bold text-label-bold text-success">Secure encrypted payment</span>
           </div>
         </section>
       )}
