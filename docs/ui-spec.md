@@ -10,8 +10,10 @@ Near-monochrome on a cool `zinc` ramp, **plus one restrained accent**. Hierarchy
 comes from layering, border and weight — hue is spent only on the accent and on the
 semantic states.
 
-**Dark is the default theme.** Light is fully supported and must look equally
-deliberate; neither is an afterthought.
+**Light is the default theme.** Dark is fully supported and must look equally
+deliberate; neither is an afterthought. The OS preference is deliberately
+ignored (`enableSystem={false}`) — the app starts light for everyone and
+remembers the user's own choice after that.
 
 ### Where tokens live
 
@@ -21,8 +23,11 @@ There is now **one** source of truth: CSS custom properties in `src/app/globals.
 themes, and it is why the `/ <alpha-value>` form is mandatory: drop it and every
 opacity modifier (`border-outline-variant/30`) silently stops working.
 
-Dark values live in `:root` so server-rendered HTML is already dark before any script
-runs; `.light` overrides them.
+Light values live in `:root` so server-rendered HTML is already light before any
+script runs; `.light` shares that rule and `.dark` follows it, winning at equal
+specificity. Anything that is **not** a colour (currently just `--radius`) lives in a
+separate theme-agnostic `:root` block — a token declared in only one theme block
+silently evaluates to nothing in the other.
 
 **Never hardcode a hex in a component.** The one sanctioned exception is the QR code
 itself (`QRCodeCanvas`, the QR PDF route), which must stay pure black on white to

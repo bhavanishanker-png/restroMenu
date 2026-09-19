@@ -20,7 +20,9 @@ export function ThemeToggle({ className }: Props) {
 
   useEffect(() => setMounted(true), []);
 
-  const isDark = resolvedTheme !== "light";
+  // Explicit rather than `!== "light"`: light is the default, so an
+  // unresolved theme must read as light, not dark.
+  const isDark = resolvedTheme === "dark";
 
   if (!mounted) {
     return (

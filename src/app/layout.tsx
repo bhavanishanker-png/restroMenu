@@ -48,12 +48,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Matches --background in each theme so the browser chrome and the
-  // over-scroll area never flash the wrong colour.
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcfcfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
-  ],
+  // Matches --background in the default (light) theme, so browser chrome and
+  // the over-scroll area agree with the page on first paint. Deliberately not
+  // keyed to prefers-color-scheme: the app ignores the OS preference, so a
+  // media-based value would show dark chrome around a light page for anyone
+  // whose machine is set to dark.
+  themeColor: "#fcfcfd",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
