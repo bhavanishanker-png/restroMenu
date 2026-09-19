@@ -26,6 +26,10 @@ const FAQS = [
     q: "Can I keep taking orders the old way too?",
     a: "Yes. Staff can place and manage orders from the dashboard, so QR ordering can run alongside table service rather than replacing it on day one.",
   },
+  {
+    q: "What happens at the end of the trial, or if I cancel?",
+    a: "The trial is 14 days and needs no card, so nothing is charged unless you choose a plan. Cancelling stops the next renewal and keeps your account readable to the end of the period you've paid for — your menu, orders and reports stay exportable.",
+  },
 ];
 
 /**

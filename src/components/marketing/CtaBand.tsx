@@ -21,7 +21,7 @@ export function CtaBand() {
             </h2>
             <p className="measure text-body-lg text-on-surface-variant">
               Set up your tables, import your menu and print your codes today.
-              You only pay once guests start ordering.
+              Free for 14 days, no card and no hardware to buy.
             </p>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Button asChild variant="brand" size="xl" className="group w-full sm:w-auto">
