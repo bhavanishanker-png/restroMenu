@@ -15,7 +15,7 @@ export default async function CheckoutPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="sticky top-0 z-10 flex h-[64px] items-center gap-3 bg-surface-container-low px-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+      <header className="glass sticky top-0 z-10 flex h-[64px] items-center gap-3 border-x-0 border-t-0 px-margin-mobile">
         <Link
           href={`/r/${slug}/t/${token}/cart`}
           aria-label="Back to cart"

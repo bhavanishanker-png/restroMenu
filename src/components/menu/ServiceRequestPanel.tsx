@@ -102,7 +102,7 @@ export function ServiceRequestPanel({ slug, token }: Props) {
                 </p>
               </div>
               {active ? (
-                <span className="material-symbols-outlined text-secondary shrink-0" style={{ fontSize: 20 }}>
+                <span className="material-symbols-outlined text-success shrink-0" style={{ fontSize: 20 }}>
                   check_circle
                 </span>
               ) : (
@@ -115,7 +115,7 @@ export function ServiceRequestPanel({ slug, token }: Props) {
         })}
       </div>
 
-      <p className="font-body-sm text-on-surface-variant/60 text-center mt-2" style={{ fontSize: 12 }}>
+      <p className="font-body-sm text-on-surface-variant text-center mt-2" style={{ fontSize: 12 }}>
         You can send each request again after 30 seconds.
       </p>
     </div>

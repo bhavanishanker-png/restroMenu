@@ -45,11 +45,14 @@ type ColumnBadge = {
   text: string;
 };
 
+// New is the loudest (inverted fill), Ready carries the success hue because it
+// is the one column that demands someone walk over — matching the `ready`
+// treatment in lib/order-status.ts. The rest differ by fill weight alone.
 const COLUMN_BADGE: Record<string, ColumnBadge> = {
-  New:       { bg: "bg-primary",                    text: "text-on-primary"                    },
-  Preparing: { bg: "bg-surface-container-highest",  text: "text-on-surface-variant"            },
-  Ready:     { bg: "bg-secondary-container",        text: "text-on-secondary-container"        },
-  Served:    { bg: "bg-surface-container-high",     text: "text-on-surface-variant"            },
+  New:       { bg: "bg-primary",                    text: "text-on-primary"             },
+  Preparing: { bg: "bg-surface-container-highest",  text: "text-on-surface"             },
+  Ready:     { bg: "bg-success-container",          text: "text-on-success-container"   },
+  Served:    { bg: "bg-surface-container-high",     text: "text-on-surface-variant"     },
 };
 
 function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
@@ -628,7 +631,7 @@ export function KitchenDisplay({
                       <span className="material-symbols-outlined text-on-surface-variant/40 mb-xs" style={{ fontSize: 32 }}>
                         receipt_long
                       </span>
-                      <p className="font-body-sm text-on-surface-variant/50">No orders</p>
+                      <p className="font-body-sm text-on-surface-variant">No orders</p>
                     </div>
                   )}
                 </div>
@@ -658,7 +661,7 @@ export function KitchenDisplay({
                   <span className="material-symbols-outlined text-on-surface-variant/40" style={{ fontSize: 32 }}>
                     notifications_none
                   </span>
-                  <p className="font-body-sm text-on-surface-variant/50">No pending requests</p>
+                  <p className="font-body-sm text-on-surface-variant">No pending requests</p>
                 </div>
               ) : (
                 serviceRequests.map((req) => {
@@ -674,7 +677,7 @@ export function KitchenDisplay({
                           {meta.icon}
                         </span>
                         <span className="font-label-bold text-on-surface flex-1">{meta.label}</span>
-                        <span className="font-body-sm text-on-surface-variant/60" style={{ fontSize: 11 }}>
+                        <span className="font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
                           {elapsed === 0 ? "just now" : `${elapsed}m ago`}
                         </span>
                       </div>
@@ -685,7 +688,7 @@ export function KitchenDisplay({
                       )}
                       <button
                         onClick={() => handleResolveRequest(req.id)}
-                        className="w-full h-8 rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-xs hover:bg-secondary/20 transition-colors"
+                        className="w-full h-8 rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-xs hover:bg-surface-container-high transition-colors"
                       >
                         Mark resolved
                       </button>

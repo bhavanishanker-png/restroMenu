@@ -356,7 +356,7 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
         <button
           type="submit"
           disabled={isSubmitting || lines.length === 0}
-          className="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-[2px] transition-transform disabled:opacity-60"
+          className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 shadow-glow active:translate-y-[2px] transition-transform disabled:opacity-60"
           style={{ fontSize: 16 }}
         >
           {isSubmitting ? (

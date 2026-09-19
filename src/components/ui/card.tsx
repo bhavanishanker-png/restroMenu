@@ -9,7 +9,10 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      // On black the lift comes from the surface being brighter than the page
+      // plus a hairline; on white it comes from the shadow. Both are tokens,
+      // so one class does the right thing in either theme.
+      "rounded-xl border border-outline-variant bg-surface-container-lowest text-card-foreground shadow-level-1",
       className
     )}
     {...props}

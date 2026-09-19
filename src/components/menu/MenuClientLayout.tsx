@@ -10,7 +10,15 @@ import { MenuHeader } from "./MenuHeader";
 import { MenuSection } from "./MenuSection";
 import { ServiceRequestPanel } from "./ServiceRequestPanel";
 import { GroupOrderSheet } from "./GroupOrderSheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useCartStore } from "@/store/cart";
+import { cn } from "@/lib/utils";
 import type { MenuItem, PublicMenu } from "@/types";
 
 type ActiveTab = "menu" | "cart" | "requests";
@@ -69,6 +77,14 @@ export default function MenuClientLayout({ menu, token }: Props) {
   }, [menu.categories, search, vegOnly, bestsellersOnly, under200]);
 
   const isMenuTab = activeTab === "menu";
+  const inGroupSession = navMounted && Boolean(sessionId);
+
+  function clearFilters() {
+    setSearch("");
+    setVegOnly(false);
+    setBestsellersOnly(false);
+    setUnder200(false);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,35 +92,44 @@ export default function MenuClientLayout({ menu, token }: Props) {
       <MenuHeader restaurant={menu.restaurant} table={menu.table} />
 
       {/* Group order banner — shown when in a session */}
-      {navMounted && sessionId && joinCode && (
-        <div
-          className="sticky top-[64px] z-[25] flex items-center justify-between gap-3 bg-secondary-container/90 backdrop-blur-sm px-4 py-2 border-b border-secondary/20 cursor-pointer"
+      {inGroupSession && joinCode && (
+        <button
+          type="button"
           onClick={() => setGroupSheetOpen(true)}
+          className="glass sticky top-[64px] z-[25] flex w-full items-center justify-between gap-3 border-x-0 border-t-0 px-margin-mobile py-2 text-left transition-colors hover:bg-surface-container-high/70"
         >
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-on-secondary-container" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>
+          <span className="flex items-center gap-2">
+            <span
+              className="material-symbols-outlined text-brand-text"
+              style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}
+              aria-hidden="true"
+            >
               group
             </span>
-            <span className="font-label-bold text-on-secondary-container" style={{ fontSize: 13 }}>
+            <span className="text-[0.8125rem] font-semibold text-on-surface">
               Group order · {personName}
             </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-mono font-bold text-on-secondary-container tracking-widest" style={{ fontSize: 14 }}>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="font-mono text-sm font-bold tracking-widest text-brand-text">
               {joinCode}
             </span>
-            <span className="material-symbols-outlined text-on-secondary-container/70" style={{ fontSize: 16 }}>
+            <span
+              className="material-symbols-outlined text-on-surface-variant"
+              style={{ fontSize: 16 }}
+              aria-hidden="true"
+            >
               chevron_right
             </span>
-          </div>
-        </div>
+          </span>
+        </button>
       )}
 
       {/* Sticky filter + tabs bar — shown only on menu tab */}
       {isMenuTab && (
         <div
-          className="sticky z-20 border-b border-outline-variant/40 bg-surface/90 backdrop-blur-md"
-          style={{ top: navMounted && sessionId ? "100px" : "64px" }}
+          className="glass sticky z-20 border-x-0 border-t-0"
+          style={{ top: inGroupSession ? "100px" : "64px" }}
         >
           <MenuFilters
             search={search}
@@ -122,99 +147,101 @@ export default function MenuClientLayout({ menu, token }: Props) {
 
       {/* Page content */}
       {isMenuTab ? (
-        <main className="pt-[64px] pb-48">
+        <main className="pb-48 pt-[64px]">
           {filteredCategories.length === 0 && isFiltering ? (
-            <div className="flex flex-col items-center gap-4 py-20 text-center">
-              <p className="font-body-md text-on-surface-variant">
-                {search
-                  ? `Nothing matches "${search}"`
-                  : "No items match the active filters"}
-              </p>
+            <div className="flex flex-col items-center gap-4 px-margin-mobile py-xl text-center">
+              <div
+                className="grid h-14 w-14 place-items-center rounded-full border border-outline-variant bg-surface-container"
+                aria-hidden="true"
+              >
+                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 26 }}>
+                  search_off
+                </span>
+              </div>
+              <div className="space-y-1">
+                <p className="font-display text-headline-sm text-on-surface">
+                  {search ? `Nothing matches “${search}”` : "No dishes match those filters"}
+                </p>
+                <p className="measure-sm text-body-sm text-on-surface-variant">
+                  Try removing a filter, or search for something else on the menu.
+                </p>
+              </div>
               <button
-                onClick={() => {
-                  setSearch("");
-                  setVegOnly(false);
-                  setBestsellersOnly(false);
-                  setUnder200(false);
-                }}
-                className="font-label-bold text-label-bold text-primary underline"
+                onClick={clearFilters}
+                className="min-h-[44px] rounded-lg border border-outline-variant px-5 font-label-bold text-label-bold uppercase text-on-surface transition-colors hover:border-brand/50 hover:text-brand-text"
               >
                 Clear filters
               </button>
             </div>
           ) : (
             filteredCategories.map((cat) => (
-              <MenuSection
-                key={cat.id}
-                category={cat}
-                onAddItem={setSelectedItem}
-              />
+              <MenuSection key={cat.id} category={cat} onAddItem={setSelectedItem} />
             ))
           )}
         </main>
       ) : (
-        <div className="pt-[64px] pb-28">
+        <div className="pb-28 pt-[64px]">
           <ServiceRequestPanel slug={slug} token={token} />
         </div>
       )}
 
       {/* Item detail sheet */}
-      <ItemDetailSheet
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-      />
+      <ItemDetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
 
       {/* Floating cart bar — sits above bottom nav, only on menu tab */}
       {isMenuTab && <CartBar slug={slug} token={token} />}
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex h-[72px] items-center justify-around rounded-t-2xl bg-surface-container-lowest border-t border-outline-variant/30 px-2 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+      <nav
+        aria-label="Primary"
+        className="glass-strong fixed inset-x-0 bottom-0 z-30 flex h-[72px] items-center justify-around rounded-t-2xl border-x-0 border-b-0 px-2 pb-[env(safe-area-inset-bottom)]"
+      >
         <BottomNavItem
           icon="restaurant_menu"
           label="Menu"
           active={activeTab === "menu"}
           onClick={() => setActiveTab("menu")}
         />
+
         <Link
           href={`/r/${slug}/t/${token}/cart`}
-          className="relative flex flex-col items-center gap-1 rounded-2xl px-5 py-2 transition-colors hover:bg-surface-container-high"
-          aria-label="Cart"
+          className="relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-5 py-2 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+          aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"}
         >
-          <span
-            className="material-symbols-outlined text-on-surface-variant"
-            style={{ fontSize: 24 }}
-          >
+          <span className="material-symbols-outlined" style={{ fontSize: 24 }} aria-hidden="true">
             shopping_bag
           </span>
-          <span className="font-label-bold text-on-surface-variant" style={{ fontSize: 11 }}>
-            Cart
-          </span>
+          <span className="text-[11px] font-semibold">Cart</span>
           {cartCount > 0 && (
-            <span className="absolute top-1.5 right-3.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-on-primary font-label-bold" style={{ fontSize: 9 }}>
+            <span className="tabular absolute right-3.5 top-1.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-brand px-1 text-[9px] font-bold text-brand-foreground">
               {cartCount > 9 ? "9+" : cartCount}
             </span>
           )}
         </Link>
 
-        {/* Group order button */}
+        {/* Group order */}
         <button
           onClick={() => setGroupSheetOpen(true)}
-          className={`relative flex flex-col items-center gap-1 rounded-2xl px-5 py-2 transition-colors hover:bg-surface-container-high ${
-            sessionId ? "text-secondary" : "text-on-surface-variant"
-          }`}
+          className={cn(
+            "relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-5 py-2 transition-colors hover:bg-surface-container-high",
+            // Was `text-secondary`, which resolves to a *surface* token — the
+            // label was rendering near-invisible in both themes. The active
+            // group state is an accent state, so it uses the accent token.
+            inGroupSession ? "text-brand-text" : "text-on-surface-variant hover:text-on-surface"
+          )}
           aria-label="Group order"
+          aria-pressed={inGroupSession}
         >
           <span
-            className={`material-symbols-outlined ${sessionId ? "text-secondary" : "text-on-surface-variant"}`}
-            style={{ fontSize: 24, fontVariationSettings: sessionId ? "'FILL' 1" : "'FILL' 0" }}
+            className="material-symbols-outlined"
+            style={{ fontSize: 24, fontVariationSettings: inGroupSession ? "'FILL' 1" : "'FILL' 0" }}
+            aria-hidden="true"
           >
             group
           </span>
-          <span className={`font-label-bold ${sessionId ? "text-secondary" : "text-on-surface-variant"}`} style={{ fontSize: 11 }}>
-            Group
-          </span>
-          {sessionId && (
-            <span className="absolute top-1.5 right-3 h-2 w-2 rounded-full bg-secondary" />
+          <span className="text-[11px] font-semibold">Group</span>
+          {inGroupSession && (
+            <span className="absolute right-3 top-1.5 h-2 w-2 rounded-full bg-brand" />
           )}
         </button>
 
@@ -226,31 +253,25 @@ export default function MenuClientLayout({ menu, token }: Props) {
         />
       </nav>
 
-      {/* Group order bottom sheet */}
-      {groupSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setGroupSheetOpen(false)}
+      {/* Group order bottom sheet.
+          Was a hand-rolled fixed-position div with a click-to-close backdrop —
+          no focus trap, no Escape handling, no scroll lock, and invisible to
+          assistive tech. Radix's Sheet gives all of that for free. */}
+      <Sheet open={groupSheetOpen} onOpenChange={setGroupSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto p-0">
+          <SheetHeader className="sticky top-0 z-10 border-b border-outline-variant bg-surface-container-lowest px-6 pb-3 pt-5 text-left">
+            <SheetTitle className="font-display text-headline-sm">Group order</SheetTitle>
+            <SheetDescription className="text-body-sm">
+              Share the code so everyone at the table can add to one bill.
+            </SheetDescription>
+          </SheetHeader>
+          <GroupOrderSheet
+            slug={slug}
+            token={token}
+            onClose={() => setGroupSheetOpen(false)}
           />
-          <div className="relative w-full rounded-t-3xl bg-surface max-h-[85vh] overflow-y-auto">
-            <div className="sticky top-0 flex justify-between items-center px-6 pt-4 pb-2 bg-surface border-b border-outline-variant/20">
-              <p className="font-headline-sm text-on-surface" style={{ fontSize: 17 }}>Group Order</p>
-              <button
-                onClick={() => setGroupSheetOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
-              </button>
-            </div>
-            <GroupOrderSheet
-              slug={slug}
-              token={token}
-              onClose={() => setGroupSheetOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -269,23 +290,26 @@ function BottomNavItem({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl px-5 py-2 transition-colors ${
-        active ? "bg-primary-container" : "hover:bg-surface-container-high"
-      }`}
+      className={cn(
+        "relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-5 py-2 transition-colors",
+        active
+          ? "text-on-surface"
+          : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+      )}
       aria-current={active ? "page" : undefined}
     >
       <span
-        className={`material-symbols-outlined ${active ? "text-on-primary-container" : "text-on-surface-variant"}`}
+        className="material-symbols-outlined"
         style={{ fontSize: 24, fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+        aria-hidden="true"
       >
         {icon}
       </span>
-      <span
-        className={`font-label-bold ${active ? "text-on-primary-container" : "text-on-surface-variant"}`}
-        style={{ fontSize: 11 }}
-      >
-        {label}
-      </span>
+      <span className="text-[11px] font-semibold">{label}</span>
+      {/* An underline bar, so the selected tab is not signalled by colour alone. */}
+      {active && (
+        <span className="absolute inset-x-4 bottom-0.5 h-0.5 rounded-full bg-brand" />
+      )}
     </button>
   );
 }

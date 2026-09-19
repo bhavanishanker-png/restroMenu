@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { MenuManager } from "@/components/menu-manager/MenuManager";
+import { PageHeader } from "@/components/dashboard/PageHeader";
 import { toMenuCategory, toAddonGroup } from "@/lib/mappers";
 import type { DbMenuCategory, DbAddonGroup } from "@/types/db";
 import type { MenuCategory, AddonGroup } from "@/types";
@@ -47,13 +48,13 @@ export default async function MenuPage() {
 
   return (
     <div className="flex h-screen flex-col bg-surface">
-      <header className="flex items-center justify-between border-b border-outline-variant/30 bg-surface-container-lowest px-md py-sm shadow-level-1 shrink-0">
-        <div>
-          <h1 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Menu Management</h1>
-          <p className="font-body-sm text-on-surface-variant">Manage items, categories and availability</p>
-        </div>
-      </header>
-      <div className="flex flex-1 overflow-hidden">
+      <div className="shrink-0">
+        <PageHeader
+          title="Menu"
+          description="Categories, dishes, pricing and availability. Changes go live immediately."
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <MenuManager initialCategories={categories} addonGroups={addonGroups} />
       </div>
     </div>

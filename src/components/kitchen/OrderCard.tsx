@@ -46,10 +46,14 @@ function elapsedColorClass(elapsed: number): string {
   return "text-on-surface-variant";
 }
 
+// The advance action is the one thing a cook touches, so it carries the accent
+// and the full 60px kitchen tap target. `hover:bg-primary/90` was a bug:
+// primary-container is a *surface* token, so the button inverted from a solid
+// fill to a dark panel on hover.
 function actionBtnClass(variant: ActionConfig["variant"]): string {
-  if (variant === "primary")   return "bg-primary text-on-primary hover:bg-primary-container";
-  if (variant === "outlined")  return "border border-primary text-primary hover:bg-primary/5";
-  return "bg-secondary-container text-on-secondary-container hover:bg-secondary-container/80";
+  if (variant === "primary")  return "bg-brand text-brand-foreground hover:bg-brand/90 hover:shadow-glow";
+  if (variant === "outlined") return "border-2 border-brand text-brand-text hover:bg-brand hover:text-brand-foreground";
+  return "bg-surface-container-highest text-on-surface hover:bg-surface-container-high";
 }
 
 export function OrderCard({ order, now, isNew, onAdvance }: Props) {
@@ -60,7 +64,7 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
 
   if (isServed) {
     return (
-      <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden opacity-75 hover:opacity-100 transition-opacity border-l-4 border-l-success">
+      <div className="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden opacity-75 hover:opacity-100 transition-opacity border-l-4 border-l-success">
         <div className="flex items-center justify-between px-3 py-2">
           <span className="font-mono text-on-surface-variant line-through" style={{ fontSize: 18 }}>
             #{order.orderNumber}
@@ -75,12 +79,12 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
 
   return (
     <div
-      className={`rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden ${borderClass} ${
-        isNew ? "animate-slide-in ring-2 ring-primary ring-offset-1" : ""
+      className={`rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden ${borderClass} ${
+        isNew ? "animate-slide-in ring-2 ring-brand ring-offset-2 ring-offset-surface" : ""
       }`}
     >
       {/* Card header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-surface-container border-b border-outline-variant/20">
+      <div className="flex items-center justify-between px-3 py-2 bg-surface-container border-b border-outline-variant">
         <div className="flex items-baseline gap-2">
           <span className="font-bold text-on-surface leading-none" style={{ fontSize: 32 }}>
             #{order.orderNumber}

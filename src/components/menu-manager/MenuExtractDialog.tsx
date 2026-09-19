@@ -252,7 +252,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
               <p className="font-headline-sm text-on-surface text-center">{errorMsg}</p>
               <button
                 onClick={reset}
-                className="rounded-full bg-primary text-on-primary font-label-bold px-6 py-2 hover:bg-surface-tint transition-colors"
+                className="rounded-full bg-brand text-brand-foreground font-label-bold px-6 py-2 hover:bg-brand/90 transition-colors"
               >
                 Try again
               </button>
@@ -379,7 +379,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
               </div>
               <button
                 onClick={handleClose}
-                className="rounded-full bg-primary text-on-primary font-label-bold px-8 py-2.5 hover:bg-surface-tint transition-colors"
+                className="rounded-full bg-brand text-brand-foreground font-label-bold px-8 py-2.5 hover:bg-brand/90 transition-colors"
               >
                 Done
               </button>
@@ -400,7 +400,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
             <button
               onClick={handleImport}
               disabled={selectedItems.length === 0}
-              className="flex items-center gap-2 rounded-full bg-primary text-on-primary font-label-bold px-6 py-2.5 shadow-[0_4px_12px_rgba(28,25,23,0.3)] hover:bg-surface-tint transition-all active:translate-y-[1px] disabled:opacity-40"
+              className="flex items-center gap-2 rounded-full bg-brand text-brand-foreground font-label-bold px-6 py-2.5 shadow-glow hover:bg-brand/90 transition-all active:translate-y-[1px] disabled:opacity-40"
               style={{ fontSize: 14 }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>

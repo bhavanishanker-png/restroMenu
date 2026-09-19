@@ -140,8 +140,10 @@ function TableCard({
 
       {/* QR preview */}
       <div className="flex w-full aspect-square items-center justify-center rounded-lg border border-outline-variant bg-surface-container overflow-hidden group relative">
-        <canvas data-table-id={table.id} className="hidden" />
-        <QRCodeCanvas url={tableUrl} size={120} />
+        {/* `downloadQR` queries `canvas[data-table-id]`. That attribute used
+            to sit on a second, hidden canvas that nothing ever drew into, so
+            Download produced a blank PNG. It now marks the real one. */}
+        <QRCodeCanvas url={tableUrl} size={120} dataTableId={table.id} />
         <div className="absolute inset-0 bg-surface/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
           <button
             onClick={onRegenerate}
@@ -183,7 +185,23 @@ export function TablesManager({ initialTables, restaurantId, restaurantSlug }: P
   const [downloading, setDownloading] = useState(false);
 
   function tableUrl(token: string) {
-    return `${window.location.origin}/r/${restaurantSlug}/t/${token}`;
+    // `"use client"` does not mean client-only — this component is still
+    // server-rendered, and this function runs during render rather than in an
+    // effect. Reading `window` directly threw
+    //   ReferenceError: window is not defined
+    // which made the server return 500 for /dashboard/tables; the browser then
+    // could not load the route's chunk and surfaced it as a ChunkLoadError.
+    //
+    // The origin is only ever consumed inside QRCodeCanvas's effect, so an
+    // empty string during SSR is harmless and causes no hydration mismatch.
+    // NEXT_PUBLIC_APP_URL is the server-side fallback so the value is still
+    // correct if this is ever rendered somewhere that matters.
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+    return `${origin}/r/${restaurantSlug}/t/${token}`;
   }
 
   async function handleDownloadAllPDF() {

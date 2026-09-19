@@ -42,7 +42,7 @@ export function InstallPrompt() {
         <p className="text-xs text-on-surface-variant">Order faster next time.</p>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" onClick={install} className="bg-on-surface hover:bg-primary-container text-surface-container-lowest h-8 text-xs">
+        <Button size="sm" onClick={install} className="bg-on-surface hover:bg-primary/90 text-surface-container-lowest h-8 text-xs">
           Add
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setDismissed(true)} className="h-8 text-xs text-on-surface-variant">

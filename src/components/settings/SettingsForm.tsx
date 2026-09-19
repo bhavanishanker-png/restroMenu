@@ -112,7 +112,7 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
                   maxLength={6}
                   placeholder="e.g. ORD"
                   onChange={(e) => set("orderNumberPrefix", e.target.value.toUpperCase())}
-                  className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none uppercase"
+                  className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none uppercase"
                 />
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-xs">
                   Uppercase letters and digits only.
@@ -148,7 +148,7 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
                     onChange={(e) =>
                       set("serviceChargePct", parseFloat(e.target.value) || 0)
                     }
-                    className="w-full h-10 pr-8 bg-surface-container border border-outline-variant rounded-md text-right font-body-md focus:border-primary outline-none"
+                    className="w-full h-10 pr-8 bg-surface-container border border-outline-variant rounded-md text-right font-body-md focus:border-brand outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
                     %
@@ -174,7 +174,7 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
                     onChange={(e) =>
                       set("packingCharge", parseFloat(e.target.value) || 0)
                     }
-                    className="w-full h-10 pl-8 bg-surface-container border border-outline-variant rounded-md font-body-md focus:border-primary outline-none"
+                    className="w-full h-10 pl-8 bg-surface-container border border-outline-variant rounded-md font-body-md focus:border-brand outline-none"
                   />
                 </div>
               </div>
@@ -288,7 +288,7 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
         <button
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 h-12 px-6 bg-primary text-on-primary rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container active:translate-y-[2px] transition-all disabled:opacity-50"
+          className="flex items-center gap-2 h-12 px-6 bg-primary text-on-primary rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 active:translate-y-[2px] transition-all disabled:opacity-50"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>save</span>
           {saving ? "Saving…" : "Save Changes"}

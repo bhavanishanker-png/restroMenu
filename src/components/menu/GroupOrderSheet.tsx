@@ -239,7 +239,7 @@ export function GroupOrderSheet({ slug, token, onClose }: Props) {
     return (
       <div className="flex flex-col gap-5 px-6 py-8">
         <div className="rounded-xl bg-secondary-container/40 px-4 py-3 flex items-center gap-3">
-          <span className="material-symbols-outlined text-secondary" style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}>
+          <span className="material-symbols-outlined text-brand-text" style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}>
             table_restaurant
           </span>
           <p className="font-body-md text-on-surface">

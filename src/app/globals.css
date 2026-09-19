@@ -2,90 +2,333 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* ── Monochrome (warm stone) — shadcn variable mapping ── */
-    --background:            60 9% 98%;        /* #fafaf9 faded white — the page */
-    --foreground:            24 10% 10%;       /* #1c1917 near-black ink */
-    --card:                  0 0% 100%;        /* #ffffff lifts above the page */
-    --card-foreground:       24 10% 10%;       /* #1c1917 */
-    --popover:               0 0% 100%;        /* #ffffff */
-    --popover-foreground:    24 10% 10%;       /* #1c1917 */
-    --primary:               24 10% 10%;       /* #1c1917 near-black, not pure #000 */
-    --primary-foreground:    0 0% 100%;        /* #ffffff */
-    --secondary:             60 5% 96%;        /* #f5f5f4 surface-container */
-    --secondary-foreground:  24 10% 10%;       /* #1c1917 */
-    --muted:                 60 5% 96%;        /* #f5f5f4 */
-    --muted-foreground:      25 5% 45%;        /* #78716c secondary text */
-    --accent:                60 9% 98%;        /* #fafaf9 surface-container-low */
-    --accent-foreground:     24 10% 10%;       /* #1c1917 */
-    --destructive:           0 72% 42%;        /* #b91c1c */
-    --destructive-foreground: 0 0% 100%;       /* #ffffff */
-    --border:                20 6% 90%;        /* #e7e5e4 hairline */
-    --input:                 20 6% 90%;        /* #e7e5e4 */
-    --ring:                  24 10% 10%;       /* #1c1917 primary */
-    --radius:                0.5rem;           /* 8px base — lg=12px, xl=16px via config */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ───────────────────────────────────────────────────────────────────────────
+   One system. Every colour in the app resolves to a variable declared here, so
+   a theme switch is a single class on <html> and nothing hardcodes a hex.
 
-    /* Chart colors — monochrome ramp, so charts read as one system */
-    --chart-1: 24 10% 10%;    /* #1c1917 */
-    --chart-2: 33 5% 32%;     /* #57534e */
-    --chart-3: 25 5% 45%;     /* #78716c */
-    --chart-4: 24 5% 64%;     /* #a8a29e */
-    --chart-5: 20 6% 90%;     /* #e7e5e4 */
+   Dark is the default and lives in :root — so server-rendered HTML is already
+   dark before next-themes' inline script runs, and before JS at all. `.light`
+   overrides it. `.dark` repeats :root so an explicit dark choice is also exact.
+
+   Values are bare HSL triplets (`H S% L%`) so Tailwind can apply opacity
+   modifiers: `hsl(var(--border) / <alpha-value>)` → `border-outline-variant/30`.
+
+   Neutral ramp is cool zinc. Hierarchy comes from layering + hairline borders.
+   The ONE accent is violet — the only hue not already carrying food or status
+   meaning here (green = veg/success, red = non-veg/error, amber = egg/warning),
+   so a violet control can never be misread as a food signal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root,
+  .dark {
+    color-scheme: dark;
+
+    /* ── shadcn core ─────────────────────────────────────────────────────── */
+    --background:             240 10% 4%;    /* #09090B  the page */
+    --foreground:             0 0% 98%;      /* #FAFAFA  ink */
+    --card:                   240 6% 7%;     /* #111113  lifts off the page */
+    --card-foreground:        0 0% 98%;
+    --popover:                240 6% 8%;     /* #131316 */
+    --popover-foreground:     0 0% 98%;
+
+    /* `primary` stays MONOCHROME and inverts per theme — a white button on
+       black, a black button on white. It is used in 180+ places; making it the
+       accent would spray violet across the whole app. The accent is `brand`. */
+    --primary:                0 0% 98%;
+    --primary-foreground:     240 10% 4%;
+
+    --secondary:              240 5% 12%;
+    --secondary-foreground:   0 0% 98%;
+    --muted:                  240 5% 12%;
+    --muted-foreground:       240 5% 65%;    /* #A1A1AA  9.0:1 on page */
+    --accent:                 240 5% 14%;
+    --accent-foreground:      0 0% 98%;
+    --destructive:            0 84% 63%;
+    --destructive-foreground: 0 0% 100%;
+    --border:                 240 5% 16%;    /* #27272A */
+    --input:                  240 5% 18%;
+    /* The ring is brighter than the fill on purpose: it sits on the page, not
+       under white text, so it can be as loud as it likes. */
+    --ring:                   252 95% 70%;  /* violet — every focus ring */
+    --radius:                 0.625rem;      /* 10px base */
+
+    /* ── The accent ──────────────────────────────────────────────────────── */
+    /* Measured, not eyeballed: at 252 100% 68% white-on-violet came to 4.35:1,
+       which fails AA for the button labels sitting on it. Dropped to 63%
+       lightness for 5.2:1 while staying unmistakably the same hue. */
+    --brand:            252 89% 63%;   /* #6F4CF5  white text 5.2:1 */
+    --brand-foreground: 0 0% 100%;     /* text on a brand fill */
+    --brand-text:       252 95% 78%;   /* brand AS text on the page — 8.2:1 */
+    --brand-subtle:     252 45% 13%;   /* violet-tinted surface */
+    --brand-border:     252 45% 26%;
+
+    /* ── Surfaces ────────────────────────────────────────────────────────── */
+    --surface:                   240 10% 4%;
+    --surface-dim:               240 10% 3%;
+    --surface-bright:            240 5% 14%;
+    --surface-container-lowest:  240 6% 7%;   /* the card surface */
+    --surface-container-low:     240 6% 9%;
+    --surface-container:         240 5% 11%;
+    --surface-container-high:    240 5% 14%;
+    --surface-container-highest: 240 5% 17%;
+    --surface-variant:           240 5% 11%;
+    --on-surface:                0 0% 98%;
+    --on-surface-variant:        240 5% 65%;
+    --inverse-surface:           0 0% 98%;
+    --inverse-on-surface:        240 10% 4%;
+    --outline:                   240 4% 46%;  /* decorative only, never text */
+    --outline-variant:           240 5% 16%;  /* the hairline */
+    --surface-tint:              252 89% 63%;
+
+    /* ── Primary containers (neutral — see note above) ───────────────────── */
+    --on-primary:                240 10% 4%;
+    --primary-container:         240 5% 14%;
+    --on-primary-container:      0 0% 98%;
+    --inverse-primary:           240 10% 4%;
+    --primary-fixed:             240 5% 14%;
+    --primary-fixed-dim:         240 5% 22%;
+    --on-primary-fixed:          0 0% 98%;
+    --on-primary-fixed-variant:  240 5% 75%;
+
+    --on-secondary:                240 10% 4%;
+    --secondary-container:         240 5% 14%;
+    --on-secondary-container:      0 0% 92%;
+    --secondary-fixed:             240 5% 12%;
+    --secondary-fixed-dim:         240 5% 22%;
+    --on-secondary-fixed:          0 0% 98%;
+    --on-secondary-fixed-variant:  240 5% 75%;
+
+    /* ── Semantic — the only other hues, all carrying meaning ────────────── */
+    --error:                  0 84% 63%;
+    --on-error:               0 0% 100%;
+    --error-container:        0 55% 13%;
+    --on-error-container:     0 90% 82%;
+    --success:                142 70% 49%;
+    --on-success:             0 0% 100%;
+    --success-container:      142 45% 11%;
+    --on-success-container:   142 65% 75%;
+    --warning:                38 92% 55%;
+    --on-warning:             38 95% 8%;
+    --warning-container:      38 60% 12%;
+    --on-warning-container:   38 95% 75%;
+    --tertiary:               0 84% 63%;
+    --on-tertiary:            0 0% 100%;
+    --tertiary-container:     0 55% 13%;
+    --on-tertiary-container:  0 90% 82%;
+    --tertiary-fixed:         0 55% 13%;
+    --tertiary-fixed-dim:     0 50% 22%;
+    --on-tertiary-fixed:      0 90% 85%;
+    --on-tertiary-fixed-variant: 0 90% 78%;
+
+    /* FSSAI food-type markers — always paired with a shape, never alone. */
+    --veg:     142 65% 50%;
+    --non-veg: 0 84% 63%;
+    --egg:     45 93% 55%;
+
+    /* ── Charts — monochrome ramp with a single violet lead ──────────────── */
+    --chart-1: 252 89% 63%;
+    --chart-2: 0 0% 85%;
+    --chart-3: 240 5% 65%;
+    --chart-4: 240 4% 46%;
+    --chart-5: 240 5% 30%;
+
+    /* ── Elevation ───────────────────────────────────────────────────────── */
+    /* On black, shadow alone is invisible — lift comes from a lighter surface
+       plus a 1px inset highlight. On white it's the reverse. Hence per-theme. */
+    --shadow-1: 0 1px 2px 0 rgb(0 0 0 / 0.55), inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+    --shadow-2: 0 4px 16px -2px rgb(0 0 0 / 0.65), inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+    --shadow-3: 0 18px 50px -10px rgb(0 0 0 / 0.8), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+    --glow:     0 0 0 1px hsl(var(--brand) / 0.35), 0 6px 28px -6px hsl(var(--brand) / 0.5);
+    --glow-lg:  0 0 80px -12px hsl(var(--brand) / 0.55);
+
+    /* Strength of the grain overlay — dark tolerates far more than light. */
+    --grain-opacity: 0.045;
   }
 
-  /* Kept coherent with the light theme, but currently unreachable:
-     no ThemeProvider is mounted, so the `dark` class is never applied. */
-  .dark {
-    --background:            24 10% 10%;       /* #1c1917 */
-    --foreground:            60 9% 98%;        /* #fafaf9 */
-    --card:                  12 6% 15%;        /* #292524 */
-    --card-foreground:       60 9% 98%;
-    --popover:               12 6% 15%;        /* #292524 */
-    --popover-foreground:    60 9% 98%;
-    --primary:               60 9% 98%;        /* #fafaf9 — inverted */
-    --primary-foreground:    24 10% 10%;       /* #1c1917 */
-    --secondary:             12 6% 15%;        /* #292524 */
-    --secondary-foreground:  60 9% 98%;
-    --muted:                 12 6% 15%;        /* #292524 */
-    --muted-foreground:      24 5% 64%;        /* #a8a29e */
-    --accent:                12 6% 15%;        /* #292524 */
-    --accent-foreground:     60 9% 98%;
-    --destructive:           0 72% 51%;        /* #dc2626 — lifted for dark bg */
-    --destructive-foreground: 0 0% 100%;
-    --border:                30 5% 24%;        /* #3f3b38 */
-    --input:                 30 5% 24%;
-    --ring:                  60 9% 98%;
-    --radius:                0.5rem;
+  .light {
+    color-scheme: light;
 
-    --chart-1: 60 9% 98%;     /* #fafaf9 */
-    --chart-2: 20 6% 90%;     /* #e7e5e4 */
-    --chart-3: 24 5% 64%;     /* #a8a29e */
-    --chart-4: 25 5% 45%;     /* #78716c */
-    --chart-5: 33 5% 32%;     /* #57534e */
+    --background:             240 20% 99%;   /* #FCFCFD */
+    --foreground:             240 10% 8%;    /* #131318 */
+    --card:                   0 0% 100%;
+    --card-foreground:        240 10% 8%;
+    --popover:                0 0% 100%;
+    --popover-foreground:     240 10% 8%;
+    --primary:                240 10% 8%;
+    --primary-foreground:     0 0% 100%;
+    --secondary:              240 9% 96%;
+    --secondary-foreground:   240 10% 8%;
+    --muted:                  240 9% 96%;
+    --muted-foreground:       240 4% 42%;    /* #666671  5.9:1 on page */
+    --accent:                 240 9% 96%;
+    --accent-foreground:      240 10% 8%;
+    --destructive:            0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border:                 240 6% 90%;
+    --input:                  240 6% 88%;
+    --ring:                   252 85% 60%;
+
+    --brand:            252 85% 60%;   /* #6B47F5  white text 5.1:1 */
+    --brand-foreground: 0 0% 100%;
+    --brand-text:       252 75% 48%;   /* brand AS text on white — 7.4:1 */
+    --brand-subtle:     252 100% 97%;
+    --brand-border:     252 60% 88%;
+
+    --surface:                   240 20% 99%;
+    --surface-dim:               240 10% 95%;
+    --surface-bright:            0 0% 100%;
+    --surface-container-lowest:  0 0% 100%;
+    --surface-container-low:     240 20% 99%;
+    --surface-container:         240 9% 96%;
+    --surface-container-high:    240 7% 93%;
+    --surface-container-highest: 240 6% 90%;
+    --surface-variant:           240 9% 96%;
+    --on-surface:                240 10% 8%;
+    --on-surface-variant:        240 4% 42%;
+    --inverse-surface:           240 10% 8%;
+    --inverse-on-surface:        0 0% 98%;
+    --outline:                   240 4% 58%;
+    --outline-variant:           240 6% 90%;
+    --surface-tint:              252 85% 60%;
+
+    --on-primary:                0 0% 100%;
+    --primary-container:         240 9% 96%;
+    --on-primary-container:      240 10% 8%;
+    --inverse-primary:           0 0% 98%;
+    --primary-fixed:             240 9% 96%;
+    --primary-fixed-dim:         240 6% 88%;
+    --on-primary-fixed:          240 10% 8%;
+    --on-primary-fixed-variant:  240 5% 34%;
+
+    --on-secondary:                0 0% 100%;
+    --secondary-container:         240 9% 96%;
+    --on-secondary-container:      240 6% 24%;
+    --secondary-fixed:             240 9% 96%;
+    --secondary-fixed-dim:         240 6% 88%;
+    --on-secondary-fixed:          240 10% 8%;
+    --on-secondary-fixed-variant:  240 5% 34%;
+
+    --error:                  0 72% 45%;
+    --on-error:               0 0% 100%;
+    --error-container:        0 90% 97%;
+    --on-error-container:     0 70% 38%;
+    --success:                142 72% 29%;
+    --on-success:             0 0% 100%;
+    --success-container:      142 70% 96%;
+    --on-success-container:   142 72% 24%;
+    --warning:                32 90% 36%;
+    --on-warning:             0 0% 100%;
+    --warning-container:      38 92% 96%;
+    --on-warning-container:   32 85% 28%;
+    --tertiary:               0 72% 45%;
+    --on-tertiary:            0 0% 100%;
+    --tertiary-container:     0 90% 97%;
+    --on-tertiary-container:  0 70% 38%;
+    --tertiary-fixed:         0 90% 97%;
+    --tertiary-fixed-dim:     0 85% 90%;
+    --on-tertiary-fixed:      0 72% 30%;
+    --on-tertiary-fixed-variant: 0 70% 38%;
+
+    --veg:     142 72% 29%;
+    --non-veg: 0 72% 45%;
+    --egg:     45 93% 33%;
+
+    --chart-1: 252 85% 60%;
+    --chart-2: 240 10% 20%;
+    --chart-3: 240 4% 42%;
+    --chart-4: 240 4% 62%;
+    --chart-5: 240 6% 82%;
+
+    --shadow-1: 0 1px 2px 0 rgb(16 16 24 / 0.05), 0 1px 3px 0 rgb(16 16 24 / 0.06);
+    --shadow-2: 0 2px 4px -1px rgb(16 16 24 / 0.04), 0 8px 24px -6px rgb(16 16 24 / 0.10);
+    --shadow-3: 0 4px 8px -2px rgb(16 16 24 / 0.05), 0 18px 48px -10px rgb(16 16 24 / 0.16);
+    --glow:     0 0 0 1px hsl(var(--brand) / 0.25), 0 6px 24px -6px hsl(var(--brand) / 0.35);
+    --glow-lg:  0 0 80px -16px hsl(var(--brand) / 0.35);
+
+    --grain-opacity: 0.02;
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+    /* Stops sticky headers from covering the target of an in-page anchor. */
+    scroll-padding-top: 6rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    font-variation-settings: "opsz" 32;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-outfit), sans-serif;
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    text-wrap: balance;
+  }
+
+  /* Numbers that sit in columns — prices, totals, order numbers — must not
+     jitter as digits change. */
+  .tabular,
+  [data-tabular] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* A single visible focus ring for the whole app, in the accent colour.
+     :focus-visible only, so pointer users never see it. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--brand) / 0.28);
+    color: hsl(var(--foreground));
+  }
+
+  /* Scrollbars, themed. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--outline-variant)) transparent;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--outline-variant));
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--outline) / 0.6);
+    background-clip: content-box;
   }
 }
 
-/* ── Material Symbols ───────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MATERIAL SYMBOLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
+  font-family: "Material Symbols Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -96,65 +339,215 @@
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   user-select: none;
 }
 .material-symbols-outlined.fill {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 .material-symbols-outlined.sm {
   font-size: 18px;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
 }
 
-/* ── Ambient shadow utilities ───────────────────────────────────────────── */
-/* Must stay in sync with theme.extend.boxShadow in tailwind.config.ts. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEXTURE, DEPTH, GLASS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @layer utilities {
-  .shadow-level-1 {
-    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 1px 3px rgba(28, 25, 23, 0.06);
+  /* Film grain. A single inline SVG turbulence tile — no image request, no
+     layout cost. Sits above the background, below content, never interactive. */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  .shadow-level-2 {
-    box-shadow: 0 2px 4px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.06);
+
+  /* Frosted panel. Falls back to an opaque surface where backdrop-filter is
+     unsupported, so text never lands on an unreadable background. */
+  .glass {
+    background-color: hsl(var(--surface-container-low) / 0.88);
+    border: 1px solid hsl(var(--outline-variant) / 0.7);
   }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass {
+      background-color: hsl(var(--surface) / 0.72);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+    }
+  }
+
+  /* For bars that sit over arbitrary content — the customer bottom nav floats
+     above dish photography, and at .72 a bright image behind a label can push
+     it under the AA contrast floor. Nearly opaque, still frosted. */
+  .glass-strong {
+    background-color: hsl(var(--surface-container-lowest) / 0.97);
+    border: 1px solid hsl(var(--outline-variant));
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass-strong {
+      background-color: hsl(var(--surface-container-lowest) / 0.92);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+    }
+  }
+
+  /* Hairline top highlight — the trick that makes a dark card look lit. */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.14) 30%,
+      hsl(var(--foreground) / 0.14) 70%,
+      transparent
+    );
+  }
+
+  /* Dot and line grids for hero / auth backdrops. */
+  .bg-dot-grid {
+    background-image: radial-gradient(hsl(var(--outline) / 0.28) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .bg-line-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--outline-variant) / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--outline-variant) / 0.7) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  /* Fades a decorative background out at the edges so it never fights content. */
+  .mask-radial {
+    -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 40%, #000 30%, transparent 78%);
+    mask-image: radial-gradient(ellipse 60% 55% at 50% 40%, #000 30%, transparent 78%);
+  }
+  .mask-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  }
+
+  /* Gradient text, in the accent. Used once or twice, never as body copy.
+     Both stops are high-contrast against the page, so the gradient itself
+     never drops below AA.
+
+     `color: transparent` is applied ONLY inside the @supports block. Setting it
+     unconditionally would make the hero headline literally invisible in any
+     engine without background-clip:text, which is the worst possible failure
+     mode for the largest text on the site. */
+  .text-gradient-brand {
+    color: hsl(var(--foreground));
+  }
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .text-gradient-brand {
+      background-image: linear-gradient(
+        100deg,
+        hsl(var(--foreground)),
+        hsl(var(--foreground)) 35%,
+        hsl(var(--brand-text))
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  /* Readable measure. Long-form copy should never run wider than this. */
+  .measure     { max-width: 68ch; }
+  .measure-sm  { max-width: 52ch; }
 }
 
-/* ── Tactile interaction states ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTERACTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .tactile-hover {
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1),
-              box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1),
+    border-color 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 .tactile-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.06);
+  box-shadow: var(--shadow-2);
 }
 .tactile-active:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+  transform: translateY(1px);
+  box-shadow: var(--shadow-1);
   transition: transform 0.1s, box-shadow 0.1s;
 }
 
-/* ── Kitchen display custom scrollbar ───────────────────────────────────── */
-.kds-column::-webkit-scrollbar        { width: 4px; }
-.kds-column::-webkit-scrollbar-track  { background: transparent; }
-.kds-column::-webkit-scrollbar-thumb  {
-  background-color: #d6d3d1;
+/* Kitchen display column scrollbar — narrower than the global one. */
+.kds-column::-webkit-scrollbar { width: 4px; }
+.kds-column::-webkit-scrollbar-track { background: transparent; }
+.kds-column::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--outline-variant));
+  border: 0;
   border-radius: 20px;
 }
 
-/* ── KDS slide-in animation ─────────────────────────────────────────────── */
 @keyframes slide-in-from-top {
   from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-in {
-  animation: slide-in-from-top 0.35s ease-out forwards;
+  animation: slide-in-from-top 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ── Input focus ring ───────────────────────────────────────────────────── */
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: none;
-  border-color: #1c1917;
-  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.12);
+/* Skeleton shimmer — loading states are skeletons, never spinners. */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: hsl(var(--surface-container-high));
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--foreground) / 0.06),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────────────
+   One global kill-switch. Framer Motion is additionally told to respect the
+   preference via MotionConfig in the root layout, but this catches every CSS
+   animation, including any that ships from a third-party component.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tactile-hover:hover {
+    transform: none;
+  }
 }

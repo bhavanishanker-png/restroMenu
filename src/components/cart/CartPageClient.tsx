@@ -51,7 +51,7 @@ export function CartPageClient({
         <p className="text-body-md text-on-surface-variant">Add items from the menu to get started.</p>
         <Link
           href={menuHref}
-          className="mt-2 inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-primary text-on-primary font-headline-sm hover:bg-primary-container transition-colors active:translate-y-[2px]"
+          className="mt-2 inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-primary text-on-primary font-headline-sm hover:bg-primary/90 transition-colors active:translate-y-[2px]"
           style={{ fontSize: 16 }}
         >
           Browse menu
@@ -63,7 +63,7 @@ export function CartPageClient({
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex h-[64px] items-center gap-3 bg-surface-container-low px-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+      <header className="glass sticky top-0 z-10 flex h-[64px] items-center gap-3 border-x-0 border-t-0 px-margin-mobile">
         <Link
           href={menuHref}
           aria-label="Back to menu"
@@ -104,7 +104,7 @@ export function CartPageClient({
       <div className="fixed bottom-0 left-0 right-0 border-t border-outline-variant/30 bg-surface-container-lowest px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(32,26,23,0.08)]">
         <Link
           href={checkoutHref}
-          className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-headline-sm shadow-[0_8px_24px_rgba(28,25,23,0.3)] hover:bg-primary-container transition-colors active:translate-y-[2px]"
+          className="flex w-full h-12 items-center justify-center gap-2 rounded-xl bg-brand text-brand-foreground font-display font-semibold shadow-glow hover:bg-brand/90 transition-colors active:translate-y-[2px]"
           style={{ fontSize: 16 }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>

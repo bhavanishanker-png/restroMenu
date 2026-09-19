@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default async function DashboardLayout({
   children,
@@ -26,9 +27,25 @@ export default async function DashboardLayout({
       />
 
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between bg-surface-container-lowest px-4 py-3 border-b border-outline-variant/30 shadow-level-1 md:hidden">
-        <span className="font-headline-sm text-primary" style={{ fontSize: 18 }}>QBite</span>
-        <span className="font-body-sm text-on-surface-variant capitalize">{session.role}</span>
+      <div className="glass fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 py-3 md:hidden">
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="relative grid h-7 w-7 place-items-center rounded-md bg-primary font-display text-xs font-bold text-primary-foreground"
+          >
+            Q
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-brand ring-2 ring-background" />
+          </span>
+          <span className="font-display text-[0.9375rem] font-bold tracking-[-0.02em] text-on-surface">
+            QBite
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="rounded-full border border-outline-variant bg-surface-container px-2.5 py-0.5 font-label-bold text-label-bold uppercase text-on-surface-variant">
+            {session.role}
+          </span>
+          <ThemeToggle className="h-8 w-8" />
+        </span>
       </div>
 
       <main className="flex-1 md:ml-[280px] min-h-screen pt-[56px] md:pt-0 overflow-auto">

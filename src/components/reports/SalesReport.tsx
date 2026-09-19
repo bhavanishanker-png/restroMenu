@@ -98,16 +98,13 @@ export function SalesReport() {
   return (
     <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="font-headline-lg-mobile text-on-surface" style={{ fontSize: 28 }}>
-            Sales Reports
-          </h1>
-          <p className="font-body-md text-on-surface-variant mt-1">
-            Review your daily performance and revenue trends.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+      {/* The page title lives in <PageHeader>; repeating it here gave the
+          Reports screen two identical h1s stacked on top of each other. */}
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <p className="font-label-bold text-label-bold uppercase text-on-surface-variant">
+          Date range
+        </p>
+        <div className="flex w-full items-center gap-3 sm:w-auto">
           <div className="relative flex-1 sm:flex-none flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 h-12 min-w-0">
             <span
               className="material-symbols-outlined text-on-surface-variant shrink-0"
@@ -132,7 +129,7 @@ export function SalesReport() {
           <button
             onClick={exportCSV}
             disabled={!data || data.days.length === 0}
-            className="flex items-center gap-2 px-4 h-12 bg-primary text-on-primary rounded-lg font-label-bold text-label-bold hover:bg-primary-container active:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 px-4 h-12 bg-primary text-on-primary rounded-lg font-label-bold text-label-bold hover:bg-primary/90 active:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap shrink-0"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>download</span>
             Export CSV
@@ -147,12 +144,12 @@ export function SalesReport() {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="bg-surface-container-lowest rounded-xl p-6 shadow-level-1 h-32 animate-pulse"
+                className="skeleton h-32 rounded-xl"
               />
             ))}
           </div>
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-level-1 h-64 animate-pulse" />
-          <div className="bg-surface-container-lowest rounded-xl shadow-level-1 h-48 animate-pulse" />
+          <div className="skeleton h-64 rounded-xl" />
+          <div className="skeleton h-48 rounded-xl" />
         </div>
       ) : (
         <>
@@ -170,7 +167,7 @@ export function SalesReport() {
                 >
                   ₹{fmt(data.totals.revenue)}
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-secondary font-body-sm text-body-sm">
+                <div className="flex items-center gap-1 mt-2 text-on-surface-variant font-body-sm text-body-sm">
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                     trending_up
                   </span>
@@ -188,7 +185,7 @@ export function SalesReport() {
                 >
                   {data.totals.orders}
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-secondary font-body-sm text-body-sm">
+                <div className="flex items-center gap-1 mt-2 text-on-surface-variant font-body-sm text-body-sm">
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                     trending_up
                   </span>
@@ -228,12 +225,13 @@ export function SalesReport() {
                     <div
                       key={d.date}
                       title={`${fmtDate(d.date)}: ₹${fmt(d.revenue)}`}
-                      className="flex-1 rounded-t-sm transition-opacity hover:opacity-80 cursor-pointer"
-                      style={{
-                        height: `${pct}%`,
-                        backgroundColor: isPeak ? "#1c1917" : "rgba(28,25,23,0.35)",
-                        minWidth: 4,
-                      }}
+                      // Peak day carries the accent; the rest are a muted
+                      // neutral. Was a hardcoded near-black, which disappeared
+                      // entirely against the dark theme.
+                      className={`flex-1 cursor-pointer rounded-t-sm transition-opacity hover:opacity-80 ${
+                        isPeak ? "bg-brand" : "bg-on-surface/25"
+                      }`}
+                      style={{ height: `${pct}%`, minWidth: 4 }}
                     />
                   );
                 })}

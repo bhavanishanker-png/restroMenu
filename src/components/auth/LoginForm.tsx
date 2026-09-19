@@ -30,7 +30,7 @@ type StaffOption = { id: string; name: string; role: string };
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
-    <p className="font-body-sm text-body-sm text-error flex items-center gap-1 mt-xs" role="alert">
+    <p className="font-body-sm text-body-sm text-on-error-container flex items-center gap-1 mt-xs" role="alert">
       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span>
       {msg}
     </p>
@@ -116,24 +116,22 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
   // the real form. It also meant the login screen first painted as a blank
   // card. The cart-backed components still need their gate; this one does not.
   return (
-    <div className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center">
+    <div className="edge-light flex w-full flex-col items-center rounded-2xl border border-outline-variant bg-surface-container-lowest/90 p-lg shadow-level-3 backdrop-blur-xl sm:p-xl">
       {/* Branding */}
-      <div className="flex flex-col items-center mb-lg text-center">
-        <div className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mb-md">
+      <div className="mb-lg flex flex-col items-center text-center">
+        <div className="mb-md grid h-14 w-14 place-items-center rounded-2xl border border-brand-border bg-brand-subtle">
           <span
-            className="material-symbols-outlined text-on-primary-container"
-            style={{ fontSize: 36, fontVariationSettings: "'FILL' 1" }}
+            className="material-symbols-outlined text-brand-text"
+            style={{ fontSize: 30, fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
           >
             restaurant_menu
           </span>
         </div>
-        <h1
-          className="font-display text-primary mb-xs"
-          style={{ fontSize: 40, lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: 700 }}
-        >
-          QBite
-        </h1>
-        <h2 className="font-headline-sm text-on-surface-variant">Staff Access</h2>
+        <h1 className="font-display text-display-lg text-on-surface">QBite</h1>
+        <p className="mt-1 text-body-sm text-on-surface-variant">
+          Sign in to your restaurant workspace
+        </p>
       </div>
 
       {/* Demo credentials */}
@@ -180,9 +178,9 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
 
       {/* API error */}
       {apiError && (
-        <div className="w-full mb-md px-4 py-3 rounded-lg bg-error-container flex items-center gap-2">
-          <span className="material-symbols-outlined text-error" style={{ fontSize: 18 }}>error</span>
-          <p className="font-body-sm text-body-sm text-error">{apiError}</p>
+        <div className="w-full mb-md px-4 py-3 rounded-lg border border-error/25 bg-error-container flex items-center gap-2">
+          <span className="material-symbols-outlined text-on-error-container" style={{ fontSize: 18 }}>error</span>
+          <p className="font-body-sm text-body-sm text-on-error-container">{apiError}</p>
         </div>
       )}
 
@@ -194,7 +192,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
               Email
             </label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
                 person
               </span>
               <input
@@ -202,7 +200,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
                 autoComplete="email"
                 placeholder="you@example.com"
                 {...regEmail("email")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container/50 transition-all placeholder:text-on-surface-variant/40"
+                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
               />
             </div>
             <FieldError msg={emailErrors.email?.message} />
@@ -213,7 +211,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
               Password
             </label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
                 lock
               </span>
               <input
@@ -221,7 +219,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
                 autoComplete="current-password"
                 placeholder="••••••••"
                 {...regEmail("password")}
-                className="w-full h-12 pl-10 pr-10 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container/50 transition-all placeholder:text-on-surface-variant/40"
+                className="w-full h-12 pl-10 pr-10 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
               />
               <button
                 type="button"
@@ -240,7 +238,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
           <button
             type="submit"
             disabled={emailSubmitting}
-            className="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm flex items-center justify-center gap-2 hover:bg-surface-tint transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
+            className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
           >
             <span>{emailSubmitting ? "Signing in…" : "Sign In"}</span>
             {!emailSubmitting && (
@@ -258,13 +256,13 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
               Restaurant Code
             </label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
                 store
               </span>
               <input
                 placeholder="e.g. tandoori-hut"
                 {...regPin("restaurantSlug")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container/50 transition-all placeholder:text-on-surface-variant/40"
+                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
               />
             </div>
             <FieldError msg={pinErrors.restaurantSlug?.message} />
@@ -311,7 +309,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
               4-digit PIN
             </label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
                 lock
               </span>
               <input
@@ -320,7 +318,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
                 maxLength={4}
                 placeholder="••••"
                 {...regPin("pin")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container/50 transition-all placeholder:text-on-surface-variant/40 tracking-[0.5em]"
+                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40 tracking-[0.5em]"
               />
             </div>
             <FieldError msg={pinErrors.pin?.message} />
@@ -329,7 +327,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
           <button
             type="submit"
             disabled={pinSubmitting}
-            className="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm flex items-center justify-center gap-2 hover:bg-surface-tint transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
+            className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
           >
             <span>{pinSubmitting ? "Signing in…" : "Sign In"}</span>
             {!pinSubmitting && (

@@ -30,11 +30,11 @@ export function KitchenHeader({
   onServiceRequestsClick,
 }: Props) {
   return (
-    <header className="flex items-center justify-between border-b border-outline-variant/30 bg-surface h-16 px-md shadow-level-1 shrink-0">
+    <header className="flex items-center justify-between border-b border-outline-variant bg-surface-container-low h-16 px-md shadow-level-1 shrink-0">
       {/* Brand */}
       <div className="flex items-center gap-sm">
         <span
-          className="material-symbols-outlined text-primary"
+          className="material-symbols-outlined text-brand-text"
           style={{ fontSize: 28, fontVariationSettings: "'FILL' 1" }}
         >
           restaurant_menu
@@ -79,12 +79,14 @@ export function KitchenHeader({
         <div
           className={`flex items-center gap-xs px-sm py-xs rounded-full font-label-bold text-xs ${
             isOnline
-              ? "bg-secondary-container text-on-secondary-container"
-              : "bg-error-container text-on-error-container"
+              ? "border border-success/25 bg-success-container text-on-success-container"
+              : "border border-error/25 bg-error-container text-on-error-container"
           }`}
         >
+          {/* Was `bg-secondary`, a *surface* token — the status dot rendered
+              invisible against its own container. */}
           <span
-            className={`w-2 h-2 rounded-full ${isOnline ? "bg-secondary animate-pulse" : "bg-error"}`}
+            className={`w-2 h-2 rounded-full ${isOnline ? "bg-success animate-pulse" : "bg-error"}`}
           />
           {isOnline ? "Online" : "Offline"}
         </div>

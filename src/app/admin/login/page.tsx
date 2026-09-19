@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -34,32 +35,23 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop font-body-md antialiased"
-      style={{
-        backgroundColor: "#fafaf9",
-        backgroundImage: "radial-gradient(#e7e5e4 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
-      }}
-    >
-      <main className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-level-2 border border-outline-variant/30 p-xl flex flex-col items-center relative overflow-hidden">
+    <AuthShell>
+      <div className="edge-light relative flex w-full flex-col items-center overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest/90 p-lg shadow-level-3 backdrop-blur-xl sm:p-xl">
         {/* Branding */}
-        <div className="flex flex-col items-center mb-lg text-center">
-          <div className="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mb-md">
+        <div className="mb-lg flex flex-col items-center text-center">
+          <div className="mb-md grid h-14 w-14 place-items-center rounded-2xl border border-brand-border bg-brand-subtle">
             <span
-              className="material-symbols-outlined text-on-primary-container"
-              style={{ fontSize: 36, fontVariationSettings: "'FILL' 1" }}
+              className="material-symbols-outlined text-brand-text"
+              style={{ fontSize: 30, fontVariationSettings: "'FILL' 1" }}
+              aria-hidden="true"
             >
-              restaurant_menu
+              shield_person
             </span>
           </div>
-          <h1
-            className="font-display text-primary mb-xs"
-            style={{ fontSize: 48, lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: 700 }}
-          >
-            QBite
-          </h1>
-          <h2 className="font-headline-sm text-on-surface-variant">Admin Control</h2>
+          <h1 className="font-display text-display-lg text-on-surface">QBite</h1>
+          <p className="mt-1 text-body-sm text-on-surface-variant">
+            Platform administration
+          </p>
         </div>
 
         {/* Demo credentials */}
@@ -89,7 +81,7 @@ export default function AdminLoginPage() {
               Enter Super Admin Secret
             </label>
             <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
                 lock
               </span>
               <input
@@ -100,7 +92,7 @@ export default function AdminLoginPage() {
                 autoComplete="current-password"
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
-                className="w-full h-12 pl-10 pr-10 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container/50 transition-all placeholder:text-on-surface-variant/40"
+                className="w-full h-12 pl-10 pr-10 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
               />
               <button
                 type="button"
@@ -116,16 +108,16 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="px-4 py-3 rounded-lg bg-error-container flex items-center gap-2">
-              <span className="material-symbols-outlined text-error" style={{ fontSize: 18 }}>error</span>
-              <p className="font-body-sm text-body-sm text-error">{error}</p>
+            <div className="px-4 py-3 rounded-lg border border-error/25 bg-error-container flex items-center gap-2">
+              <span className="material-symbols-outlined text-on-error-container" style={{ fontSize: 18 }}>error</span>
+              <p className="font-body-sm text-body-sm text-on-error-container">{error}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading || !secret}
-            className="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm flex items-center justify-center gap-2 hover:bg-surface-tint transition-all active:translate-y-[2px] disabled:opacity-60"
+            className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow transition-all active:translate-y-[2px] disabled:opacity-60"
           >
             <span>{loading ? "Checking…" : "Login to Platform"}</span>
             {!loading && (
@@ -135,11 +127,13 @@ export default function AdminLoginPage() {
         </form>
 
         {/* Footer */}
-        <div className="mt-lg flex items-center justify-center gap-1 text-on-surface-variant opacity-70">
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>encrypted</span>
-          <span className="font-body-sm text-body-sm">Secure Enterprise Access</span>
+        <div className="mt-lg flex items-center justify-center gap-1.5 text-on-surface-variant">
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">
+            encrypted
+          </span>
+          <span className="text-body-sm">Secure enterprise access</span>
         </div>
-      </main>
-    </div>
+      </div>
+    </AuthShell>
   );
 }

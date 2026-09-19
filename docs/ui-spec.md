@@ -6,44 +6,81 @@ Mobile-first. Design at 375px width, scale up. shadcn/ui primitives throughout.
 
 ## Design tokens
 
-Monochrome, built on a warm `stone` ramp. Hierarchy comes from **layering, border and
-weight** — never from hue. Colour is spent only where it carries meaning.
+Near-monochrome on a cool `zinc` ramp, **plus one restrained accent**. Hierarchy still
+comes from layering, border and weight — hue is spent only on the accent and on the
+semantic states.
+
+**Dark is the default theme.** Light is fully supported and must look equally
+deliberate; neither is an afterthought.
+
+### Where tokens live
+
+There is now **one** source of truth: CSS custom properties in `src/app/globals.css`.
+`tailwind.config.ts` contains no literal colours at all — every entry resolves to
+`hsl(var(--token) / <alpha-value>)`. That is what makes the same class correct in both
+themes, and it is why the `/ <alpha-value>` form is mandatory: drop it and every
+opacity modifier (`border-outline-variant/30`) silently stops working.
+
+Dark values live in `:root` so server-rendered HTML is already dark before any script
+runs; `.light` overrides them.
+
+**Never hardcode a hex in a component.** The one sanctioned exception is the QR code
+itself (`QRCodeCanvas`, the QR PDF route), which must stay pure black on white to
+remain scannable regardless of theme.
 
 ```
-── Neutrals (the whole UI) ──
-Page             #FAFAF9   the "faded white" ground
-Card / sheet     #FFFFFF   lifts by being brighter than the page
-Container        #F5F5F4
-Container high   #E7E5E4
-Border/hairline  #E7E5E4   1px does the work shadows used to
-Outline          #A8A29E   decorative only — never text (2.3:1)
-Text secondary   #78716C
-Text body        #57534E
-Text primary     #1C1917
-Primary action   #1C1917   near-black fill, white label — not pure #000
+                          DARK (default)      LIGHT
+── Neutrals ──
+Page                      #09090B             #FCFCFD
+Card / sheet              #111113             #FFFFFF
+Container                 #1A1A1E             #F4F4F5
+Container high            #212126             #EDEDF0
+Border / hairline         #27272A             #E4E4E7
+Outline (decorative)      #71717A             #909099
+Text secondary            #A1A1AA  9.0:1      #666671  5.9:1
+Text primary              #FAFAFA             #131318
+Primary action            #FAFAFA on dark ink / #131318 on white — inverts per theme
 
-── Semantic accents (the only hues) ──
-Veg marker       #15803D   green square outline with a filled dot
-Non-veg marker   #B91C1C   red square outline with a filled triangle
-Egg marker       #CA8A04   amber square outline with a filled dot
-Success          #15803D   on #F0FDF4 — ready, paid
-Warning          #B45309   on #FFFBEB — kitchen 15–25 min
-Danger / error   #B91C1C   on #FEF2F2 — cancelled, errors, kitchen 25 min+
+── The accent: violet ──
+Fill        --brand        #6F4CF5            #6B47F5   white label, 5.2:1 / 5.1:1
+As text     --brand-text   #A792FC  7.1:1     #4B2FD4  7.4:1
+Surface     --brand-subtle violet-tinted container
+Focus ring  --ring         brighter than the fill — it sits on the page, not under text
 
-Radius           12px cards, 8px controls, full for pills
-Font             Inter body / Outfit headings (next/font)
-Base size        16px customer / 18px kitchen screen
-Elevation        near-hairline; heavy shadows read dated on monochrome
+Why violet: it is the only hue not already carrying food or status meaning here
+(green = veg/success, red = non-veg/error, amber = egg/warning), so a violet
+control can never be misread as a food signal.
+
+Spend it on: primary CTAs, focus rings, the active nav/tab indicator, the one
+"needs attention" stat, and glow. Nothing else. `primary` stays monochrome.
+
+── Semantic states (the only other hues) ──
+Veg marker       green square outline with a filled dot
+Non-veg marker   red square outline with a filled triangle
+Egg marker       amber square outline with a filled dot
+Success          ready, paid, online
+Warning          kitchen 15–25 min
+Danger / error   cancelled, errors, kitchen 25 min+
+
+── Everything else ──
+Radius     --radius 10px base → 6 controls / 14 components / 18 cards / 24 containers
+Font       Inter body · Space Grotesk display · JetBrains Mono figures (next/font)
+Base size  16px customer / 18px kitchen screen
+Elevation  --shadow-1..3, per theme: shadow on white, lighter surface + inset
+           highlight on black. --glow for the accent.
+Motion     150–400ms, ease-out-expo. Respects prefers-reduced-motion globally
+           (CSS media query + Framer MotionConfig).
+Texture    .grain, .glass, .glass-strong, .bg-dot-grid, .bg-line-grid, .edge-light
 ```
-
-Tokens live in two places and must agree: the named Material-3 set in
-`tailwind.config.ts` (`surface-*`, `on-surface-*`, `primary-*`, `success-*`,
-`warning-*`, `error-*`, `veg`/`non-veg`/`egg`) and the shadcn CSS variables in
-`src/app/globals.css`. Never hardcode a hex in a component.
 
 Never use colour alone. Veg/non-veg always shows the square-dot icon; order status
 badges differ by fill weight and label; kitchen urgency escalates border *weight*
-alongside colour.
+alongside colour; active nav items carry a rail or underline, not just a tint.
+
+A note on the `surface-*` / `on-surface-*` family: `*-container` tokens are
+**backgrounds**. Using one as a text or icon colour (`text-primary-container`,
+`text-secondary`, `text-primary-fixed-dim`) produces invisible content — this was the
+single most common bug found when the themes were unified.
 
 ---
 

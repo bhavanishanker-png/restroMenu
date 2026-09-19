@@ -274,7 +274,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
                     placeholder="e.g. less spicy, no onion, extra sauce…"
                     rows={3}
                     maxLength={120}
-                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all resize-none"
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-sm font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-brand focus:ring-1 focus:ring-primary focus:outline-none transition-all resize-none"
                   />
                   <p className="mt-1 text-right font-body-sm text-on-surface-variant">{notes.length}/120</p>
                 </section>
@@ -282,7 +282,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
             </div>
 
             {/* Sticky footer */}
-            <div className="absolute bottom-0 w-full bg-surface border-t border-outline-variant p-margin-mobile shadow-[0_-4px_16px_rgba(0,0,0,0.05)] flex items-center justify-between gap-md z-30 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="glass absolute bottom-0 w-full border-x-0 border-b-0 p-margin-mobile flex items-center justify-between gap-md z-30 pb-[max(1rem,env(safe-area-inset-bottom))]">
               {/* Quantity stepper */}
               <div className="flex items-center bg-surface-container rounded-full h-12 px-2">
                 <button
@@ -297,7 +297,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
                 </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-primary-container hover:text-on-primary-container transition-colors"
+                  className="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-primary/90 hover:text-on-primary-container transition-colors"
                   aria-label="Increase quantity"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
@@ -308,7 +308,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
               <button
                 onClick={handleAdd}
                 disabled={!canAdd}
-                className="flex-1 h-12 bg-primary text-on-primary rounded-full font-headline-sm flex items-center justify-center gap-2 hover:bg-surface-tint active:translate-y-[2px] transition-all shadow-md disabled:opacity-50"
+                className="flex-1 h-12 bg-brand text-brand-foreground rounded-full font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow active:translate-y-[2px] transition-all shadow-md disabled:opacity-50"
                 style={{ fontSize: 16 }}
               >
                 <span>Add to Cart</span>

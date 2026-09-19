@@ -90,8 +90,8 @@ export default async function DashboardPage() {
           <p className="font-body-md text-on-surface-variant mt-1">Today&apos;s Overview</p>
         </div>
         {/* Accepting orders status chip */}
-        <div className="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full shadow-level-1 border border-outline-variant/30 self-start">
-          <span className="h-2.5 w-2.5 rounded-full bg-success animate-pulse shadow-[0_0_6px_rgba(21,128,61,0.5)]" />
+        <div className="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full shadow-level-1 border border-outline-variant self-start">
+          <span className="h-2.5 w-2.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_hsl(var(--success)/0.6)]" />
           <span className="font-label-bold text-label-bold text-on-surface">Accepting Orders</span>
         </div>
       </div>
@@ -99,46 +99,53 @@ export default async function DashboardPage() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-sm md:gap-gutter lg:grid-cols-4">
         {/* Orders today */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
+        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-label-bold text-label-bold">Orders Today</span>
-            <span className="material-symbols-outlined text-primary-container" style={{ fontSize: 20 }}>receipt_long</span>
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>receipt_long</span>
           </div>
-          <div className="font-display text-on-surface leading-none" style={{ fontSize: 40 }}>{ordersToday}</div>
+          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 40 }}>{ordersToday}</div>
           <div className="font-body-sm text-on-surface-variant mt-1">All time</div>
         </div>
 
         {/* Revenue */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
+        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-label-bold text-label-bold">Revenue Today</span>
             <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>payments</span>
           </div>
-          <div className="font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(revenueToday)}</div>
+          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(revenueToday)}</div>
           <div className="font-body-sm text-on-surface-variant mt-1">Net sales</div>
         </div>
 
         {/* Avg ticket */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
+        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
           <div className="flex items-center justify-between text-on-surface-variant mb-1">
             <span className="font-label-bold text-label-bold">Avg. Ticket</span>
-            <span className="material-symbols-outlined text-primary-container" style={{ fontSize: 20 }}>local_activity</span>
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>local_activity</span>
           </div>
-          <div className="font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(avgTicket)}</div>
+          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(avgTicket)}</div>
           <div className="font-body-sm text-on-surface-variant mt-1">Per order</div>
         </div>
 
-        {/* Live orders — highlighted card */}
-        <div className="relative flex flex-col gap-xs overflow-hidden rounded-xl border border-primary/30 bg-primary-container p-md shadow-level-1 tactile-hover">
-          <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-primary opacity-20 blur-xl" />
-          <div className="flex items-center justify-between text-on-primary-container mb-1 relative z-10">
+        {/* Live orders — the one stat that needs acting on, so it is the one
+            card that carries the accent. `text-primary-fixed-dim` here was a
+            surface token used as body text: unreadable in both themes. */}
+        <div className="relative flex flex-col gap-xs overflow-hidden rounded-xl border border-brand-border bg-brand-subtle p-md shadow-level-1 tactile-hover">
+          <div
+            aria-hidden="true"
+            className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-brand/30 blur-2xl"
+          />
+          <div className="relative z-10 mb-1 flex items-center justify-between text-brand-text">
             <span className="font-label-bold text-label-bold">Live Orders</span>
-            <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>skillet</span>
+            <span className="material-symbols-outlined fill" style={{ fontSize: 20 }} aria-hidden="true">
+              skillet
+            </span>
           </div>
-          <div className="font-display text-on-primary-container leading-none relative z-10" style={{ fontSize: 40 }}>
+          <div className="tabular relative z-10 font-display leading-none text-on-surface" style={{ fontSize: 40 }}>
             {liveOrders ?? 0}
           </div>
-          <div className="font-body-sm text-primary-fixed-dim mt-1 relative z-10">In kitchen now</div>
+          <div className="relative z-10 mt-1 font-body-sm text-on-surface-variant">In kitchen now</div>
         </div>
       </div>
 
@@ -149,10 +156,10 @@ export default async function DashboardPage() {
           <HourlyChart data={hourlyData} />
 
           {/* Recent orders table */}
-          <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest shadow-level-1 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-outline-variant/30 px-md py-sm">
+          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest shadow-level-1 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-outline-variant px-md py-sm">
               <h3 className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>Recent Orders</h3>
-              <Link href="/dashboard/orders" className="font-label-bold text-label-bold text-primary">
+              <Link href="/dashboard/orders" className="font-label-bold text-label-bold text-brand-text hover:underline">
                 View All
               </Link>
             </div>
@@ -177,7 +184,7 @@ export default async function DashboardPage() {
                     {recentOrders.map((order: Order & { tableLabel: string | null }) => (
                       <tr
                         key={order.id}
-                        className="border-b border-outline-variant/20 last:border-0 hover:bg-surface-container-highest transition-colors cursor-pointer"
+                        className="border-b border-outline-variant last:border-0 hover:bg-surface-container-highest transition-colors cursor-pointer"
                       >
                         <td className="p-sm pl-md py-4 font-body-md text-on-surface font-semibold">
                           #{order.orderNumber}
@@ -213,12 +220,12 @@ export default async function DashboardPage() {
 
         {/* Quick actions column */}
         <div className="xl:col-span-1">
-          <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-md shadow-level-1 sticky top-6">
+          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 sticky top-6">
             <h3 className="font-headline-sm text-on-surface mb-sm" style={{ fontSize: 16 }}>Quick Actions</h3>
             <div className="flex flex-col gap-3">
               <Link
                 href="/dashboard/kitchen"
-                className="flex w-full items-center justify-between p-4 bg-primary text-on-primary rounded-lg tactile-hover shadow-level-1 font-body-md font-medium"
+                className="flex w-full items-center justify-between p-4 bg-brand text-brand-foreground rounded-lg tactile-hover shadow-level-1 font-body-md font-medium"
               >
                 <span className="flex items-center gap-sm">
                   <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>display_settings</span>
@@ -231,7 +238,7 @@ export default async function DashboardPage() {
                 className="flex w-full items-center justify-between p-4 bg-surface-container border border-outline-variant text-on-surface rounded-lg tactile-hover hover:bg-surface-container-high font-body-md font-medium transition-colors"
               >
                 <span className="flex items-center gap-sm">
-                  <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>add_circle</span>
+                  <span className="material-symbols-outlined text-brand-text" style={{ fontSize: 20 }}>add_circle</span>
                   Add Menu Item
                 </span>
                 <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>arrow_forward</span>
@@ -248,12 +255,24 @@ export default async function DashboardPage() {
               </Link>
             </div>
 
-            {/* Support card */}
-            <div className="mt-lg p-sm bg-inverse-surface rounded-xl text-inverse-on-surface flex items-start gap-sm">
-              <span className="material-symbols-outlined text-primary-fixed-dim" style={{ fontSize: 22 }}>support_agent</span>
+            {/* Support card. Was `bg-inverse-surface`, which in dark mode
+                painted a near-white slab in the corner of an otherwise dark
+                sidebar — high contrast, but visually shouting. */}
+            <div className="mt-lg flex items-start gap-sm rounded-xl border border-outline-variant bg-surface-container p-sm">
+              <span
+                className="material-symbols-outlined text-brand-text"
+                style={{ fontSize: 22 }}
+                aria-hidden="true"
+              >
+                support_agent
+              </span>
               <div>
-                <h4 className="font-label-bold text-label-bold text-primary-fixed">Need Help?</h4>
-                <p className="font-body-sm text-body-sm mt-1 opacity-80">Support is available 24/7.</p>
+                <h4 className="font-label-bold text-label-bold uppercase text-on-surface">
+                  Need help?
+                </h4>
+                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                  Support is available 24/7.
+                </p>
               </div>
             </div>
           </div>

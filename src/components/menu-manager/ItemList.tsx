@@ -16,14 +16,16 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2, Plus } from "lucide-react";
+import { GripVertical, Pencil, Trash2, Plus, ImageOff } from "lucide-react";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/pricing";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
 import type { AddonGroup, MenuItem } from "@/types";
 import { ItemEditorSheet } from "./ItemEditorSheet";
+import { CategoryInsights } from "./CategoryInsights";
 
 type Props = {
   categoryId: string | null;
@@ -57,66 +59,96 @@ function ItemRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-3 rounded-lg border border-stone-100 bg-white px-3 py-3 shadow-sm"
+      className="group flex items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 shadow-level-1 transition-[border-color,box-shadow] duration-fast ease-out-quart hover:border-outline/40 hover:shadow-level-2"
     >
       {/* Drag handle */}
       <button
-        className="cursor-grab touch-none text-stone-300 hover:text-stone-500"
+        className="cursor-grab touch-none rounded p-1 text-outline transition-colors hover:text-on-surface-variant"
         {...attributes}
         {...listeners}
-        aria-label="Drag to reorder"
+        aria-label={`Reorder ${item.name}`}
       >
         <GripVertical className="h-4 w-4" />
       </button>
 
       {/* Thumbnail */}
-      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-stone-100">
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-container ring-1 ring-inset ring-outline-variant">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+          <img
+            src={item.imageUrl}
+            alt=""
+            loading="lazy"
+            className={`h-full w-full object-cover ${item.isAvailable ? "" : "grayscale"}`}
+          />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-stone-300 text-xs">
-            No img
+          <div className="grid h-full w-full place-items-center text-outline" aria-hidden="true">
+            <ImageOff className="h-4 w-4" />
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div className="flex flex-1 flex-col gap-0.5 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-1.5">
           <FoodTypeMarker type={item.foodType} />
-          <span className={`text-sm font-medium truncate ${!item.isAvailable ? "text-stone-400" : "text-stone-900"}`}>
+          <span
+            className={`truncate text-sm font-medium ${
+              item.isAvailable ? "text-on-surface" : "text-on-surface-variant line-through"
+            }`}
+          >
             {item.name}
           </span>
           {!item.isAvailable && (
-            <span className="shrink-0 rounded bg-stone-100 px-1 py-0.5 text-xs text-stone-400">
-              Unavailable
+            <span className="shrink-0 rounded-full border border-outline-variant bg-surface-container px-1.5 py-0.5 font-label-bold text-label-bold uppercase text-on-surface-variant">
+              Off menu
             </span>
           )}
         </div>
-        <span className="text-xs text-stone-500">₹{item.basePrice.toFixed(2)}</span>
+        {/* `min-w-0` + `truncate` on the description alone: the price and
+            variant count must never wrap, only the description clips. */}
+        <div className="flex min-w-0 items-center gap-2 text-xs text-on-surface-variant">
+          <span className="tabular shrink-0 font-semibold text-on-surface">
+            {formatMoney(item.basePrice)}
+          </span>
+          {item.variants.length > 0 && (
+            <span className="shrink-0 whitespace-nowrap">
+              · {item.variants.length} variants
+            </span>
+          )}
+          {item.description ? (
+            <span className="truncate">· {item.description}</span>
+          ) : (
+            <span className="shrink-0 italic">· no description</span>
+          )}
+        </div>
       </div>
 
       {/* Availability toggle — the most-used control */}
       <Switch
         checked={item.isAvailable}
         onCheckedChange={onToggle}
-        aria-label={item.isAvailable ? "Mark unavailable" : "Mark available"}
+        aria-label={`${item.name} — ${item.isAvailable ? "mark unavailable" : "mark available"}`}
       />
 
-      {/* Actions */}
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+      {/*
+        Actions were `opacity-0 group-hover:opacity-100`, which hid them from
+        keyboard users entirely: Tab moved focus onto a fully transparent
+        button with no visible focus ring. They now also appear on focus, and
+        stay visible on touch where hover never fires.
+      */}
+      <div className="flex gap-1 opacity-100 transition-opacity duration-fast md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
         <button
           onClick={onEdit}
-          className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-          aria-label="Edit"
+          className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+          aria-label={`Edit ${item.name}`}
         >
           <Pencil className="h-4 w-4" />
         </button>
         <button
           onClick={onDelete}
-          className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-red-500"
-          aria-label="Delete"
+          className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container"
+          aria-label={`Delete ${item.name}`}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -213,53 +245,97 @@ export function ItemList({ categoryId, categoryName, addonGroups }: Props) {
 
   if (!categoryId) {
     return (
-      <div className="flex flex-1 items-center justify-center text-stone-400">
-        Select a category to see items.
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-md text-center">
+        <span
+          className="grid h-12 w-12 place-items-center rounded-full border border-outline-variant bg-surface-container text-on-surface-variant"
+          aria-hidden="true"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+            restaurant_menu
+          </span>
+        </span>
+        <div className="space-y-1">
+          <p className="font-display text-title text-on-surface">No category selected</p>
+          <p className="measure-sm text-body-sm text-on-surface-variant">
+            Pick a category on the left to manage its dishes, or add your first
+            one to get started.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-stone-800">{categoryName}</h2>
-        <Button size="sm" onClick={() => setCreating(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Add item
-        </Button>
-      </div>
-
-      {/* List */}
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-16 w-full rounded-lg" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-stone-200 py-16 text-stone-400">
-          <p className="text-sm">No items in this category.</p>
-          <Button size="sm" variant="outline" onClick={() => setCreating(true)}>
-            <Plus className="mr-1 h-4 w-4" /> Add first item
+    <div className="flex min-h-0 flex-1">
+      {/* List column. Capped width so rows never stretch into unreadable
+          full-width bars on a wide monitor — the rail uses the rest. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-md">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-2.5">
+            <h2 className="font-display text-headline-sm text-on-surface">{categoryName}</h2>
+            {!loading && items.length > 0 && (
+              <span className="tabular text-body-sm text-on-surface-variant">
+                {items.length} {items.length === 1 ? "item" : "items"}
+              </span>
+            )}
+          </div>
+          <Button size="sm" variant="brand" onClick={() => setCreating(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Add item
           </Button>
         </div>
-      ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+
+        {/* List */}
+        <div className="w-full max-w-4xl">
+          {loading ? (
             <div className="flex flex-col gap-2">
-              {items.map((item) => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  onToggle={() => handleToggle(item)}
-                  onEdit={() => setEditingItem(item)}
-                  onDelete={() => handleDelete(item)}
-                />
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Skeleton key={n} className="h-[68px] w-full rounded-xl" />
               ))}
             </div>
-          </SortableContext>
-        </DndContext>
-      )}
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-outline-variant px-6 py-16 text-center">
+              <span
+                className="grid h-12 w-12 place-items-center rounded-full bg-surface-container text-on-surface-variant"
+                aria-hidden="true"
+              >
+                <Plus className="h-5 w-5" />
+              </span>
+              <div className="space-y-1">
+                <p className="font-display text-title text-on-surface">
+                  Nothing in {categoryName} yet
+                </p>
+                <p className="measure-sm text-body-sm text-on-surface-variant">
+                  Add a dish and it appears on the live menu immediately.
+                </p>
+              </div>
+              <Button size="sm" variant="brand" onClick={() => setCreating(true)}>
+                <Plus className="mr-1 h-4 w-4" /> Add first item
+              </Button>
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2">
+                  {items.map((item) => (
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      onToggle={() => handleToggle(item)}
+                      onEdit={() => setEditingItem(item)}
+                      onDelete={() => handleDelete(item)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
+      </div>
+
+      {/* Right rail — stats + live guest preview. Only from 2xl up, where
+          there is genuinely spare width to fill. */}
+      {!loading && <CategoryInsights items={items} categoryName={categoryName} />}
 
       {/* Editor sheet */}
       <ItemEditorSheet

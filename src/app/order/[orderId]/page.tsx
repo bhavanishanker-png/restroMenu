@@ -15,8 +15,8 @@ export default async function OrderTrackerPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="border-b border-stone-200 bg-white px-4 py-3 text-center">
-        <p className="text-sm font-semibold text-stone-800">Order status</p>
+      <header className="border-b border-outline-variant bg-surface-container-lowest px-4 py-3 text-center">
+        <p className="text-sm font-semibold text-on-surface">Order status</p>
       </header>
 
       <InstallPrompt />

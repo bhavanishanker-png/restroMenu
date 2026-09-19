@@ -118,12 +118,12 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by restaurant name or slug…"
-            className="w-full pl-12 pr-4 h-12 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-on-surface"
+            className="w-full pl-12 pr-4 h-12 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-primary transition-all text-on-surface"
           />
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container hover:-translate-y-[2px] transition-all h-12 whitespace-nowrap sm:order-2"
+          className="flex items-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 hover:-translate-y-[2px] transition-all h-12 whitespace-nowrap sm:order-2"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
           New Restaurant
@@ -234,7 +234,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="e.g. Tandoori Hut"
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -245,7 +245,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 onChange={(e) =>
                   setField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                 }
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 URL: /r/{form.slug || "…"}
@@ -259,7 +259,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 onChange={(e) =>
                   setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
                 }
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -268,7 +268,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="Street, city"
                 value={form.address}
                 onChange={(e) => setField("address", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
 
@@ -281,7 +281,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="e.g. Rajesh Sharma"
                 value={form.ownerName}
                 onChange={(e) => setField("ownerName", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -291,7 +291,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="owner@example.com"
                 value={form.ownerEmail}
                 onChange={(e) => setField("ownerEmail", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -301,14 +301,14 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="Min 8 characters"
                 value={form.ownerPassword}
                 onChange={(e) => setField("ownerPassword", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
 
             <button
               onClick={create}
               disabled={saving}
-              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container transition-colors active:translate-y-[2px] disabled:opacity-50 mt-xs"
+              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 transition-colors active:translate-y-[2px] disabled:opacity-50 mt-xs"
             >
               {saving ? "Creating…" : "Create Restaurant"}
             </button>

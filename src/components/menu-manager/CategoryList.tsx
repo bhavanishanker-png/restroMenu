@@ -75,7 +75,7 @@ function CategoryRow({
     >
       {/* Drag handle */}
       <button
-        className="cursor-grab touch-none text-stone-300 hover:text-stone-500"
+        className="cursor-grab touch-none text-outline hover:text-on-surface-variant"
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
@@ -98,7 +98,7 @@ function CategoryRow({
           <button onClick={commitRename} className="text-success hover:text-on-success-container">
             <Check className="h-4 w-4" />
           </button>
-          <button onClick={() => { setDraft(cat.name); setEditing(false); }} className="text-stone-400">
+          <button onClick={() => { setDraft(cat.name); setEditing(false); }} className="text-on-surface-variant">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -113,14 +113,14 @@ function CategoryRow({
         <div className="flex gap-1 opacity-0 group-hover:opacity-100">
           <button
             onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-            className="rounded p-0.5 text-stone-400 hover:text-stone-600"
+            className="rounded p-0.5 text-on-surface-variant hover:text-on-surface-variant"
             aria-label="Rename"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="rounded p-0.5 text-stone-400 hover:text-red-500"
+            className="rounded p-0.5 text-on-surface-variant hover:text-error"
             aria-label="Delete"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -232,7 +232,7 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
       </DndContext>
 
       {categories.length === 0 && !showAdd && (
-        <p className="px-2 py-4 text-center text-sm text-stone-400">No categories yet.</p>
+        <p className="px-2 py-4 text-center text-sm text-on-surface-variant">No categories yet.</p>
       )}
 
       {showAdd ? (
@@ -258,7 +258,7 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
       ) : (
         <button
           onClick={() => setShowAdd(true)}
-          className="mt-1 flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+          className="mt-1 flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
         >
           <Plus className="h-4 w-4" /> Add category
         </button>

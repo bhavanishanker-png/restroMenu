@@ -6,9 +6,15 @@ import QRCode from "qrcode";
 type Props = {
   url: string;
   size?: number;
+  /**
+   * Marks the *painted* canvas so a download handler can find it. Without
+   * this the caller has to render its own placeholder canvas to query, which
+   * is how the download ended up producing a blank image.
+   */
+  dataTableId?: string;
 };
 
-export function QRCodeCanvas({ url, size = 96 }: Props) {
+export function QRCodeCanvas({ url, size = 96, dataTableId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -24,10 +30,12 @@ export function QRCodeCanvas({ url, size = 96 }: Props) {
   return (
     <canvas
       ref={canvasRef}
+      data-table-id={dataTableId}
       width={size}
       height={size}
       className="rounded"
-      aria-label="QR code"
+      role="img"
+      aria-label="Table QR code"
     />
   );
 }

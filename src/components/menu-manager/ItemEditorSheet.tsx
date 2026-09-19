@@ -231,14 +231,14 @@ export function ItemEditorSheet({
           {/* Image */}
           <div className="flex items-center gap-3">
             <div
-              className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-stone-200 bg-stone-50 hover:border-stone-400"
+              className="flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low hover:border-outline"
               onClick={() => fileRef.current?.click()}
             >
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="" className="h-full w-full object-cover" />
               ) : (
-                <Upload className="h-6 w-6 text-stone-400" />
+                <Upload className="h-6 w-6 text-on-surface-variant" />
               )}
             </div>
             <div>
@@ -256,13 +256,13 @@ export function ItemEditorSheet({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="ml-1 text-red-500"
+                  className="ml-1 text-error"
                   onClick={() => setImageUrl(null)}
                 >
                   Remove
                 </Button>
               )}
-              <p className="mt-1 text-xs text-stone-400">JPEG / PNG / WebP, max 5 MB</p>
+              <p className="mt-1 text-xs text-on-surface-variant">JPEG / PNG / WebP, max 5 MB</p>
             </div>
             <input
               ref={fileRef}
@@ -277,7 +277,7 @@ export function ItemEditorSheet({
           <div className="space-y-1">
             <Label>Name *</Label>
             <Input {...register("name")} placeholder="Paneer Tikka" />
-            {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+            {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
           </div>
 
           {/* Description */}
@@ -291,7 +291,7 @@ export function ItemEditorSheet({
             <div className="space-y-1">
               <Label>Base price (₹) *</Label>
               <Input type="number" step="0.01" min="0" {...register("basePrice")} />
-              {errors.basePrice && <p className="text-xs text-red-500">{errors.basePrice.message}</p>}
+              {errors.basePrice && <p className="text-xs text-error">{errors.basePrice.message}</p>}
             </div>
             <div className="space-y-1">
               <Label>GST %</Label>
@@ -308,8 +308,8 @@ export function ItemEditorSheet({
                   key={ft.value}
                   className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                     watchedFoodType === ft.value
-                      ? "border-stone-900 bg-stone-100"
-                      : "border-stone-200"
+                      ? "border-on-surface bg-surface-container"
+                      : "border-outline-variant"
                   }`}
                 >
                   <input
@@ -382,14 +382,14 @@ export function ItemEditorSheet({
                 <button
                   type="button"
                   onClick={() => removeVariant(idx)}
-                  className="text-stone-400 hover:text-red-500"
+                  className="text-on-surface-variant hover:text-error"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}
             {variantFields.length === 0 && (
-              <p className="text-xs text-stone-400">No variants — single price.</p>
+              <p className="text-xs text-on-surface-variant">No variants — single price.</p>
             )}
           </div>
 
@@ -406,7 +406,7 @@ export function ItemEditorSheet({
                       onCheckedChange={() => toggleAddonGroup(group.id)}
                     />
                     <span>{group.name}</span>
-                    <span className="text-xs text-stone-400">
+                    <span className="text-xs text-on-surface-variant">
                       ({group.addons.length} options)
                     </span>
                   </label>

@@ -182,7 +182,7 @@ export function StaffManager({ initialStaff }: Props) {
         </p>
         <button
           onClick={() => setSheetOpen(true)}
-          className="flex items-center justify-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container transition-all active:translate-y-[2px] h-11 whitespace-nowrap"
+          className="flex items-center justify-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 transition-all active:translate-y-[2px] h-11 whitespace-nowrap"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
           Add Staff
@@ -286,7 +286,7 @@ export function StaffManager({ initialStaff }: Props) {
                 placeholder="e.g. Ravi Kumar"
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -297,7 +297,7 @@ export function StaffManager({ initialStaff }: Props) {
                 onChange={(e) =>
                   setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
                 }
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -328,7 +328,7 @@ export function StaffManager({ initialStaff }: Props) {
                   onChange={(e) =>
                     setField("pin", e.target.value.replace(/\D/g, "").slice(0, 4))
                   }
-                  className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-primary focus:ring-2 focus:ring-primary-fixed/50 transition-all text-on-surface outline-none tracking-[0.5em]"
+                  className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none tracking-[0.5em]"
                 />
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
                   Used to log in on the kitchen/waiter screen.
@@ -338,7 +338,7 @@ export function StaffManager({ initialStaff }: Props) {
             <button
               onClick={createStaff}
               disabled={saving}
-              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary-container transition-colors active:translate-y-[2px] disabled:opacity-50"
+              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 transition-colors active:translate-y-[2px] disabled:opacity-50"
             >
               {saving ? "Adding…" : "Add Staff Member"}
             </button>

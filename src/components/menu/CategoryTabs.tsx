@@ -69,25 +69,33 @@ export function CategoryTabs({ categories }: Props) {
       ref={tabsRef}
       role="tablist"
       aria-label="Menu categories"
-      className="flex gap-2 overflow-x-auto px-4 py-2 scrollbar-none"
+      className="flex gap-1.5 overflow-x-auto px-margin-mobile py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      {categories.map((cat) => (
-        <button
-          key={cat.id}
-          role="tab"
-          aria-selected={activeId === cat.id}
-          data-catid={cat.id}
-          onClick={() => handleTabClick(cat.id)}
-          className={cn(
-            "shrink-0 rounded-full px-4 py-1.5 font-label-bold text-label-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[36px]",
-            activeId === cat.id
-              ? "bg-primary-container text-on-primary-container shadow-level-1"
-              : "bg-surface-container-high text-on-surface hover:bg-surface-variant transition-all active:scale-95"
-          )}
-        >
-          {cat.name}
-        </button>
-      ))}
+      {categories.map((cat) => {
+        const active = activeId === cat.id;
+        return (
+          <button
+            key={cat.id}
+            role="tab"
+            aria-selected={active}
+            data-catid={cat.id}
+            onClick={() => handleTabClick(cat.id)}
+            // A sliding `layoutId` pill was tempting here, but it was the only
+            // thing pulling Framer Motion onto the customer menu — ~46kB for
+            // one transition, on the screen with the strictest load budget in
+            // the app. A colour transition costs nothing and reads fine.
+            className={cn(
+              "shrink-0 rounded-full px-4 font-label-bold text-label-bold uppercase",
+              "min-h-[44px] transition-[background-color,color,box-shadow] duration-base ease-out-quart",
+              active
+                ? "bg-brand text-brand-foreground shadow-glow"
+                : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            )}
+          >
+            {cat.name}
+          </button>
+        );
+      })}
     </div>
   );
 }

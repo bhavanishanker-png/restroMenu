@@ -39,7 +39,7 @@ function EstimatedReady({ isoString }: { isoString: string | null }) {
 
   if (!label) return null;
   return (
-    <p className="text-center text-sm font-medium text-stone-600">{label}</p>
+    <p className="text-center text-sm font-medium text-on-surface-variant">{label}</p>
   );
 }
 
@@ -70,7 +70,7 @@ function FeedbackPrompt() {
           >
             <span
               className={`material-symbols-outlined transition-colors ${
-                star <= rating ? "fill text-amber-400" : "text-outline-variant"
+                star <= rating ? "fill text-warning" : "text-outline-variant"
               }`}
               style={{ fontSize: 28 }}
             >
@@ -163,7 +163,7 @@ export function OrderTrackerClient({
   };
 
   const paymentColor: Record<string, string> = {
-    pending: "bg-amber-50 text-amber-700",
+    pending: "bg-warning-container text-on-warning-container",
     paid: "bg-secondary-container text-on-secondary-container",
     failed: "bg-tertiary/10 text-tertiary",
     refunded: "bg-surface-container text-on-surface-variant",

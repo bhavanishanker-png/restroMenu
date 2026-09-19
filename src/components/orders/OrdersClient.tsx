@@ -65,27 +65,27 @@ function OrderDetailSheet({
 
         <div className="mt-4 flex flex-col gap-4 text-sm">
           {/* Meta */}
-          <div className="grid grid-cols-2 gap-2 text-stone-600">
+          <div className="grid grid-cols-2 gap-2 text-on-surface-variant">
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Table</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Table</p>
               <p className="font-medium">{order.tableLabel ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Status</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Status</p>
               <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                 {STATUS_LABELS[order.status]}
               </span>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Customer</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Customer</p>
               <p className="font-medium">{order.customerName ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Phone</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Phone</p>
               <p className="font-medium">{order.customerPhone ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Placed at</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Placed at</p>
               <p className="font-medium">
                 {new Date(order.placedAt).toLocaleString("en-IN", {
                   day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
@@ -93,39 +93,39 @@ function OrderDetailSheet({
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-stone-400">Payment</p>
+              <p className="text-xs uppercase tracking-wide text-on-surface-variant">Payment</p>
               <p className="font-medium capitalize">{order.paymentStatus} / {order.paymentMethod ?? "—"}</p>
             </div>
           </div>
 
           {/* Bill */}
-          <div className="rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm">
-            <div className="flex justify-between text-stone-500">
+          <div className="rounded-lg border border-outline-variant bg-surface-container-low p-3 text-sm">
+            <div className="flex justify-between text-on-surface-variant">
               <span>Subtotal</span><span>₹{fmt(order.subtotal)}</span>
             </div>
             {order.taxTotal > 0 && (
-              <div className="flex justify-between text-stone-500">
+              <div className="flex justify-between text-on-surface-variant">
                 <span>Tax</span><span>₹{fmt(order.taxTotal)}</span>
               </div>
             )}
             {order.serviceCharge > 0 && (
-              <div className="flex justify-between text-stone-500">
+              <div className="flex justify-between text-on-surface-variant">
                 <span>Service charge</span><span>₹{fmt(order.serviceCharge)}</span>
               </div>
             )}
             {order.packingCharge > 0 && (
-              <div className="flex justify-between text-stone-500">
+              <div className="flex justify-between text-on-surface-variant">
                 <span>Packing charge</span><span>₹{fmt(order.packingCharge)}</span>
               </div>
             )}
-            <div className="mt-2 flex justify-between border-t border-stone-200 pt-2 font-semibold text-stone-800">
+            <div className="mt-2 flex justify-between border-t border-outline-variant pt-2 font-semibold text-on-surface">
               <span>Total</span><span>₹{fmt(order.total)}</span>
             </div>
           </div>
 
           {order.notes && (
-            <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-600">Notes</p>
+            <div className="rounded-lg bg-warning-container p-3 text-sm text-on-warning-container">
+              <p className="text-xs font-medium uppercase tracking-wide text-on-warning-container">Notes</p>
               <p className="mt-1">{order.notes}</p>
             </div>
           )}
@@ -232,7 +232,7 @@ export function OrdersClient() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-stone-400" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-on-surface-variant" />
           <Input
             placeholder="Order # or phone…"
             className="pl-8"
@@ -247,7 +247,7 @@ export function OrdersClient() {
           onChange={(e) => setDateFrom(e.target.value)}
           className="w-36"
         />
-        <span className="text-stone-400 text-sm">to</span>
+        <span className="text-on-surface-variant text-sm">to</span>
         <Input
           type="date"
           value={dateTo}
@@ -270,11 +270,11 @@ export function OrdersClient() {
           <Download className="mr-1 h-4 w-4" /> Export CSV
         </Button>
 
-        <span className="ml-auto text-xs text-stone-400">{total} orders</span>
+        <span className="ml-auto text-xs text-on-surface-variant">{total} orders</span>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm">
         {loading ? (
           <div className="flex flex-col gap-1 p-2">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -282,13 +282,39 @@ export function OrdersClient() {
             ))}
           </div>
         ) : orders.length === 0 ? (
-          <p className="py-16 text-center text-sm text-stone-400">
-            No orders match the selected filters.
-          </p>
+          // An empty list needs a way out of it, not just a statement of fact.
+          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+            <span
+              className="grid h-12 w-12 place-items-center rounded-full border border-outline-variant bg-surface-container text-on-surface-variant"
+              aria-hidden="true"
+            >
+              <Search className="h-5 w-5" />
+            </span>
+            <div className="space-y-1">
+              <p className="font-display text-title text-on-surface">No orders here</p>
+              <p className="measure-sm text-sm text-on-surface-variant">
+                Nothing matches the current date range and status. Orders placed
+                today appear the moment a guest checks out.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDateFrom(isoDate(today));
+                setDateTo(isoDate(today));
+                setStatus("all");
+                setSearch("");
+                setPage(1);
+              }}
+            >
+              Reset to today
+            </Button>
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-100 text-left text-xs font-medium uppercase tracking-wide text-stone-400">
+              <tr className="border-b border-outline-variant text-left text-xs font-medium uppercase tracking-wide text-on-surface-variant">
                 <th className="px-4 py-2.5">Order</th>
                 <th className="px-4 py-2.5">Table</th>
                 <th className="px-4 py-2.5 hidden sm:table-cell">Customer</th>
@@ -301,14 +327,14 @@ export function OrdersClient() {
               {orders.map((order) => (
                 <tr
                   key={order.id}
-                  className="cursor-pointer border-b border-stone-50 last:border-0 hover:bg-stone-50"
+                  className="cursor-pointer border-b border-outline-variant last:border-0 hover:bg-surface-container-low"
                   onClick={() => setDetail(order)}
                 >
-                  <td className="px-4 py-3 font-medium text-stone-800">
+                  <td className="px-4 py-3 font-medium text-on-surface">
                     #{order.orderNumber}
                   </td>
-                  <td className="px-4 py-3 text-stone-500">{order.tableLabel ?? "—"}</td>
-                  <td className="px-4 py-3 text-stone-500 hidden sm:table-cell">
+                  <td className="px-4 py-3 text-on-surface-variant">{order.tableLabel ?? "—"}</td>
+                  <td className="px-4 py-3 text-on-surface-variant hidden sm:table-cell">
                     {order.customerName ?? order.customerPhone ?? "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -316,10 +342,10 @@ export function OrdersClient() {
                       {STATUS_LABELS[order.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-stone-700">
+                  <td className="px-4 py-3 text-right font-medium text-on-surface">
                     ₹{fmt(order.total)}
                   </td>
-                  <td className="px-4 py-3 text-right text-stone-400 hidden md:table-cell">
+                  <td className="px-4 py-3 text-right text-on-surface-variant hidden md:table-cell">
                     {new Date(order.placedAt).toLocaleTimeString("en-IN", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -343,7 +369,7 @@ export function OrdersClient() {
           >
             <ChevronLeft className="h-4 w-4" /> Previous
           </Button>
-          <span className="text-stone-500">
+          <span className="text-on-surface-variant">
             Page {page} of {totalPages}
           </span>
           <Button

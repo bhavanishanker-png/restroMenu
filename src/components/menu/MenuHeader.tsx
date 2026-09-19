@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { Restaurant, RestaurantSettings, RestaurantTable } from "@/types";
 
 type Props = {
@@ -9,21 +9,20 @@ type Props = {
   table: Pick<RestaurantTable, "id" | "label"> | null;
 };
 
+/**
+ * This used to gate its own markup behind a `mounted` flag, which meant the
+ * restaurant name was absent from the server HTML and the bar rendered empty
+ * on first paint — a visible blank on the app's highest-traffic screen. The
+ * markup is deterministic (it only reads props), and extension-injected nodes
+ * are already covered by `suppressHydrationWarning` on <body>, so the gate is
+ * gone and the header is server-rendered. Same fix as the one applied to
+ * LoginForm.
+ */
 export function MenuHeader({ restaurant, table }: Props) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Server + initial client render: empty bar keeps extension injection outside hydration
-  if (!mounted) {
-    return (
-      <header className="fixed top-0 left-0 right-0 z-30 h-[64px] bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.08)]" />
-    );
-  }
-
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 flex h-[64px] items-center gap-3 bg-surface-container-low px-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+    <header className="glass-strong fixed inset-x-0 top-0 z-30 flex h-[64px] items-center gap-3 border-x-0 border-t-0 px-margin-mobile">
       {/* Logo */}
-      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-primary-container flex items-center justify-center border border-outline-variant/20">
+      <div className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-container-high ring-1 ring-inset ring-outline-variant">
         {restaurant.logoUrl ? (
           <Image
             src={restaurant.logoUrl}
@@ -31,11 +30,13 @@ export function MenuHeader({ restaurant, table }: Props) {
             fill
             sizes="36px"
             className="object-cover"
+            priority
           />
         ) : (
           <span
-            className="material-symbols-outlined text-on-primary-container"
+            className="material-symbols-outlined text-on-surface-variant"
             style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
           >
             restaurant_menu
           </span>
@@ -43,20 +44,22 @@ export function MenuHeader({ restaurant, table }: Props) {
       </div>
 
       {/* Name */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <h1 className="truncate font-headline-sm text-on-surface leading-tight" style={{ fontSize: 17 }}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h1 className="truncate font-display text-[1.0625rem] font-semibold leading-tight tracking-[-0.014em] text-on-surface">
           {restaurant.name}
         </h1>
         {restaurant.address && (
-          <p className="truncate font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
+          <p className="truncate text-[0.6875rem] leading-tight text-on-surface-variant">
             {restaurant.address}
           </p>
         )}
       </div>
 
+      <ThemeToggle className="h-9 w-9" />
+
       {/* Table badge */}
       {table && (
-        <span className="shrink-0 rounded-full bg-primary-container px-3 py-1 font-label-bold text-on-primary-container" style={{ fontSize: 12 }}>
+        <span className="shrink-0 rounded-full border border-brand-border bg-brand-subtle px-3 py-1 font-label-bold text-label-bold uppercase text-brand-text">
           Table {table.label}
         </span>
       )}
