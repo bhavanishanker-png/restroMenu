@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
+import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import type { RestaurantSettings } from "@/types";
 
-type Props = { settings: RestaurantSettings; restaurantName?: string };
+type Props = {
+  settings: RestaurantSettings;
+  restaurantName?: string;
+  logoUrl: string | null;
+};
 
 function Toggle({
   checked,
@@ -32,8 +38,11 @@ function Toggle({
   );
 }
 
-export function SettingsForm({ settings: initial, restaurantName }: Props) {
+export function SettingsForm({ settings: initial, restaurantName, logoUrl: initialLogoUrl }: Props) {
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialLogoUrl);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     serviceChargePct: initial.serviceChargePct,
     packingCharge: initial.packingCharge,
@@ -45,6 +54,42 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleLogoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset immediately so re-picking the same file still fires a change event.
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+      });
+
+      const formData = new FormData();
+      formData.append("file", compressed, compressed.name);
+
+      const res = await fetch("/api/settings/logo", { method: "POST", body: formData });
+
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: { message?: string } };
+        toast.error(body.error?.message ?? "Logo upload failed.");
+        return;
+      }
+
+      const { url } = (await res.json()) as { url: string };
+      setLogoUrl(url);
+      toast.success("Logo uploaded. Save changes to apply it.");
+    } catch (err) {
+      console.error("[settings logo]", err);
+      toast.error("Logo upload failed.");
+    } finally {
+      setUploadingLogo(false);
+    }
   }
 
   async function save() {
@@ -60,6 +105,7 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
           acceptsCash: form.acceptsCash,
           acceptsOnline: form.acceptsOnline,
           autoAcceptOrders: form.autoAcceptOrders,
+          logoUrl,
         }),
       });
       if (!res.ok) {
@@ -212,18 +258,58 @@ export function SettingsForm({ settings: initial, restaurantName }: Props) {
                   Restaurant Logo
                 </label>
                 <div className="mt-2 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-lg bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
-                    <span className="font-display text-2xl text-primary">Q</span>
+                  <div className="relative w-16 h-16 shrink-0 rounded-lg bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
+                    {logoUrl ? (
+                      <Image
+                        src={logoUrl}
+                        alt="Restaurant logo"
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="font-display text-2xl text-primary">
+                        {(restaurantName?.trim()[0] ?? "Q").toUpperCase()}
+                      </span>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    disabled
-                    className="h-10 px-4 rounded border border-outline-variant text-on-surface-variant font-label-bold text-label-bold opacity-60 cursor-not-allowed"
-                  >
-                    Change Logo
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleLogoSelect}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="h-11 px-4 rounded border border-outline-variant text-on-surface font-label-bold text-label-bold hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploadingLogo ? "Uploading…" : logoUrl ? "Change Logo" : "Upload Logo"}
+                    </button>
+                    {logoUrl && !uploadingLogo && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl(null)}
+                        className="h-8 px-2 self-start rounded text-error font-label-bold text-label-bold hover:bg-error/10 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-xs">
+                  Square image, JPEG/PNG/WebP. Shown in the customer menu header.
+                </p>
               </div>
+              {/*
+                Cover photo stays a placeholder on purpose: `restaurants.cover_url`
+                exists in the schema but no screen renders it yet, so an upload here
+                would write a field nothing reads. Wire it up alongside whichever
+                screen first displays the cover.
+              */}
               <div>
                 <label className="block font-label-bold text-label-bold text-on-surface-variant mb-xs">
                   Cover Photo
