@@ -14,11 +14,18 @@ export async function GET(): Promise<NextResponse> {
   const session = await getStaffSession();
   const supabase = createServerClient();
 
-  const { data, error } = await supabase
-    .from("restaurant_settings")
-    .select("*")
-    .eq("restaurant_id", session!.restaurantId)
-    .single();
+  const [{ data, error }, restaurant] = await Promise.all([
+    supabase
+      .from("restaurant_settings")
+      .select("*")
+      .eq("restaurant_id", session!.restaurantId)
+      .single(),
+    supabase
+      .from("restaurants")
+      .select("logo_url")
+      .eq("id", session!.restaurantId)
+      .single(),
+  ]);
 
   if (error || !data) {
     console.error("[settings GET]", error);
@@ -28,10 +35,28 @@ export async function GET(): Promise<NextResponse> {
     );
   }
 
-  return NextResponse.json({ settings: toRestaurantSettings(data as DbRestaurantSettings) });
+  if (restaurant.error) {
+    console.error("[settings GET restaurant]", restaurant.error);
+    return NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Restaurant not found." } },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({
+    settings: toRestaurantSettings(data as DbRestaurantSettings),
+    logoUrl: restaurant.data.logo_url,
+  });
 }
 
 // ---------------------------------------------------------------- PATCH /api/settings
+
+/**
+ * A logo URL is only ever accepted if it points at our own Supabase storage —
+ * an arbitrary host would be rejected by next/image's remotePatterns and leave
+ * the customer menu header broken.
+ */
+const STORAGE_URL_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/`;
 
 const patchSchema = z.object({
   acceptsCash: z.boolean().optional(),
@@ -40,6 +65,12 @@ const patchSchema = z.object({
   packingCharge: z.number().min(0).optional(),
   orderNumberPrefix: z.string().min(1).max(6).regex(/^[A-Z0-9]+$/, "Only uppercase letters and digits").optional(),
   autoAcceptOrders: z.boolean().optional(),
+  logoUrl: z
+    .string()
+    .url()
+    .refine((u) => u.startsWith(STORAGE_URL_PREFIX), "Logo must be an uploaded image.")
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
@@ -74,7 +105,10 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   if (body.orderNumberPrefix !== undefined) update.order_number_prefix = body.orderNumberPrefix;
   if (body.autoAcceptOrders !== undefined) update.auto_accept_orders = body.autoAcceptOrders;
 
-  if (Object.keys(update).length === 0) {
+  // Branding lives on the `restaurants` row, not `restaurant_settings`.
+  const brandingChanged = body.logoUrl !== undefined;
+
+  if (Object.keys(update).length === 0 && !brandingChanged) {
     return NextResponse.json(
       { error: { code: "NO_CHANGES", message: "No fields to update." } },
       { status: 400 }
@@ -82,6 +116,42 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   }
 
   const supabase = createServerClient();
+
+  if (brandingChanged) {
+    const { error: brandingError } = await supabase
+      .from("restaurants")
+      .update({ logo_url: body.logoUrl })
+      .eq("id", session!.restaurantId);
+
+    if (brandingError) {
+      console.error("[settings PATCH branding]", brandingError);
+      return NextResponse.json(
+        { error: { code: "UPDATE_FAILED", message: "Failed to update branding." } },
+        { status: 500 }
+      );
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    const { data, error } = await supabase
+      .from("restaurant_settings")
+      .select("*")
+      .eq("restaurant_id", session!.restaurantId)
+      .single();
+
+    if (error || !data) {
+      console.error("[settings PATCH reload]", error);
+      return NextResponse.json(
+        { error: { code: "UPDATE_FAILED", message: "Failed to load settings." } },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      settings: toRestaurantSettings(data as DbRestaurantSettings),
+      logoUrl: body.logoUrl ?? null,
+    });
+  }
 
   const { data, error } = await supabase
     .from("restaurant_settings")
@@ -98,5 +168,8 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  return NextResponse.json({ settings: toRestaurantSettings(data as DbRestaurantSettings) });
+  return NextResponse.json({
+    settings: toRestaurantSettings(data as DbRestaurantSettings),
+    ...(brandingChanged ? { logoUrl: body.logoUrl ?? null } : {}),
+  });
 }

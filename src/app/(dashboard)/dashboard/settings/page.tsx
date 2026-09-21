@@ -21,7 +21,7 @@ export default async function SettingsPage() {
       .single(),
     supabase
       .from("restaurants")
-      .select("name")
+      .select("name, logo_url")
       .eq("id", session.restaurantId)
       .single(),
   ]);
@@ -30,6 +30,7 @@ export default async function SettingsPage() {
 
   const settings = toRestaurantSettings(data as DbRestaurantSettings);
   const restaurantName = restaurantData.data?.name ?? undefined;
+  const logoUrl = restaurantData.data?.logo_url ?? null;
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
@@ -43,7 +44,7 @@ export default async function SettingsPage() {
           </p>
         </div>
       </header>
-      <SettingsForm settings={settings} restaurantName={restaurantName} />
+      <SettingsForm settings={settings} restaurantName={restaurantName} logoUrl={logoUrl} />
     </div>
   );
 }
