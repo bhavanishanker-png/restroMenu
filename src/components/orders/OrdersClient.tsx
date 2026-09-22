@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,6 +37,9 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 
 const STATUS_COLORS = ORDER_STATUS_STYLES;
 const STATUS_LABELS = ORDER_STATUS_LABELS;
+
+const REALTIME_DEBOUNCE_MS = 400;
+const POLL_MS = 15_000;
 
 function fmt(n: number) {
   return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -137,7 +141,7 @@ function OrderDetailSheet({
 
 // ---------------------------------------------------------------- main component
 
-export function OrdersClient() {
+export function OrdersClient({ restaurantId }: { restaurantId: string }) {
   const today = new Date();
   const [dateFrom, setDateFrom] = useState(isoDate(today));
   const [dateTo, setDateTo] = useState(isoDate(today));
@@ -152,8 +156,10 @@ export function OrdersClient() {
 
   const limit = 50;
 
-  const fetchOrders = useCallback(async (p: number) => {
-    setLoading(true);
+  // `silent` skips the skeleton: a background refresh triggered by Realtime
+  // should not blank a table the staff member is reading.
+  const fetchOrders = useCallback(async (p: number, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const params = new URLSearchParams({
         dateFrom: new Date(dateFrom + "T00:00:00").toISOString(),
@@ -169,7 +175,7 @@ export function OrdersClient() {
       setOrders(data.orders);
       setTotal(data.total);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [dateFrom, dateTo, status, search]);
 
@@ -181,6 +187,59 @@ export function OrdersClient() {
   }, [dateFrom, dateTo, status, search, fetchOrders]);
 
   useEffect(() => { fetchOrders(page); }, [page, fetchOrders]);
+
+  // The list is fetched client-side, so router.refresh() cannot reach it —
+  // it needs its own refresh loop. Without this the only way to see an order
+  // a customer had just placed was to reload the page.
+  //
+  // The poll is the reliable half. postgres_changes cannot reach a staff
+  // screen: the browser holds the anon key and the `orders` RLS policy keys
+  // off `auth.uid()`, which a signed-cookie session never sets. The
+  // subscription below stays as a latency win and only nudges the same fetch.
+  const refetchRef = useRef<() => void>(() => {});
+  refetchRef.current = () => { void fetchOrders(page, true); };
+
+  useEffect(() => {
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    // One order write fires several events; collapse the burst into one fetch.
+    const scheduleRefetch = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => refetchRef.current(), REALTIME_DEBOUNCE_MS);
+    };
+
+    const channel = supabase
+      .channel(`orders-list:${restaurantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        scheduleRefetch
+      )
+      .subscribe();
+
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") scheduleRefetch();
+    }, POLL_MS);
+
+    // A backgrounded tab skips its polls, so catch up on the way back.
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") scheduleRefetch();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId]);
 
   async function exportCSV() {
     try {

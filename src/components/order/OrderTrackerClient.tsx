@@ -95,7 +95,6 @@ export function OrderTrackerClient({
 }: Props) {
   const [order, setOrder] = useState<Order>(initialOrder);
   const [items, setItems] = useState<OrderItem[]>(initialItems);
-  const [socketActive, setSocketActive] = useState(false);
   const clearCart = useCartStore((s) => s.clearCart);
   const cartCleared = useRef(false);
 
@@ -116,9 +115,11 @@ export function OrderTrackerClient({
     setItems(data.items);
   };
 
-  // Primary: Supabase Realtime via postgres_changes.
-  // Requires migration 003_order_tracker_realtime.sql to be run.
-  // Falls back to polling if the socket is unavailable or RLS blocks it.
+  // Accelerator: Supabase Realtime via postgres_changes. It only fires where
+  // migration 003_order_tracker_realtime.sql has been applied — without it,
+  // RLS filters every event out. The socket still reports SUBSCRIBED in that
+  // case, so `socketActive` is not evidence that events are arriving and the
+  // poll below must run regardless.
   useEffect(() => {
     const supabase = createClient();
 
@@ -137,9 +138,7 @@ export function OrderTrackerClient({
           refresh();
         }
       )
-      .subscribe((status) => {
-        setSocketActive(status === "SUBSCRIBED");
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -147,13 +146,24 @@ export function OrderTrackerClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
-  // Fallback: 15s polling when Realtime socket is down.
+  // The reliable path: poll while the customer is looking at the page. A diner
+  // watching for "Ready" must never have to pull-to-refresh to find out.
   useEffect(() => {
-    if (socketActive) return;
-    const interval = setInterval(refresh, 15_000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 15_000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socketActive, orderId]);
+  }, [orderId]);
 
   const paymentLabel: Record<string, string> = {
     pending: "Payment pending",

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus, ServiceRequest, ServiceRequestType } from "@/types";
-import type { KitchenItem, KitchenOrder, PendingChange } from "./types";
+import type { KitchenOrder, PendingChange } from "./types";
 import { KitchenHeader } from "./KitchenHeader";
 import { OrderCard } from "./OrderCard";
 
@@ -65,49 +65,6 @@ function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
   return filtered;
 }
 
-// ---------------------------------------------------------------- raw order mapper
-
-type RawOrderRow = {
-  id: string;
-  order_number: string;
-  status: string;
-  placed_at: string;
-  restaurant_tables: { label: string } | null;
-  order_items: {
-    id: string;
-    item_name: string;
-    variant_name: string | null;
-    quantity: number;
-    addons: { name: string; price: number }[] | null;
-    notes: string | null;
-  }[];
-};
-
-function mapRaw(row: RawOrderRow): KitchenOrder {
-  const tableLabel =
-    row.restaurant_tables && "label" in row.restaurant_tables
-      ? (row.restaurant_tables as { label: string }).label
-      : null;
-
-  const items: KitchenItem[] = (row.order_items ?? []).map((i) => ({
-    id: i.id,
-    itemName: i.item_name,
-    variantName: i.variant_name,
-    quantity: i.quantity,
-    addons: (i.addons ?? []) as KitchenItem["addons"],
-    notes: i.notes,
-  }));
-
-  return {
-    id: row.id,
-    orderNumber: row.order_number,
-    status: row.status as OrderStatus,
-    placedAt: row.placed_at,
-    tableLabel,
-    items,
-  };
-}
-
 // ---------------------------------------------------------------- service request labels
 
 const REQUEST_LABELS: Record<ServiceRequestType, { icon: string; label: string }> = {
@@ -138,7 +95,35 @@ type Props = {
   restaurantId: string;
   restaurantName: string;
   initialOrders: KitchenOrder[];
+  initialServiceRequests: ServiceRequest[];
 };
+
+/** Shape of GET /api/kitchen/board. Declared here so this client component
+ *  never reaches into the server-only query module. */
+type BoardResponse = {
+  orders: KitchenOrder[];
+  serviceRequests: ServiceRequest[];
+};
+
+const POLL_MS = 8_000;
+const REALTIME_DEBOUNCE_MS = 300;
+
+/**
+ * Server rows win, except for orders whose change is still sitting in the
+ * offline queue: the server has not heard about those yet, so taking its
+ * status would visibly undo the tap the cook just made.
+ */
+function mergeOrders(
+  incoming: KitchenOrder[],
+  queued: PendingChange[]
+): KitchenOrder[] {
+  if (queued.length === 0) return incoming;
+  const pending = new Map(queued.map((c) => [c.orderId, c.newStatus]));
+  return incoming.map((o) => {
+    const status = pending.get(o.id);
+    return status ? { ...o, status } : o;
+  });
+}
 
 // ---------------------------------------------------------------- component
 
@@ -146,6 +131,7 @@ export function KitchenDisplay({
   restaurantId,
   restaurantName,
   initialOrders,
+  initialServiceRequests,
 }: Props) {
   const supabase = useMemo(() => createClient(), []);
 
@@ -155,15 +141,28 @@ export function KitchenDisplay({
   const [queue, setQueue] = useState<PendingChange[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
-  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
+  const [serviceRequests, setServiceRequests] =
+    useState<ServiceRequest[]>(initialServiceRequests);
   const [servicesPanelOpen, setServicesPanelOpen] = useState(false);
 
   const isOnlineRef = useRef(isOnline);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const soundEnabledRef = useRef(soundEnabled);
+  const queueRef = useRef(queue);
+
+  // Orders already on screen. Seeded from the server render so the first poll
+  // does not chime for the whole board.
+  const seenOrderIdsRef = useRef<Set<string>>(
+    new Set(initialOrders.map((o) => o.id))
+  );
+
+  // Bumped by every local status change. A poll whose response comes back
+  // against a stale sequence is discarded rather than allowed to overwrite it.
+  const mutationSeqRef = useRef(0);
 
   useEffect(() => { isOnlineRef.current = isOnline; }, [isOnline]);
   useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
 
   // ---- 1s timer ----
   useEffect(() => {
@@ -203,39 +202,6 @@ export function KitchenDisplay({
     setQueue(loadQueue());
     setIsOnline(navigator.onLine);
   }, []);
-
-  // ---- Load initial open service requests ----
-  useEffect(() => {
-    supabase
-      .from("service_requests")
-      .select("id, restaurant_id, table_id, type, status, created_at, restaurant_tables(label)")
-      .eq("restaurant_id", restaurantId)
-      .eq("status", "open")
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (!data) return;
-        type RawSR = {
-          id: string; restaurant_id: string; table_id: string;
-          type: string; status: string; created_at: string;
-          restaurant_tables: { label: string }[] | { label: string } | null;
-        };
-        const mapped: ServiceRequest[] = (data as unknown as RawSR[]).map((r) => {
-          const tableRow = Array.isArray(r.restaurant_tables)
-            ? r.restaurant_tables[0]
-            : r.restaurant_tables;
-          return {
-            id: r.id,
-            restaurantId: r.restaurant_id,
-            tableId: r.table_id,
-            tableLabel: tableRow?.label ?? null,
-            type: r.type as ServiceRequestType,
-            status: r.status as "open" | "resolved",
-            createdAt: r.created_at,
-          };
-        });
-        setServiceRequests(mapped);
-      });
-  }, [supabase, restaurantId]);
 
   // ---- Online / offline listeners + queue flush ----
   useEffect(() => {
@@ -282,145 +248,117 @@ export function KitchenDisplay({
     };
   }, []);
 
-  // ---- Supabase Realtime — orders ----
+  // ---- Board sync ----
+  //
+  // Polling is the transport that actually works here. The browser holds the
+  // anon key, and the `orders` RLS policy resolves staff through `auth.uid()`
+  // — which a signed-cookie session never sets — so `postgres_changes`
+  // delivers nothing to this screen and the board silently froze at whatever
+  // the server rendered. /api/kitchen/board reads with the service role and
+  // scopes to the caller's own restaurant.
+  //
+  // The Realtime subscription is kept as a latency win: when it does fire it
+  // only nudges the same poll, so it can never be the sole path to a refresh.
   useEffect(() => {
-    const SELECT =
-      "id, order_number, status, placed_at, restaurant_tables(label), order_items(id, item_name, variant_name, quantity, addons, notes)";
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function announce(incoming: KitchenOrder[]): void {
+      const seen = seenOrderIdsRef.current;
+      const arrivals = incoming.filter((o) => !seen.has(o.id));
+      for (const o of incoming) seen.add(o.id);
+      if (arrivals.length === 0) return;
+
+      const arrivalIds = arrivals.map((o) => o.id);
+      setNewIds((prev) => new Set([...Array.from(prev), ...arrivalIds]));
+
+      if (soundEnabledRef.current && audioCtxRef.current) {
+        try { buildChime(audioCtxRef.current); } catch { /* audio blocked */ }
+      }
+
+      setTimeout(() => {
+        setNewIds((prev) => {
+          const next = new Set(prev);
+          for (const id of arrivalIds) next.delete(id);
+          return next;
+        });
+      }, 1500);
+    }
+
+    async function sync(): Promise<void> {
+      if (cancelled || !isOnlineRef.current) return;
+
+      // A response that lands after a local tap must not roll it back.
+      const seq = mutationSeqRef.current;
+
+      try {
+        const res = await fetch("/api/kitchen/board", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+
+        const board = (await res.json()) as BoardResponse;
+        if (cancelled || mutationSeqRef.current !== seq) return;
+
+        setOrders(mergeOrders(board.orders, queueRef.current));
+        setServiceRequests(board.serviceRequests);
+        announce(board.orders);
+      } catch {
+        // Offline or a transient failure — the next tick retries. The offline
+        // banner already tells the cook what is going on.
+      }
+    }
+
+    function scheduleNudge(): void {
+      if (nudgeTimer) clearTimeout(nudgeTimer);
+      nudgeTimer = setTimeout(() => { void sync(); }, REALTIME_DEBOUNCE_MS);
+    }
+
+    async function tick(): Promise<void> {
+      await sync();
+      if (!cancelled) pollTimer = setTimeout(() => { void tick(); }, POLL_MS);
+    }
+
+    pollTimer = setTimeout(() => { void tick(); }, POLL_MS);
 
     const channel = supabase
-      .channel(`kitchen-${restaurantId}`)
+      .channel(`kitchen:${restaurantId}`)
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "orders",
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-        async (payload) => {
-          const { data } = await supabase
-            .from("orders")
-            .select(SELECT)
-            .eq("id", (payload.new as { id: string }).id)
-            .single();
-
-          if (!data) return;
-
-          const newOrder = mapRaw(data as unknown as RawOrderRow);
-          setOrders((prev) => [newOrder, ...prev]);
-          setNewIds((prev) => new Set(Array.from(prev).concat(newOrder.id)));
-
-          if (soundEnabledRef.current && audioCtxRef.current) {
-            try { buildChime(audioCtxRef.current); } catch { /* ignore */ }
-          }
-
-          setTimeout(() => {
-            setNewIds((prev) => {
-              const next = new Set(prev);
-              next.delete(newOrder.id);
-              return next;
-            });
-          }, 1500);
-        }
+        scheduleNudge
       )
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; status: string };
-          setOrders((prev) =>
-            prev.map((o) =>
-              o.id === updated.id
-                ? { ...o, status: updated.status as OrderStatus }
-                : o
-            )
-          );
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [supabase, restaurantId]);
-
-  // ---- Supabase Realtime — service requests ----
-  useEffect(() => {
-    const channel = supabase
-      .channel(`kitchen-service-${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "service_requests",
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-        async (payload) => {
-          const inserted = payload.new as {
-            id: string; restaurant_id: string; table_id: string;
-            type: string; status: string; created_at: string;
-          };
-
-          // Fetch with the table label join
-          const { data } = await supabase
-            .from("service_requests")
-            .select("id, restaurant_id, table_id, type, status, created_at, restaurant_tables(label)")
-            .eq("id", inserted.id)
-            .single();
-
-          type RawSRSingle = {
-            id: string; restaurant_id: string; table_id: string;
-            type: string; status: string; created_at: string;
-            restaurant_tables: { label: string }[] | { label: string } | null;
-          };
-          const r = data as unknown as RawSRSingle | null;
-
-          if (!r) return;
-
-          const tableRow = Array.isArray(r.restaurant_tables)
-            ? r.restaurant_tables[0]
-            : r.restaurant_tables;
-
-          const req: ServiceRequest = {
-            id: r.id,
-            restaurantId: r.restaurant_id,
-            tableId: r.table_id,
-            tableLabel: tableRow?.label ?? null,
-            type: r.type as ServiceRequestType,
-            status: r.status as "open" | "resolved",
-            createdAt: r.created_at,
-          };
-
-          setServiceRequests((prev) => [...prev, req]);
-
-          const label = REQUEST_LABELS[req.type as ServiceRequestType];
-          const tableName = req.tableLabel ? `Table ${req.tableLabel}` : "A table";
-          toast.info(`${tableName}: ${label.label}`, { icon: label.icon });
-          setServicesPanelOpen(true);
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "service_requests",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; status: string };
-          if (updated.status === "resolved") {
-            setServiceRequests((prev) => prev.filter((r) => r.id !== updated.id));
-          }
-        }
+        scheduleNudge
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // A tablet that has been asleep is the most likely thing to be stale.
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") scheduleNudge();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("online", scheduleNudge);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+      if (nudgeTimer) clearTimeout(nudgeTimer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("online", scheduleNudge);
+      supabase.removeChannel(channel);
+    };
   }, [supabase, restaurantId]);
 
   // ---- Sound toggle ----
@@ -439,6 +377,7 @@ export function KitchenDisplay({
   // ---- Resolve service request ----
   const handleResolveRequest = useCallback(async (id: string) => {
     // Optimistic remove
+    mutationSeqRef.current++;
     setServiceRequests((prev) => prev.filter((r) => r.id !== id));
 
     const res = await fetch("/api/service-requests", {
@@ -465,6 +404,7 @@ export function KitchenDisplay({
 
     const prevStatus = order.status;
 
+    mutationSeqRef.current++;
     setOrders((prev) =>
       prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
     );
@@ -509,6 +449,7 @@ export function KitchenDisplay({
 
     const prevStatus = order.status;
 
+    mutationSeqRef.current++;
     setOrders((prev) =>
       prev.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o))
     );

@@ -15,7 +15,7 @@ export default async function OrdersPage() {
         title="Orders"
         description="Search, filter and export every order the restaurant has taken."
       />
-      <OrdersClient />
+      <OrdersClient restaurantId={session.restaurantId} />
     </div>
   );
 }

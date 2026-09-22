@@ -4,6 +4,7 @@ import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { toOrder } from "@/lib/mappers";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { DbOrder } from "@/types/db";
 import { ORDER_STATUS_STYLES, ORDER_STATUS_LABELS } from "@/lib/order-status";
 import type { Order, OrderStatus } from "@/types";
@@ -36,7 +37,14 @@ export default async function DashboardPage() {
   today.setHours(0, 0, 0, 0);
   const todayStart = today.toISOString();
 
-  const [{ data: todayOrders }, { data: recentRows }, restaurantData] = await Promise.all([
+  // All four reads go out together. The live-orders count used to be awaited
+  // after this block, adding a serial round trip to every dashboard render.
+  const [
+    { data: todayOrders },
+    { data: recentRows },
+    restaurantData,
+    { count: liveOrders },
+  ] = await Promise.all([
     supabase
       .from("orders")
       .select("total, placed_at")
@@ -56,17 +64,17 @@ export default async function DashboardPage() {
       .select("name")
       .eq("id", session.restaurantId)
       .single(),
+
+    supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("restaurant_id", session.restaurantId)
+      .in("status", ["placed", "accepted", "preparing", "ready"]),
   ]);
 
   const ordersToday = todayOrders?.length ?? 0;
   const revenueToday = (todayOrders ?? []).reduce((sum, o) => sum + Number(o.total), 0);
   const avgTicket = ordersToday > 0 ? revenueToday / ordersToday : 0;
-
-  const { count: liveOrders } = await supabase
-    .from("orders")
-    .select("*", { count: "exact", head: true })
-    .eq("restaurant_id", session.restaurantId)
-    .in("status", ["placed", "accepted", "preparing", "ready"]);
 
   const hourCounts = new Array(24).fill(0) as number[];
   for (const o of todayOrders ?? []) {
@@ -81,6 +89,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
+      {/* Stats and the recent-orders list re-render as customers order. */}
+      <LiveRefresh restaurantId={session.restaurantId} tables={["orders"]} />
+
       {/* Page header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-md">
         <div>
