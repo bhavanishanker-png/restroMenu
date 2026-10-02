@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
@@ -28,7 +29,11 @@ export default async function DashboardLayout({
 
       {/* Mobile top bar */}
       <div className="glass fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 py-3 md:hidden">
-        <span className="flex items-center gap-2">
+        <Link
+          href="/"
+          aria-label="QBite home page"
+          className="-m-1.5 flex min-h-[44px] items-center gap-2 rounded-lg p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
           <span
             aria-hidden="true"
             className="relative grid h-7 w-7 place-items-center rounded-md bg-primary font-display text-xs font-bold text-primary-foreground"
@@ -39,7 +44,7 @@ export default async function DashboardLayout({
           <span className="font-display text-[0.9375rem] font-bold tracking-[-0.02em] text-on-surface">
             QBite
           </span>
-        </span>
+        </Link>
         <span className="flex items-center gap-2">
           <span className="rounded-full border border-outline-variant bg-surface-container px-2.5 py-0.5 font-label-bold text-label-bold uppercase text-on-surface-variant">
             {session.role}
@@ -48,7 +53,11 @@ export default async function DashboardLayout({
         </span>
       </div>
 
-      <main className="flex-1 md:ml-[280px] min-h-screen pt-[56px] md:pt-0 overflow-auto">
+      {/* overflow-x-clip, not overflow-auto: an overflow container becomes
+          the scrollport for position: sticky, and since the window (not this
+          element) scrolls, sticky children like the Settings section menu
+          never stuck. Clip still stops wide content widening the page. */}
+      <main className="flex-1 md:ml-[280px] min-h-screen min-w-0 pt-[56px] md:pt-0 overflow-x-clip">
         {children}
       </main>
     </div>

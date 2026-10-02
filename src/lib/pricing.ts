@@ -50,6 +50,22 @@ export function averageMoney(total: number, count: number): number {
   return roundMoney(total / count);
 }
 
+/**
+ * Period-over-period change, as a percentage rounded to one decimal.
+ * `null` when there is no previous amount to compare with — "+∞%" is not a
+ * number an owner can use.
+ */
+export function percentChange(current: number, previous: number): number | null {
+  if (previous <= 0) return null;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
+/** `part` as a percentage of `whole` (0–100), one decimal. 0 when `whole` is 0. */
+export function percentOf(part: number, whole: number): number {
+  if (whole <= 0) return 0;
+  return Math.round((part / whole) * 1000) / 10;
+}
+
 /** Format for display. Amounts are stored as numbers, never as formatted strings. */
 export function formatMoney(value: number, currency = 'INR'): string {
   return new Intl.NumberFormat('en-IN', {

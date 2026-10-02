@@ -95,8 +95,12 @@ export function DashboardNav({ role, restaurantName }: Props) {
       aria-label="Dashboard"
       className="fixed left-0 top-0 z-40 hidden h-screen w-[280px] flex-col border-r border-outline-variant bg-surface-container-low md:flex"
     >
-      {/* Brand */}
-      <div className="flex items-center gap-3 border-b border-outline-variant px-5 py-4">
+      {/* Brand — links to the public home page. */}
+      <Link
+        href="/"
+        aria-label={`QBite home page (${restaurantName})`}
+        className="flex items-center gap-3 border-b border-outline-variant px-5 py-4 transition-colors duration-fast hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+      >
         <span
           aria-hidden="true"
           className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground"
@@ -110,7 +114,7 @@ export function DashboardNav({ role, restaurantName }: Props) {
           </p>
           <p className="truncate text-body-sm text-on-surface-variant">{restaurantName}</p>
         </div>
-      </div>
+      </Link>
 
       {/* Main nav */}
       <div className="flex-1 overflow-y-auto p-3">

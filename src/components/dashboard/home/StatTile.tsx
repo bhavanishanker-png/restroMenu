@@ -51,7 +51,7 @@ export function StatTile({ label, value, icon, caption, accent = false }: Props)
           </span>
         </span>
       </div>
-      <div className="relative truncate font-display text-[28px] font-bold leading-none text-on-surface md:text-[34px]">
+      <div className="relative truncate text-[28px] font-semibold leading-none tracking-tight text-on-surface md:text-[34px]">
         {value}
       </div>
       <div className="relative min-w-0 text-body-sm text-on-surface-variant">{caption}</div>

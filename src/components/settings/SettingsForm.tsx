@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { formatMoney, priceCart } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
-import type { RestaurantSettings } from "@/types";
+import type { CartLine, RestaurantSettings } from "@/types";
 
 type Props = {
   settings: RestaurantSettings;
@@ -51,39 +52,79 @@ function FieldError({ id, children }: { id: string; children: string }) {
   );
 }
 
-/** Heading on the left, fields on the right from lg up; stacked below. */
+type SectionKey = "profile" | "ordering" | "charges" | "payments";
+
+const SECTIONS: { key: SectionKey; icon: string; title: string; description: string }[] = [
+  { key: "profile", icon: "storefront", title: "Restaurant profile", description: "How your restaurant appears to guests on the menu." },
+  { key: "ordering", icon: "receipt_long", title: "Ordering", description: "How new orders are numbered and whether they need confirming." },
+  { key: "charges", icon: "request_quote", title: "Charges", description: "Added to the bill on top of item prices and tax." },
+  { key: "payments", icon: "payments", title: "Payments", description: "How guests can settle the bill when they check out." },
+];
+
+const sectionId = (key: SectionKey) => `settings-${key}`;
+
+/** One card per section: icon, heading and description, then its settings. */
 function SettingsSection({
-  icon,
-  title,
-  description,
+  section,
+  edited,
   children,
 }: {
-  icon: string;
-  title: string;
-  description: string;
+  section: (typeof SECTIONS)[number];
+  edited: boolean;
   children: ReactNode;
 }) {
-  const id = `settings-${title.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+  const id = sectionId(section.key);
   return (
-    <section aria-labelledby={id} className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
-      <div className="flex items-start gap-3 lg:flex-col lg:gap-3 lg:pt-1">
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      // Clears the sticky save bar's shadow and the top of the viewport when
+      // jumped to from the section menu.
+      className="scroll-mt-6 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-level-1"
+    >
+      <header className="flex items-start gap-3 border-b border-outline-variant bg-surface-container-low px-4 py-4 sm:px-5">
         <span
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-outline-variant bg-surface-container text-on-surface-variant"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface-variant"
           aria-hidden="true"
         >
-          <Icon name={icon} size={22} />
+          <Icon name={section.icon} size={22} />
         </span>
-        <div className="min-w-0">
-          <h2 id={id} className="font-display text-title text-on-surface">{title}</h2>
-          <p className="mt-0.5 text-body-sm text-on-surface-variant">{description}</p>
+        <div className="min-w-0 flex-1">
+          <h2 id={`${id}-title`} className="font-display text-title text-on-surface">{section.title}</h2>
+          <p className="mt-0.5 text-body-sm text-on-surface-variant">{section.description}</p>
         </div>
-      </div>
-      <div className="divide-y divide-outline-variant rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-level-1">
-        {children}
-      </div>
+        {edited && (
+          <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-border bg-brand-subtle px-2 py-0.5 text-xs font-semibold text-brand-text">
+            <Icon name="edit" size={12} />
+            Edited
+          </span>
+        )}
+      </header>
+      <div className="divide-y divide-outline-variant">{children}</div>
     </section>
   );
 }
+
+/**
+ * A sample order priced by the same `priceCart` the checkout uses, so the
+ * preview can never disagree with what a guest is actually charged.
+ */
+const SAMPLE_LINE: CartLine = {
+  lineId: "settings-preview",
+  itemId: "settings-preview",
+  itemName: "Sample dish",
+  imageUrl: null,
+  foodType: "veg",
+  basePrice: 250,
+  taxRate: 5,
+  prepMinutes: 15,
+  variantId: null,
+  variantName: null,
+  variantPriceDelta: 0,
+  addons: [],
+  quantity: 4,
+  notes: null,
+};
 
 /** One setting per row inside a section card. */
 function Row({ children, className }: { children: ReactNode; className?: string }) {
@@ -131,7 +172,7 @@ function SwitchRow({
           checked={checked}
           onCheckedChange={onChange}
           aria-describedby={`${id}-desc`}
-          className="data-[state=unchecked]:bg-surface-container-highest data-[state=unchecked]:ring-1 data-[state=unchecked]:ring-inset data-[state=unchecked]:ring-outline-variant"
+          className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-surface-container-highest data-[state=unchecked]:ring-1 data-[state=unchecked]:ring-inset data-[state=unchecked]:ring-outline-variant"
         />
       </span>
     </label>
@@ -182,6 +223,74 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
     logoUrl !== saved.logoUrl ||
     (Object.keys(form) as (keyof FormState)[]).some((k) => form[k] !== saved.form[k]);
   const noPaymentMethod = !form.acceptsCash && !form.acceptsOnline;
+
+  const changed = (k: keyof FormState) => form[k] !== saved.form[k];
+  const editedSections: Record<SectionKey, boolean> = {
+    profile: logoUrl !== saved.logoUrl,
+    ordering: changed("orderNumberPrefix") || changed("autoAcceptOrders"),
+    charges: changed("serviceChargePct") || changed("packingCharge"),
+    payments: changed("acceptsCash") || changed("acceptsOnline"),
+  };
+
+  // One line per section for the menu, so the owner can check the setup
+  // without opening every card.
+  const summaries: Record<SectionKey, string> = {
+    profile: logoUrl ? "Logo added" : "No logo yet",
+    ordering: `#${form.orderNumberPrefix || "—"} · auto-accept ${form.autoAcceptOrders ? "on" : "off"}`,
+    charges:
+      form.serviceChargePct === 0 && form.packingCharge === 0
+        ? "No extra charges"
+        : [
+            form.serviceChargePct > 0 ? `${form.serviceChargePct}% service` : null,
+            form.packingCharge > 0 ? `${formatMoney(form.packingCharge)} packing` : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+    payments: noPaymentMethod
+      ? "None — guests can't pay"
+      : form.acceptsCash && form.acceptsOnline
+        ? "Cash and online"
+        : form.acceptsCash
+          ? "Cash only"
+          : "Online only",
+  };
+
+  // Live bill preview for the current, unsaved charge values.
+  const preview = useMemo(() => {
+    const settings = {
+      serviceChargePct: errors.serviceChargePct ? 0 : form.serviceChargePct,
+      packingCharge: errors.packingCharge ? 0 : form.packingCharge,
+    };
+    return {
+      dineIn: priceCart([SAMPLE_LINE], { orderType: "dine_in", settings }),
+      takeaway: priceCart([SAMPLE_LINE], { orderType: "takeaway", settings }),
+    };
+  }, [form.serviceChargePct, form.packingCharge, errors.serviceChargePct, errors.packingCharge]);
+
+  // Section menu highlight: the section nearest the top of the viewport.
+  const [activeSection, setActiveSection] = useState<SectionKey>("profile");
+  useEffect(() => {
+    const els = SECTIONS.map((sec) => document.getElementById(sectionId(sec.key))).filter(
+      (el): el is HTMLElement => el !== null
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const first = visible[0];
+        if (first) setActiveSection(first.target.id.replace("settings-", "") as SectionKey);
+      },
+      { rootMargin: "-10% 0px -55% 0px" }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  function jumpTo(key: SectionKey) {
+    setActiveSection(key);
+    document.getElementById(sectionId(key))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function handleLogoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -258,13 +367,54 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
 
   return (
     <div className="flex flex-col p-margin-mobile pb-36 md:p-5 md:pb-32">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-8">
+        {/* Section menu: a sticky list with a one-line summary per section on
+            wide screens, a row of jump chips on phones. */}
+        <nav aria-label="Settings sections" className="lg:sticky lg:top-6 lg:self-start">
+          <ul className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:p-0">
+            {SECTIONS.map((sec) => {
+              const active = activeSection === sec.key;
+              return (
+                <li key={sec.key} className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => jumpTo(sec.key)}
+                    aria-current={active ? "true" : undefined}
+                    className={cn(
+                      "relative flex min-h-11 w-full items-center gap-3 rounded-full border px-3.5 text-left transition-colors duration-fast lg:rounded-xl lg:border-transparent lg:px-3 lg:py-2.5",
+                      active
+                        ? "border-brand-border bg-brand-subtle text-on-surface lg:border-brand-border"
+                        : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:text-on-surface lg:bg-transparent lg:hover:bg-surface-container"
+                    )}
+                  >
+                    <Icon name={sec.icon} size={20} className={active ? "text-brand-text" : undefined} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block whitespace-nowrap text-[14px] font-semibold">{sec.title}</span>
+                      {/* text-[13px], not text-body-xs: cn() (tailwind-merge)
+                          reads the custom text-body-xs as a colour and drops
+                          it when a text colour is merged in. */}
+                      <span
+                        className={cn(
+                          "hidden truncate text-[13px] lg:block",
+                          sec.key === "payments" && noPaymentMethod ? "text-error" : "text-on-surface-variant"
+                        )}
+                      >
+                        {summaries[sec.key]}
+                      </span>
+                    </span>
+                    {editedSections[sec.key] && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-brand" aria-label="Edited" role="img" />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="flex min-w-0 flex-col gap-6">
         {/* ── Restaurant profile ─────────────────────────────────────────── */}
-        <SettingsSection
-          icon="storefront"
-          title="Restaurant profile"
-          description="How your restaurant appears to guests on the menu."
-        >
+        <SettingsSection section={SECTIONS[0]} edited={editedSections.profile}>
           {restaurantName && (
             <Row>
               <div className="flex flex-col gap-1.5">
@@ -345,6 +495,32 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
             </div>
           </Row>
 
+          {/* What the guest menu header looks like with this logo and name. */}
+          <Row>
+            <span className="text-sm font-medium text-on-surface">Guests see</span>
+            <div className="max-w-sm rounded-2xl border border-outline-variant bg-surface p-3 shadow-level-1">
+              <div className="flex items-center gap-3">
+                <span className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-brand-border bg-brand-subtle text-brand-text">
+                  {logoUrl ? (
+                    <Image src={logoUrl} alt="" fill sizes="44px" className="object-cover" />
+                  ) : (
+                    <Icon name="restaurant" size={22} />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-[16px] font-bold text-on-surface">
+                    {restaurantName ?? "Your restaurant"}
+                  </span>
+                  <span className="block text-body-xs text-on-surface-variant">Top of the QR menu</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-border bg-brand-subtle px-2 py-0.5 text-xs font-semibold text-brand-text">
+                  <Icon name="table_restaurant" size={14} />
+                  T1
+                </span>
+              </div>
+            </div>
+          </Row>
+
           {/*
             Cover photo stays a placeholder on purpose: `restaurants.cover_url`
             exists in the schema but no screen renders it yet, so an upload here
@@ -367,11 +543,7 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
         </SettingsSection>
 
         {/* ── Ordering ───────────────────────────────────────────────────── */}
-        <SettingsSection
-          icon="receipt_long"
-          title="Ordering"
-          description="How new orders are numbered and whether they need confirming."
-        >
+        <SettingsSection section={SECTIONS[1]} edited={editedSections.ordering}>
           <Row>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="order-prefix">Order number prefix</Label>
@@ -418,11 +590,7 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
         </SettingsSection>
 
         {/* ── Charges ────────────────────────────────────────────────────── */}
-        <SettingsSection
-          icon="request_quote"
-          title="Charges"
-          description="Added to the bill on top of item prices and tax."
-        >
+        <SettingsSection section={SECTIONS[2]} edited={editedSections.charges}>
           <Row className="sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <Label htmlFor="service-charge" className="text-sm font-semibold">Service charge</Label>
@@ -494,14 +662,64 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
               )}
             </div>
           </Row>
+
+          {/* Live preview of the charges above, before saving. */}
+          <Row className="bg-surface-container-low/60">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-on-surface">
+                <Icon name="receipt" size={18} className="text-on-surface-variant" />
+                Bill preview
+              </span>
+              <span className="text-body-xs text-on-surface-variant">
+                Sample order: 4 × {formatMoney(SAMPLE_LINE.basePrice)} dish, {SAMPLE_LINE.taxRate}% GST
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(
+                [
+                  { label: "Dine-in", icon: "restaurant", bill: preview.dineIn },
+                  { label: "Takeaway", icon: "takeout_dining", bill: preview.takeaway },
+                ] as const
+              ).map(({ label, icon, bill }) => (
+                <div key={label} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                    <Icon name={icon} size={16} />
+                    {label}
+                  </p>
+                  <dl className="space-y-1 text-body-sm">
+                    <div className="flex justify-between text-on-surface-variant">
+                      <dt>Item total</dt>
+                      <dd className="tabular-nums">{formatMoney(bill.subtotal)}</dd>
+                    </div>
+                    <div className="flex justify-between text-on-surface-variant">
+                      <dt>GST</dt>
+                      <dd className="tabular-nums">{formatMoney(bill.taxTotal)}</dd>
+                    </div>
+                    {bill.serviceCharge > 0 && (
+                      <div className="flex justify-between text-on-surface">
+                        <dt>Service charge ({form.serviceChargePct}%)</dt>
+                        <dd className="tabular-nums">{formatMoney(bill.serviceCharge)}</dd>
+                      </div>
+                    )}
+                    {bill.packingCharge > 0 && (
+                      <div className="flex justify-between text-on-surface">
+                        <dt>Packing charge</dt>
+                        <dd className="tabular-nums">{formatMoney(bill.packingCharge)}</dd>
+                      </div>
+                    )}
+                    <div className="mt-1.5 flex justify-between border-t border-outline-variant pt-1.5 font-semibold text-on-surface">
+                      <dt>Guest pays</dt>
+                      <dd className="tabular-nums">{formatMoney(bill.total)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          </Row>
         </SettingsSection>
 
         {/* ── Payments ───────────────────────────────────────────────────── */}
-        <SettingsSection
-          icon="payments"
-          title="Payments"
-          description="How guests can settle the bill when they check out."
-        >
+        <SettingsSection section={SECTIONS[3]} edited={editedSections.payments}>
           <SwitchRow
             id="accepts-cash"
             icon="payments"
@@ -532,12 +750,13 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
             )}
           </div>
         </SettingsSection>
+        </div>
       </div>
 
       {/* Save bar — fixed so it stays reachable on long forms. Offsets the
           280px sidebar from md up. */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-outline-variant bg-surface-container-lowest/90 backdrop-blur-md md:left-[280px]">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-margin-mobile py-3 md:px-5">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-margin-mobile py-3 md:px-5">
           <p className="flex min-w-0 flex-1 items-center gap-2 text-body-sm" aria-live="polite">
             {errorCount > 0 ? (
               <>

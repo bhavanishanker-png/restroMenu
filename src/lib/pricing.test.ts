@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   averageMoney,
+  percentChange,
+  percentOf,
   sumMoney,
   toPaise,
   buildLineId,
@@ -298,5 +300,28 @@ describe("toPaise", () => {
 
   it("is 0 for a free order", () => {
     expect(toPaise(0)).toBe(0);
+  });
+});
+
+describe("percentChange", () => {
+  it("is signed and rounded to one decimal", () => {
+    expect(percentChange(1500, 1000)).toBe(50);
+    expect(percentChange(900, 1200)).toBe(-25);
+    expect(percentChange(1000, 3000)).toBe(-66.7);
+  });
+
+  it("is null with nothing to compare against", () => {
+    expect(percentChange(500, 0)).toBeNull();
+  });
+});
+
+describe("percentOf", () => {
+  it("is a 0-100 share", () => {
+    expect(percentOf(171.2, 3231.2)).toBe(5.3);
+    expect(percentOf(0, 100)).toBe(0);
+  });
+
+  it("is 0 for an empty whole", () => {
+    expect(percentOf(10, 0)).toBe(0);
   });
 });

@@ -103,7 +103,8 @@ export function HourlyChart({ data }: Props) {
                 key={t}
                 className={cn(
                   "absolute inset-x-0 border-t",
-                  t === 0 ? "border-outline-variant" : "border-dashed border-outline-variant/50"
+                  // Solid hairlines: dashed reads as a threshold, not a grid.
+                  t === 0 ? "border-outline-variant" : "border-outline-variant/40"
                 )}
                 style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}
               />
