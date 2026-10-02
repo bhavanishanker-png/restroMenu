@@ -1,7 +1,21 @@
 -- Migration 003: enable Realtime for the customer order tracker
 -- Run in the Supabase SQL editor BEFORE deploying T10.
 --
--- Security note (review in T20):
+-- !! DO NOT RUN AS WRITTEN — the policies below leak every order. !!
+--
+-- `using (true)` does NOT mean "readable if you know the UUID". It makes every
+-- row readable to the anon key, which ships in every browser bundle, so
+-- `GET /rest/v1/orders?select=*` would list all orders for all restaurants,
+-- customer phone numbers included. A filter is something the *client* chooses
+-- to send; RLS cannot require one.
+--
+-- The tracker does not need this: it polls GET /api/orders/[orderId], which
+-- reads with the service role and returns a redacted guest view
+-- (src/lib/order-privacy.ts). Realtime is only a latency nudge on top of that
+-- poll. If Realtime is wanted for guests, gate the policy on a per-order
+-- secret the client must present (e.g. a signed token claim), not `true`.
+--
+-- Original note (review in T20), kept for history — its premise is wrong:
 --   The SELECT policies below use `using (true)`, which lets any client read
 --   any order/order_item row if they supply its UUID.  Since UUIDs have 122 bits
 --   of entropy they are effectively unguessable; the order ID is never revealed

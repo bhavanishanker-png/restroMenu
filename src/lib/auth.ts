@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase/server";
 import type { StaffRole, StaffSession } from "@/types";
 
 // ---------------------------------------------------------------- constants
@@ -85,7 +87,57 @@ async function verifyToken(token: string): Promise<SessionPayload | null> {
 
 // ---------------------------------------------------------------- public API
 
-/** Read and verify the session cookie. Returns null if absent, expired, or tampered. */
+const STAFF_ROLES: readonly StaffRole[] = ["owner", "manager", "kitchen", "waiter"];
+
+function isStaffRole(value: unknown): value is StaffRole {
+  return typeof value === "string" && (STAFF_ROLES as readonly string[]).includes(value);
+}
+
+/**
+ * The signed cookie proves who someone *was* at login; the staff row says who
+ * they are now. Without this lookup a removed staff member (soft-deleted to
+ * `is_active = false`) kept full access for the rest of the 8-hour cookie, and
+ * a demoted manager kept manager permissions, because the role was read from
+ * the cookie.
+ *
+ * Fails closed: if the lookup errors, the request is treated as signed out
+ * rather than trusted on the cookie alone.
+ *
+ * `cache` dedupes the lookup within one server render, where the layout, the
+ * page and nested components each call getStaffSession.
+ */
+const loadActiveStaff = cache(
+  async (
+    staffId: string,
+    restaurantId: string
+  ): Promise<{ role: StaffRole } | null> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("staff")
+      .select("role")
+      .eq("id", staffId)
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[auth] staff lookup failed; treating session as signed out", error);
+      return null;
+    }
+    if (!data) return null;
+    if (!isStaffRole(data.role)) {
+      console.error("[auth] staff row has an unknown role; treating session as signed out", data.role);
+      return null;
+    }
+    return { role: data.role };
+  }
+);
+
+/**
+ * Read and verify the session cookie, then confirm the staff member is still
+ * active. Returns null if the cookie is absent, expired or tampered, or if the
+ * staff member has been removed. The role always comes from the database.
+ */
 export async function getStaffSession(): Promise<StaffSession | null> {
   const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -93,10 +145,13 @@ export async function getStaffSession(): Promise<StaffSession | null> {
   const payload = await verifyToken(token);
   if (!payload) return null;
 
+  const staff = await loadActiveStaff(payload.staffId, payload.restaurantId);
+  if (!staff) return null;
+
   return {
     staffId: payload.staffId,
     restaurantId: payload.restaurantId,
-    role: payload.role,
+    role: staff.role,
   };
 }
 

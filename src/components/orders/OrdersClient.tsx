@@ -205,7 +205,8 @@ function OrderDetailSheet({
     setItems(null);
     setItemsError(false);
     try {
-      const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
+      // `view=staff` returns the unredacted order, scoped to this restaurant.
+      const res = await fetch(`/api/orders/${id}?view=staff`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as OrderDetailResponse;
       setItems(data.items);

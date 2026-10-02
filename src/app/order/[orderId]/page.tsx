@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { fetchOrder } from "@/lib/queries/order";
+import { orderIdSchema, toGuestOrder } from "@/lib/order-privacy";
 import { OrderTrackerClient } from "@/components/order/OrderTrackerClient";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
@@ -22,6 +23,10 @@ function TrackerHeader() {
 
 export default async function OrderTrackerPage({ params }: Props) {
   const { orderId } = params;
+  // A malformed ID would surface as a Postgres cast error — i.e. the "we
+  // couldn't load your order" screen — for an order that cannot exist.
+  if (!orderIdSchema.safeParse(orderId).success) notFound();
+
   const result = await fetchOrder(orderId);
 
   if (!result.ok) {
@@ -63,7 +68,10 @@ export default async function OrderTrackerPage({ params }: Props) {
       <InstallPrompt />
       <OrderTrackerClient
         orderId={orderId}
-        initialOrder={order}
+        // Everything passed to a client component is serialised into the
+        // page HTML, so the guest view is redacted here too, not just in the
+        // polling API.
+        initialOrder={toGuestOrder(order)}
         initialItems={items}
         tableLabel={tableLabel}
         estimatedReadyAt={estimatedReadyAt}
