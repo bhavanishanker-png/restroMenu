@@ -26,6 +26,7 @@ import type {
   ServiceRequest,
   ServiceRequestType,
   Staff,
+  StaffMember,
   StaffRole,
   TableSession,
 } from "@/types";
@@ -88,6 +89,15 @@ export function toStaff(r: DbStaff): Staff {
     phone: r.phone,
     role: r.role as StaffRole,
     isActive: r.is_active,
+  };
+}
+
+/** `loginEmail` comes from Supabase Auth, looked up by `auth_user_id`. */
+export function toStaffMember(r: DbStaff, loginEmail: string | null): StaffMember {
+  return {
+    ...toStaff(r),
+    loginEmail,
+    hasPin: r.pin_hash !== null,
   };
 }
 

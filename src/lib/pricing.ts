@@ -25,6 +25,31 @@ export function roundMoney(value: number): number {
   return shifted / 100;
 }
 
+/**
+ * Sum of money amounts, e.g. a day's order totals. Adds in whole paise so a
+ * long list of two-decimal values can't drift (0.1 + 0.2 !== 0.3).
+ */
+export function sumMoney(values: readonly number[]): number {
+  let paise = 0;
+  for (const v of values) paise += toPaise(v);
+  return paise / 100;
+}
+
+/**
+ * Rupees to paise, the integer unit Razorpay expects for `amount`. Uses the
+ * same EPSILON nudge as roundMoney: 1.005 * 100 is 100.49999999999999 in
+ * floating point, and a bare Math.round would charge a paisa too little.
+ */
+export function toPaise(rupees: number): number {
+  return Math.round((rupees + Number.EPSILON) * 100);
+}
+
+/** Average of a money total over a count (per order, per day). Zero count is ₹0, not NaN. */
+export function averageMoney(total: number, count: number): number {
+  if (count <= 0) return 0;
+  return roundMoney(total / count);
+}
+
 /** Format for display. Amounts are stored as numbers, never as formatted strings. */
 export function formatMoney(value: number, currency = 'INR'): string {
   return new Intl.NumberFormat('en-IN', {

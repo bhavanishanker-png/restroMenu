@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
-import { priceCart, buildLineId } from "@/lib/pricing";
+import { priceCart, buildLineId, toPaise } from "@/lib/pricing";
 import { toOrder, toRestaurantSettings } from "@/lib/mappers";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { CartLine, FoodType, OrderStatus } from "@/types";
 import type { DbOrder, DbRestaurantSettings } from "@/types/db";
+import { startOfRestaurantDay } from "@/lib/restaurant-time";
+import { getRestaurantTimezone } from "@/lib/queries/restaurant-timezone";
 
 // ---------------------------------------------------------------- GET /api/orders  (staff only)
 
@@ -22,10 +24,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const session = await getStaffSession();
   const sp = req.nextUrl.searchParams;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const dateFrom = sp.get("dateFrom") ?? today.toISOString();
+  // Default range starts at the restaurant's midnight, not the server's.
+  const dateFrom =
+    sp.get("dateFrom") ??
+    startOfRestaurantDay(await getRestaurantTimezone(session!.restaurantId)).toISOString();
   const dateTo = sp.get("dateTo");
   const statusParam = sp.get("status") ?? "all";
   const search = sp.get("search") ?? "";
@@ -493,7 +495,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
     const rzpOrder = await rzp.orders.create({
-      amount: Math.round(bill.total * 100), // paise
+      amount: toPaise(bill.total),
       currency: "INR",
       receipt: result.order_id.slice(0, 40),
     });

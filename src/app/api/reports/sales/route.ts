@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
+import { sumMoney } from "@/lib/pricing";
+import { dayKeyInZone, startOfRestaurantDay } from "@/lib/restaurant-time";
+import { getRestaurantTimezone } from "@/lib/queries/restaurant-timezone";
 
 // ---------------------------------------------------------------- GET /api/reports/sales
 // Returns daily revenue aggregates for a given date range.
@@ -12,14 +15,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const session = await getStaffSession();
   const sp = req.nextUrl.searchParams;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Days are the restaurant's calendar days, not the server's or UTC's.
+  const timezone = await getRestaurantTimezone(session!.restaurantId);
 
-  // Default: last 30 days
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-
-  const dateFrom = sp.get("dateFrom") ?? thirtyDaysAgo.toISOString();
+  // Default: last 30 days, today included.
+  const dateFrom =
+    sp.get("dateFrom") ?? startOfRestaurantDay(timezone, new Date(), 29).toISOString();
   const dateTo = sp.get("dateTo");
 
   const supabase = createServerClient();
@@ -44,36 +45,32 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Group by date (YYYY-MM-DD in local timezone)
-  const dayMap = new Map<
-    string,
-    { orders: number; revenue: number; subtotal: number; tax: number; serviceCharge: number; packingCharge: number }
-  >();
-
+  // Group by the restaurant's calendar date. This used `toISOString()` —
+  // the UTC date — so in IST everything before 05:30 landed on the day before.
+  type SalesRow = NonNullable<typeof data>[number];
+  const byDay = new Map<string, SalesRow[]>();
   for (const row of data ?? []) {
-    const day = new Date(row.placed_at).toISOString().slice(0, 10);
-    const existing = dayMap.get(day) ?? {
-      orders: 0, revenue: 0, subtotal: 0, tax: 0, serviceCharge: 0, packingCharge: 0,
-    };
-    dayMap.set(day, {
-      orders: existing.orders + 1,
-      revenue: existing.revenue + Number(row.total),
-      subtotal: existing.subtotal + Number(row.subtotal),
-      tax: existing.tax + Number(row.tax_total),
-      serviceCharge: existing.serviceCharge + Number(row.service_charge),
-      packingCharge: existing.packingCharge + Number(row.packing_charge),
-    });
+    const day = dayKeyInZone(row.placed_at, timezone);
+    const rows = byDay.get(day);
+    if (rows) rows.push(row);
+    else byDay.set(day, [row]);
   }
 
-  const days = Array.from(dayMap.entries()).map(([date, v]) => ({ date, ...v }));
+  // Every sum goes through the pricing helper, which adds in whole paise.
+  const days = Array.from(byDay.entries()).map(([date, rows]) => ({
+    date,
+    orders: rows.length,
+    revenue: sumMoney(rows.map((r) => Number(r.total))),
+    subtotal: sumMoney(rows.map((r) => Number(r.subtotal))),
+    tax: sumMoney(rows.map((r) => Number(r.tax_total))),
+    serviceCharge: sumMoney(rows.map((r) => Number(r.service_charge))),
+    packingCharge: sumMoney(rows.map((r) => Number(r.packing_charge))),
+  }));
 
-  const totals = days.reduce(
-    (acc, d) => ({
-      orders: acc.orders + d.orders,
-      revenue: acc.revenue + d.revenue,
-    }),
-    { orders: 0, revenue: 0 }
-  );
+  const totals = {
+    orders: days.reduce((n, d) => n + d.orders, 0),
+    revenue: sumMoney(days.map((d) => d.revenue)),
+  };
 
   return NextResponse.json({ days, totals });
 }

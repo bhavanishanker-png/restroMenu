@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  averageMoney,
+  sumMoney,
+  toPaise,
   buildLineId,
   computeUnitPrice,
   priceCart,
@@ -251,5 +254,49 @@ describe("buildLineId", () => {
     const a = buildLineId("item-1", null, [], "  Less Spicy  ");
     const b = buildLineId("item-1", null, [], "less spicy");
     expect(a).toBe(b);
+  });
+});
+
+describe("sumMoney", () => {
+  it("adds in paise, so two-decimal amounts don't drift", () => {
+    // Plain float addition gives 0.30000000000000004.
+    expect(sumMoney([0.1, 0.2])).toBe(0.3);
+    expect(sumMoney(Array(10).fill(814.1))).toBe(8141);
+  });
+
+  it("is 0 for no orders", () => {
+    expect(sumMoney([])).toBe(0);
+  });
+
+  it("handles a typical day of mixed totals", () => {
+    expect(sumMoney([814.1, 1083.6, 745.5, 588])).toBe(3231.2);
+  });
+});
+
+describe("averageMoney", () => {
+  it("rounds to two decimals", () => {
+    expect(averageMoney(100, 3)).toBe(33.33);
+  });
+
+  it("is 0, not NaN, for a zero count", () => {
+    expect(averageMoney(0, 0)).toBe(0);
+    expect(averageMoney(500, 0)).toBe(0);
+  });
+});
+
+describe("toPaise", () => {
+  it("converts whole and fractional rupees", () => {
+    expect(toPaise(920)).toBe(92000);
+    expect(toPaise(814.1)).toBe(81410);
+  });
+
+  it("does not lose a paisa on float boundaries", () => {
+    // 1.005 * 100 === 100.49999999999999 — a bare Math.round gives 100.
+    expect(toPaise(1.005)).toBe(101);
+    expect(toPaise(1083.6)).toBe(108360);
+  });
+
+  it("is 0 for a free order", () => {
+    expect(toPaise(0)).toBe(0);
   });
 });

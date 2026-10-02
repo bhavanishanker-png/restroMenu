@@ -3,6 +3,7 @@ import Razorpay from "razorpay";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { toPaise } from "@/lib/pricing";
 
 const schema = z.object({ orderId: z.string().uuid() });
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   const rzpOrder = await rzp.orders.create({
-    amount: Math.round(Number(order.total) * 100), // paise
+    amount: toPaise(Number(order.total)),
     currency: "INR",
     receipt: orderId.slice(0, 40),
   });

@@ -3,7 +3,13 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
-import { toStaff } from "@/lib/mappers";
+import { fetchStaffMembers, withLoginEmails } from "@/lib/queries/staff";
+import {
+  createLoginAccount,
+  deleteLoginAccount,
+  loginEmailSchema,
+  loginPasswordSchema,
+} from "@/lib/staff-accounts";
 import type { DbStaff } from "@/types/db";
 
 // ---------------------------------------------------------------- GET /api/staff
@@ -13,24 +19,16 @@ export async function GET(): Promise<NextResponse> {
   if (guard) return guard;
 
   const session = await getStaffSession();
-  const supabase = createServerClient();
+  const result = await fetchStaffMembers(session!.restaurantId);
 
-  const { data, error } = await supabase
-    .from("staff")
-    .select("*")
-    .eq("restaurant_id", session!.restaurantId)
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("[staff GET]", error);
+  if (!result.ok) {
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Failed to load staff." } },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ staff: (data ?? []).map((r) => toStaff(r as DbStaff)) });
+  return NextResponse.json({ staff: result.staff });
 }
 
 // ---------------------------------------------------------------- POST /api/staff
@@ -40,6 +38,9 @@ const createSchema = z.object({
   phone: z.string().regex(/^\d{10}$/).nullable().optional(),
   role: z.enum(["manager", "kitchen", "waiter"]),
   pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits").optional(),
+  // Managers only: their email/password sign-in.
+  email: loginEmailSchema.optional(),
+  password: loginPasswordSchema.optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -75,7 +76,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const pin_hash = body.pin ? await bcrypt.hash(body.pin, 10) : null;
+  // Managers sign in with email + password; without both they could never
+  // sign in, which is exactly the bug this replaces.
+  if (body.role === "manager" && (!body.email || !body.password)) {
+    return NextResponse.json(
+      { error: { code: "VALIDATION_ERROR", message: "Managers need an email and a password to sign in." } },
+      { status: 400 }
+    );
+  }
+
+  // Floor staff use a PIN only; a PIN on a manager would be a second,
+  // weaker way into a role that can change the menu.
+  const pin_hash =
+    body.role !== "manager" && body.pin ? await bcrypt.hash(body.pin, 10) : null;
+
+  // Create the login first: if it fails (email taken, weak password) nothing
+  // has been written, and the owner can fix the field and resubmit.
+  let authUserId: string | null = null;
+  if (body.role === "manager" && body.email && body.password) {
+    const account = await createLoginAccount(body.email, body.password);
+    if (!account.ok) {
+      return NextResponse.json(
+        { error: { code: account.code, message: account.message } },
+        { status: account.status }
+      );
+    }
+    authUserId = account.value;
+  }
 
   const supabase = createServerClient();
 
@@ -83,6 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .from("staff")
     .insert({
       restaurant_id: session!.restaurantId,
+      auth_user_id: authUserId,
       name: body.name,
       phone: body.phone ?? null,
       role: body.role,
@@ -94,11 +122,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (error || !data) {
     console.error("[staff POST]", error);
+    // Don't leave a login behind that points at no staff row.
+    if (authUserId) await deleteLoginAccount(authUserId);
     return NextResponse.json(
       { error: { code: "CREATE_FAILED", message: "Failed to create staff member." } },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ staff: toStaff(data as DbStaff) }, { status: 201 });
+  const [member] = await withLoginEmails([data as DbStaff]);
+  return NextResponse.json({ staff: member }, { status: 201 });
 }

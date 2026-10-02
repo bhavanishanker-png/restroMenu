@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatMoney } from "@/lib/pricing";
+import { dayKeyInZone } from "@/lib/restaurant-time";
 import {
   ORDER_STATUS_ICONS,
   ORDER_STATUS_LABELS,
@@ -16,12 +17,16 @@ function whereLabel(order: RecentOrder): { icon: string; text: string } {
   return { icon: "takeout_dining", text: "Takeaway" };
 }
 
-/** Time only for today's orders; older ones carry their date too. */
-function formatPlacedAt(iso: string): string {
+/**
+ * Time only for today's orders; older ones carry their date too. Rendered on
+ * the server, so both "today" and the clock time use the restaurant's zone —
+ * the server's own zone is usually UTC.
+ */
+function formatPlacedAt(iso: string, timezone: string): string {
   const placed = new Date(iso);
-  const time = placed.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-  if (placed.toDateString() === new Date().toDateString()) return time;
-  return `${placed.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${time}`;
+  const time = placed.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: timezone });
+  if (dayKeyInZone(placed, timezone) === dayKeyInZone(new Date(), timezone)) return time;
+  return `${placed.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: timezone })}, ${time}`;
 }
 
 function StatusPill({ status }: { status: Order["status"] }) {
@@ -42,12 +47,14 @@ function StatusPill({ status }: { status: Order["status"] }) {
 
 type Props = {
   orders: RecentOrder[];
+  /** IANA zone of the restaurant (restaurants.timezone). */
+  timezone: string;
   canManage: boolean;
   /** True when the query failed — the list is unknown, not empty. */
   failed: boolean;
 };
 
-export function RecentOrders({ orders, canManage, failed }: Props) {
+export function RecentOrders({ orders, timezone, canManage, failed }: Props) {
   return (
     <section
       aria-labelledby="recent-orders-heading"
@@ -125,7 +132,7 @@ export function RecentOrders({ orders, canManage, failed }: Props) {
                     #{order.orderNumber}
                   </p>
                   <p className="text-body-sm tabular-nums text-on-surface-variant">
-                    {where.text} · {formatPlacedAt(order.placedAt)}
+                    {where.text} · {formatPlacedAt(order.placedAt, timezone)}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row-reverse sm:items-center sm:gap-4">

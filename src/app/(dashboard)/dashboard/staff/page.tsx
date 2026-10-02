@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
-import { createServerClient } from "@/lib/supabase/server";
-import { toStaff } from "@/lib/mappers";
+import { fetchStaffMembers } from "@/lib/queries/staff";
 import { StaffManager } from "@/components/staff/StaffManager";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import type { DbStaff } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,21 +11,11 @@ export default async function StaffPage() {
   if (!session) redirect("/login");
   if (session.role !== "owner" && session.role !== "manager") redirect("/dashboard");
 
-  const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from("staff")
-    .select("*")
-    .eq("restaurant_id", session.restaurantId)
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
+  const result = await fetchStaffMembers(session.restaurantId);
 
   // An error used to render as an empty team. Surface it via error.tsx.
-  if (error) {
-    console.error("[staff page]", error);
-    throw new Error("Failed to load staff.");
-  }
-
-  const staff = (data ?? []).map((r) => toStaff(r as DbStaff));
+  if (!result.ok) throw new Error("Failed to load staff.");
+  const staff = result.staff;
 
   return (
     <div className="flex flex-col gap-0">

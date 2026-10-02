@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
 import type { ServiceRequest, ServiceRequestType } from "@/types";
 import type { KitchenItem, KitchenOrder } from "@/components/kitchen/types";
+import { startOfRestaurantDay } from "@/lib/restaurant-time";
+import { getRestaurantTimezone } from "@/lib/queries/restaurant-timezone";
 
 /**
  * The kitchen board, read with the service role and scoped to one tenant.
@@ -95,8 +97,10 @@ export type KitchenBoard = {
 export async function fetchKitchenBoard(restaurantId: string): Promise<KitchenBoard> {
   const supabase = createServerClient();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Today's board starts at the restaurant's midnight. On a UTC server the
+  // old local midnight was 05:30 IST, so late-night orders vanished from it.
+  const timezone = await getRestaurantTimezone(restaurantId);
+  const today = startOfRestaurantDay(timezone);
 
   const [ordersResult, requestsResult] = await Promise.all([
     supabase

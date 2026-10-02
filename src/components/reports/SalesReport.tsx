@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { averageMoney } from "@/lib/pricing";
 
 type DayRow = {
   date: string;
@@ -93,7 +94,7 @@ export function SalesReport() {
 
   const maxRevenue = Math.max(...(data?.days.map((d) => d.revenue) ?? [0]), 1);
   const avgRevenue =
-    data && data.days.length > 0 ? data.totals.revenue / data.days.length : 0;
+    data ? averageMoney(data.totals.revenue, data.days.length) : 0;
 
   return (
     <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">

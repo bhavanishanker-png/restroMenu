@@ -8,7 +8,7 @@ import type { DbRestaurantTable } from "@/types/db";
 // ---------------------------------------------------------------- PATCH /api/tables/[id]
 
 const patchSchema = z.object({
-  label: z.string().min(1).max(50).optional(),
+  label: z.string().trim().min(1, "Give the table a name.").max(50).optional(),
   seats: z.number().int().min(1).max(100).optional(),
 });
 
@@ -38,19 +38,38 @@ export async function PATCH(
   const session = await getStaffSession();
   const supabase = createServerClient();
 
-  const update: Record<string, unknown> = {};
+  const update: Partial<Pick<DbRestaurantTable, "label" | "seats">> = {};
   if (parsed.data.label !== undefined) update.label = parsed.data.label;
   if (parsed.data.seats !== undefined) update.seats = parsed.data.seats;
 
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json(
+      { error: { code: "NO_CHANGES", message: "No fields to update." } },
+      { status: 400 }
+    );
+  }
+
+  // Only the label and seat count change; the QR token does not, so printed
+  // standees keep working after a rename.
   const { data, error } = await supabase
     .from("restaurant_tables")
     .update(update)
     .eq("id", params.id)
     .eq("restaurant_id", session!.restaurantId)
+    // A removed table is soft-deleted; editing it would be invisible anyway.
+    .eq("is_active", true)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  // A database failure used to be reported as "Table not found".
+  if (error) {
+    console.error("[tables PATCH]", error);
+    return NextResponse.json(
+      { error: { code: "UPDATE_FAILED", message: "Failed to save the table. Try again." } },
+      { status: 500 }
+    );
+  }
+  if (!data) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Table not found." } },
       { status: 404 }

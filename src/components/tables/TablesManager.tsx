@@ -63,19 +63,26 @@ function FieldError({ id, children }: { id: string; children: string }) {
   );
 }
 
-// ---------------------------------------------------------------- Add table dialog
+// ---------------------------------------------------------------- Add / edit table dialog
 
-function AddTableDialog({
+/**
+ * Adds a table, or edits one when `table` is given. Remounted (via `key`) for
+ * each table, so the fields start from that table's current values.
+ */
+function TableFormDialog({
   open,
+  table,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   open: boolean;
+  table: TableEntry | null;
   onClose: () => void;
-  onCreated: (t: TableEntry) => void;
+  onSaved: (t: TableEntry) => void;
 }) {
-  const [label, setLabel] = useState("");
-  const [seats, setSeats] = useState("4");
+  const isEdit = table !== null;
+  const [label, setLabel] = useState(table?.label ?? "");
+  const [seats, setSeats] = useState(String(table?.seats ?? 4));
   const [saving, setSaving] = useState(false);
   // Errors appear only after the first submit attempt, not while typing.
   const [attempted, setAttempted] = useState(false);
@@ -93,31 +100,48 @@ function AddTableDialog({
     setAttempted(false);
   }
 
+  // Only what changed goes in the PATCH body.
+  const changes: { label?: string; seats?: number } = {};
+  if (table) {
+    if (label.trim() !== table.label) changes.label = label.trim();
+    if (seatsNum !== table.seats) changes.seats = seatsNum;
+  }
+  const nothingToSave = isEdit && Object.keys(changes).length === 0;
+  const renamed = isEdit && changes.label !== undefined;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setAttempted(true);
     const l = label.trim();
-    if (labelError || seatsError) return;
+    if (labelError || seatsError || nothingToSave) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/tables", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: l, seats: Number(seats) || 4 }),
-      });
+      const res = table
+        ? await fetch(`/api/tables/${table.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(changes),
+          })
+        : await fetch("/api/tables", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ label: l, seats: Number(seats) || 4 }),
+          });
       if (!res.ok) {
-        const body = await res.json() as { error?: { message?: string } };
-        toast.error(body.error?.message ?? "Failed to create table.");
+        const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        toast.error(body.error?.message ?? (isEdit ? "Failed to save the table." : "Failed to create table."));
         return;
       }
-      const { table } = await res.json() as { table: TableEntry };
-      toast.success(`Table "${table.label}" created.`);
-      onCreated(table);
-      reset();
+      const { table: saved } = (await res.json()) as { table: RestaurantTable };
+      // PATCH returns the bare row; keep the live in-use flag from the list.
+      const entry: TableEntry = { ...saved, hasActiveSession: table?.hasActiveSession ?? false };
+      toast.success(isEdit ? `Table "${saved.label}" updated.` : `Table "${saved.label}" created.`);
+      onSaved(entry);
+      if (!isEdit) reset();
       onClose();
     } catch (err) {
       // A dropped connection used to surface as an unhandled rejection.
-      console.error("[tables] create failed", err);
+      console.error(isEdit ? "[tables] update failed" : "[tables] create failed", err);
       toast.error("Couldn't reach the server. Check your connection and try again.");
     } finally {
       setSaving(false);
@@ -132,11 +156,15 @@ function AddTableDialog({
             className="grid h-11 w-11 place-items-center rounded-xl border border-brand-border bg-brand-subtle text-brand-text"
             aria-hidden="true"
           >
-            <Icon name="table_restaurant" size={22} />
+            <Icon name={isEdit ? "edit" : "table_restaurant"} size={22} />
           </span>
-          <DialogTitle className="pr-8 font-display text-headline-sm">Add a table</DialogTitle>
+          <DialogTitle className="pr-8 font-display text-headline-sm">
+            {isEdit ? `Edit ${table.label}` : "Add a table"}
+          </DialogTitle>
           <DialogDescription className="text-body-sm text-on-surface-variant">
-            Each table gets its own QR code. Guests who scan it order straight to this table.
+            {isEdit
+              ? "Its QR code stays the same, so the standee on the table keeps working."
+              : "Each table gets its own QR code. Guests who scan it order straight to this table."}
           </DialogDescription>
         </DialogHeader>
 
@@ -156,6 +184,13 @@ function AddTableDialog({
             />
             {attempted && labelError ? (
               <FieldError id="table-label-error">{labelError}</FieldError>
+            ) : renamed ? (
+              // The token is unchanged, but the old name is printed on the
+              // standee — worth a reprint so staff and guests agree.
+              <p id="table-label-hint" className="flex items-start gap-1 text-body-xs text-on-warning-container">
+                <Icon name="print" size={14} className="mt-px" />
+                The printed standee still shows the old name. Reprint it if you want the new one on the table.
+              </p>
             ) : (
               <p id="table-label-hint" className="text-body-xs text-on-surface-variant">
                 Printed on the standee and shown on kitchen tickets.
@@ -203,9 +238,11 @@ function AddTableDialog({
             {attempted && seatsError && <FieldError id="table-seats-error">{seatsError}</FieldError>}
           </div>
 
-          <Button type="submit" variant="brand" size="lg" disabled={saving}>
-            <Icon name="add" />
-            {saving ? "Creating…" : "Create table"}
+          <Button type="submit" variant="brand" size="lg" disabled={saving || nothingToSave}>
+            <Icon name={isEdit ? "save" : "add"} />
+            {isEdit
+              ? saving ? "Saving…" : nothingToSave ? "No changes" : "Save changes"
+              : saving ? "Creating…" : "Create table"}
           </Button>
         </form>
       </DialogContent>
@@ -235,11 +272,13 @@ function StatusPill({ inUse }: { inUse: boolean }) {
 function TableCard({
   table,
   tableUrl,
+  onEdit,
   onRegenerate,
   onDelete,
 }: {
   table: TableEntry;
   tableUrl: string;
+  onEdit: () => void;
   onRegenerate: () => void;
   onDelete: () => void;
 }) {
@@ -314,6 +353,10 @@ function TableCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 rounded-xl border-outline-variant p-1.5">
+            <DropdownMenuItem onSelect={onEdit} className="min-h-11 gap-2.5 rounded-lg px-3">
+              <Icon name="edit" />
+              Edit name & seats
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={onRegenerate} className="min-h-11 gap-2.5 rounded-lg px-3">
               <Icon name="refresh" />
               Regenerate QR code
@@ -387,6 +430,8 @@ type PendingAction = { kind: "regenerate" | "delete"; table: TableEntry };
 export function TablesManager({ initialTables, restaurantId, restaurantSlug }: Props) {
   const [tables, setTables] = useState<TableEntry[]>(initialTables);
   const [addOpen, setAddOpen] = useState(false);
+  /** The table being edited; the form dialog is open while this is set. */
+  const [editingTable, setEditingTable] = useState<TableEntry | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [busy, setBusy] = useState(false);
@@ -533,6 +578,7 @@ export function TablesManager({ initialTables, restaurantId, restaurantSlug }: P
                 key={table.id}
                 table={table}
                 tableUrl={tableUrl(table.qrToken)}
+                onEdit={() => setEditingTable(table)}
                 onRegenerate={() => setPending({ kind: "regenerate", table })}
                 onDelete={() => setPending({ kind: "delete", table })}
               />
@@ -541,11 +587,23 @@ export function TablesManager({ initialTables, restaurantId, restaurantSlug }: P
         </>
       )}
 
-      <AddTableDialog
+      <TableFormDialog
+        key="new"
         open={addOpen}
+        table={null}
         onClose={() => setAddOpen(false)}
-        onCreated={(t) => setTables((prev) => [...prev, t])}
+        onSaved={(t) => setTables((prev) => [...prev, t])}
       />
+
+      {editingTable && (
+        <TableFormDialog
+          key={editingTable.id}
+          open
+          table={editingTable}
+          onClose={() => setEditingTable(null)}
+          onSaved={(t) => setTables((prev) => prev.map((x) => (x.id === t.id ? t : x)))}
+        />
+      )}
 
       <ConfirmDialog
         open={pending?.kind === "regenerate"}

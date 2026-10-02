@@ -77,6 +77,16 @@ export type Staff = {
   isActive: boolean;
 };
 
+/**
+ * A staff row as the Staff page shows it. Not a table: `loginEmail` lives in
+ * Supabase Auth (auth.users), and `hasPin` only says whether `pin_hash` is set
+ * — the hash itself never leaves the server.
+ */
+export type StaffMember = Staff & {
+  loginEmail: string | null;
+  hasPin: boolean;
+};
+
 export type StaffSession = {
   staffId: string;
   restaurantId: string;

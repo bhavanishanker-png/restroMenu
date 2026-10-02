@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { toOrder } from "@/lib/mappers";
-import { formatMoney, roundMoney } from "@/lib/pricing";
+import { averageMoney, formatMoney, sumMoney } from "@/lib/pricing";
+import { hourInZone, startOfRestaurantDay } from "@/lib/restaurant-time";
+import { getRestaurantTimezone } from "@/lib/queries/restaurant-timezone";
 import { ORDER_STATUS_ICONS, ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
@@ -51,9 +53,10 @@ export default async function DashboardPage() {
   const supabase = createServerClient();
 
   const now = new Date();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const todayStart = today.toISOString();
+  // The restaurant's midnight, not the server's — a UTC host would otherwise
+  // start "today" at 05:30 IST.
+  const timezone = await getRestaurantTimezone(session.restaurantId);
+  const todayStart = startOfRestaurantDay(timezone, now).toISOString();
 
   // All four reads go out together, each scoped to the session's tenant.
   const [todayRes, recentRes, restaurantRes, liveRes] = await Promise.all([
@@ -96,15 +99,12 @@ export default async function DashboardPage() {
 
   const todayOrders = todayRes.data ?? [];
   const ordersToday = todayOrders.length;
-  // TODO(pricing): this sum and average belong in src/lib/pricing.ts (e.g. a
-  // `sumMoney` helper). Kept here unchanged because lib/ is out of scope for
-  // this presentation pass; the result is rounded with the pricing helper.
-  const revenueToday = roundMoney(todayOrders.reduce((sum, o) => sum + Number(o.total), 0));
-  const avgTicket = ordersToday > 0 ? roundMoney(revenueToday / ordersToday) : 0;
+  const revenueToday = sumMoney(todayOrders.map((o) => Number(o.total)));
+  const avgTicket = averageMoney(revenueToday, ordersToday);
 
   const hourCounts = new Array(24).fill(0) as number[];
   for (const o of todayOrders) {
-    hourCounts[new Date(o.placed_at).getHours()]++;
+    hourCounts[hourInZone(o.placed_at, timezone)]++;
   }
   const hourlyData = hourCounts.map((count, hour) => ({ hour, count }));
 
@@ -128,6 +128,7 @@ export default async function DashboardPage() {
     weekday: "long",
     day: "numeric",
     month: "long",
+    timeZone: timezone,
   });
 
   return (
@@ -142,7 +143,7 @@ export default async function DashboardPage() {
             {dateLabel}
           </p>
           <h1 className="mt-1 font-display text-[26px] font-bold leading-tight text-on-surface md:text-[32px]">
-            {greeting(now.getHours())}
+            {greeting(hourInZone(now, timezone))}
             {restaurantRes.data?.name ? (
               <span className="text-on-surface-variant">, {restaurantRes.data.name}</span>
             ) : null}
@@ -209,7 +210,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
           <HourlyChart data={hourlyData} />
-          <RecentOrders orders={recentOrders} canManage={canManage} failed={Boolean(recentRes.error)} />
+          <RecentOrders timezone={timezone} orders={recentOrders} canManage={canManage} failed={Boolean(recentRes.error)} />
         </div>
 
         {/* On phones the shortcuts come straight after the KPIs; on wide
