@@ -20,11 +20,16 @@ export function QRCodeCanvas({ url, size = 96, dataTableId }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Pure black on white, always — a themed QR is one some phone cameras
+    // refuse to read.
     QRCode.toCanvas(canvas, url, {
       width: size,
       margin: 1,
       color: { dark: "#000000", light: "#ffffff" },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      // Previously swallowed, which left a blank tile with no trace of why.
+      console.error("[qr] failed to render table QR", err);
+    });
   }, [url, size]);
 
   return (
@@ -33,7 +38,7 @@ export function QRCodeCanvas({ url, size = 96, dataTableId }: Props) {
       data-table-id={dataTableId}
       width={size}
       height={size}
-      className="rounded"
+      className="block rounded-sm"
       role="img"
       aria-label="Table QR code"
     />

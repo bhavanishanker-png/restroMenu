@@ -3,48 +3,60 @@ import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { toOrder } from "@/lib/mappers";
+import { formatMoney, roundMoney } from "@/lib/pricing";
+import { ORDER_STATUS_ICONS, ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
+import { StatTile } from "@/components/dashboard/home/StatTile";
+import { QuickActions } from "@/components/dashboard/home/QuickActions";
+import { RecentOrders, type RecentOrder } from "@/components/dashboard/home/RecentOrders";
 import type { DbOrder } from "@/types/db";
-import { ORDER_STATUS_STYLES, ORDER_STATUS_LABELS } from "@/lib/order-status";
-import type { Order, OrderStatus } from "@/types";
+import type { OrderStatus } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_LABELS = ORDER_STATUS_LABELS;
-const STATUS_COLORS = ORDER_STATUS_STYLES;
+/** Statuses still on the pass, in pipeline order. */
+const LIVE_STATUSES = ["placed", "accepted", "preparing", "ready"] as const satisfies readonly OrderStatus[];
 
-const STATUS_ICONS: Record<OrderStatus, string> = {
-  placed: "fiber_new",
-  accepted: "thumb_up",
-  preparing: "skillet",
-  ready: "check_circle",
-  served: "done_all",
-  cancelled: "cancel",
-};
+function greeting(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-function fmt(n: number) {
-  return n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+/** Rendered twice: in the side column on wide screens, last on phones. */
+function HelpCard({ className }: { className: string }) {
+  return (
+    <div className={`items-start gap-3 rounded-2xl border border-outline-variant bg-surface-container-low p-4 ${className}`}>
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface-variant">
+        <span className="material-symbols-outlined" style={{ fontSize: 22 }} aria-hidden="true">
+          support_agent
+        </span>
+      </span>
+      <div className="min-w-0">
+        <p className="font-display text-[15px] font-semibold text-on-surface">Need a hand?</p>
+        <p className="mt-0.5 text-body-sm text-on-surface-variant">
+          Support is available 24/7.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default async function DashboardPage() {
   const session = await getStaffSession();
   if (!session) redirect("/login");
 
+  const canManage = session.role === "owner" || session.role === "manager";
   const supabase = createServerClient();
 
-  const today = new Date();
+  const now = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const todayStart = today.toISOString();
 
-  // All four reads go out together. The live-orders count used to be awaited
-  // after this block, adding a serial round trip to every dashboard render.
-  const [
-    { data: todayOrders },
-    { data: recentRows },
-    restaurantData,
-    { count: liveOrders },
-  ] = await Promise.all([
+  // All four reads go out together, each scoped to the session's tenant.
+  const [todayRes, recentRes, restaurantRes, liveRes] = await Promise.all([
     supabase
       .from("orders")
       .select("total, placed_at")
@@ -65,229 +77,150 @@ export default async function DashboardPage() {
       .eq("id", session.restaurantId)
       .single(),
 
+    // Statuses rather than a bare count, so the live tile can break the
+    // pipeline down. Only in-flight orders, so the payload stays tiny.
     supabase
       .from("orders")
-      .select("*", { count: "exact", head: true })
+      .select("status")
       .eq("restaurant_id", session.restaurantId)
-      .in("status", ["placed", "accepted", "preparing", "ready"]),
+      .in("status", [...LIVE_STATUSES]),
   ]);
 
-  const ordersToday = todayOrders?.length ?? 0;
-  const revenueToday = (todayOrders ?? []).reduce((sum, o) => sum + Number(o.total), 0);
-  const avgTicket = ordersToday > 0 ? revenueToday / ordersToday : 0;
+  // Never swallow a failed read: log it, and tell the user which figures are
+  // unreliable instead of showing a confident zero.
+  if (todayRes.error) console.error("Dashboard: today's orders query failed", todayRes.error);
+  if (recentRes.error) console.error("Dashboard: recent orders query failed", recentRes.error);
+  if (restaurantRes.error) console.error("Dashboard: restaurant query failed", restaurantRes.error);
+  if (liveRes.error) console.error("Dashboard: live orders query failed", liveRes.error);
+  const statsFailed = Boolean(todayRes.error || liveRes.error);
+
+  const todayOrders = todayRes.data ?? [];
+  const ordersToday = todayOrders.length;
+  // TODO(pricing): this sum and average belong in src/lib/pricing.ts (e.g. a
+  // `sumMoney` helper). Kept here unchanged because lib/ is out of scope for
+  // this presentation pass; the result is rounded with the pricing helper.
+  const revenueToday = roundMoney(todayOrders.reduce((sum, o) => sum + Number(o.total), 0));
+  const avgTicket = ordersToday > 0 ? roundMoney(revenueToday / ordersToday) : 0;
 
   const hourCounts = new Array(24).fill(0) as number[];
-  for (const o of todayOrders ?? []) {
+  for (const o of todayOrders) {
     hourCounts[new Date(o.placed_at).getHours()]++;
   }
   const hourlyData = hourCounts.map((count, hour) => ({ hour, count }));
 
-  const recentOrders = (recentRows ?? []).map((row) => ({
+  const liveByStatus = Object.fromEntries(LIVE_STATUSES.map((s) => [s, 0])) as Record<
+    (typeof LIVE_STATUSES)[number],
+    number
+  >;
+  for (const row of liveRes.data ?? []) {
+    const status = row.status as (typeof LIVE_STATUSES)[number];
+    if (status in liveByStatus) liveByStatus[status]++;
+  }
+  const liveOrders = (liveRes.data ?? []).length;
+
+  const recentOrders: RecentOrder[] = (recentRes.data ?? []).map((row) => ({
     ...toOrder(row as DbOrder),
-    tableLabel: (row as { restaurant_tables: { label: string } | null }).restaurant_tables?.label ?? null,
+    tableLabel:
+      (row as { restaurant_tables: { label: string } | null }).restaurant_tables?.label ?? null,
   }));
 
+  const dateLabel = now.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
   return (
-    <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
+    <div className="flex flex-col gap-6 p-margin-mobile md:p-margin-desktop">
       {/* Stats and the recent-orders list re-render as customers order. */}
       <LiveRefresh restaurantId={session.restaurantId} tables={["orders"]} />
 
-      {/* Page header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-md">
-        <div>
-          <h1 className="font-headline-lg-mobile text-on-surface" style={{ fontSize: 28 }}>
-            {restaurantData.data?.name ?? "Dashboard"}
+      {/* Header */}
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
+          <p className="font-label-bold text-label-bold uppercase text-on-surface-variant">
+            {dateLabel}
+          </p>
+          <h1 className="mt-1 font-display text-[26px] font-bold leading-tight text-on-surface md:text-[32px]">
+            {greeting(now.getHours())}
+            {restaurantRes.data?.name ? (
+              <span className="text-on-surface-variant">, {restaurantRes.data.name}</span>
+            ) : null}
           </h1>
-          <p className="font-body-md text-on-surface-variant mt-1">Today&apos;s Overview</p>
+          <p className="mt-1 flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+            <span className="h-2 w-2 rounded-full bg-success motion-safe:animate-pulse" aria-hidden="true" />
+            {/* The words carry the state; the dot only reinforces it. */}
+            Live — updates automatically as orders come in
+          </p>
         </div>
-        {/* Accepting orders status chip */}
-        <div className="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full shadow-level-1 border border-outline-variant self-start">
-          <span className="h-2.5 w-2.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_hsl(var(--success)/0.6)]" />
-          <span className="font-label-bold text-label-bold text-on-surface">Accepting Orders</span>
+        <Link
+          href="/dashboard/kitchen"
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 self-start rounded-xl bg-brand px-4 font-semibold text-brand-foreground shadow-level-1 transition-shadow hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background md:self-auto"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
+            display_settings
+          </span>
+          Open kitchen display
+        </Link>
+      </header>
+
+      {statsFailed && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-error/25 bg-error-container px-4 py-3 text-body-sm text-on-error-container"
+        >
+          <span className="material-symbols-outlined shrink-0" style={{ fontSize: 20 }} aria-hidden="true">
+            error
+          </span>
+          Some of today&apos;s figures couldn&apos;t be loaded, so the numbers below may read low.
+          The page retries on its own every 15 seconds.
         </div>
-      </div>
+      )}
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-sm md:gap-gutter lg:grid-cols-4">
-        {/* Orders today */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
-          <div className="flex items-center justify-between text-on-surface-variant mb-1">
-            <span className="font-label-bold text-label-bold">Orders Today</span>
-            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>receipt_long</span>
-          </div>
-          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 40 }}>{ordersToday}</div>
-          <div className="font-body-sm text-on-surface-variant mt-1">All time</div>
-        </div>
-
-        {/* Revenue */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
-          <div className="flex items-center justify-between text-on-surface-variant mb-1">
-            <span className="font-label-bold text-label-bold">Revenue Today</span>
-            <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>payments</span>
-          </div>
-          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(revenueToday)}</div>
-          <div className="font-body-sm text-on-surface-variant mt-1">Net sales</div>
-        </div>
-
-        {/* Avg ticket */}
-        <div className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 tactile-hover">
-          <div className="flex items-center justify-between text-on-surface-variant mb-1">
-            <span className="font-label-bold text-label-bold">Avg. Ticket</span>
-            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>local_activity</span>
-          </div>
-          <div className="tabular font-display text-on-surface leading-none" style={{ fontSize: 32 }}>₹{fmt(avgTicket)}</div>
-          <div className="font-body-sm text-on-surface-variant mt-1">Per order</div>
-        </div>
-
-        {/* Live orders — the one stat that needs acting on, so it is the one
-            card that carries the accent. `text-primary-fixed-dim` here was a
-            surface token used as body text: unreadable in both themes. */}
-        <div className="relative flex flex-col gap-xs overflow-hidden rounded-xl border border-brand-border bg-brand-subtle p-md shadow-level-1 tactile-hover">
-          <div
-            aria-hidden="true"
-            className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-brand/30 blur-2xl"
-          />
-          <div className="relative z-10 mb-1 flex items-center justify-between text-brand-text">
-            <span className="font-label-bold text-label-bold">Live Orders</span>
-            <span className="material-symbols-outlined fill" style={{ fontSize: 20 }} aria-hidden="true">
-              skillet
-            </span>
-          </div>
-          <div className="tabular relative z-10 font-display leading-none text-on-surface" style={{ fontSize: 40 }}>
-            {liveOrders ?? 0}
-          </div>
-          <div className="relative z-10 mt-1 font-body-sm text-on-surface-variant">In kitchen now</div>
-        </div>
-      </div>
-
-      {/* Bento grid: chart + quick actions */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-lg">
-        {/* Chart + recent orders column */}
-        <div className="xl:col-span-2 flex flex-col gap-lg">
-          <HourlyChart data={hourlyData} />
-
-          {/* Recent orders table */}
-          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest shadow-level-1 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-outline-variant px-md py-sm">
-              <h3 className="font-headline-sm text-on-surface" style={{ fontSize: 16 }}>Recent Orders</h3>
-              <Link href="/dashboard/orders" className="font-label-bold text-label-bold text-brand-text hover:underline">
-                View All
-              </Link>
-            </div>
-
-            {recentOrders.length === 0 ? (
-              <p className="px-md py-lg text-center font-body-md text-on-surface-variant">
-                No orders yet today.
-              </p>
+      {/* KPI tiles */}
+      <section aria-label="Today at a glance" className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+        <StatTile
+          label="Live orders"
+          icon="skillet"
+          accent
+          value={liveOrders}
+          caption={
+            liveOrders === 0 ? (
+              "Nothing on the pass"
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-surface-container-lowest">
-                      <th className="font-label-bold text-label-bold text-on-surface-variant p-sm pl-md whitespace-nowrap">Order #</th>
-                      <th className="font-label-bold text-label-bold text-on-surface-variant p-sm whitespace-nowrap">Table</th>
-                      <th className="font-label-bold text-label-bold text-on-surface-variant p-sm whitespace-nowrap">Total</th>
-                      <th className="font-label-bold text-label-bold text-on-surface-variant p-sm whitespace-nowrap">Time</th>
-                      <th className="font-label-bold text-label-bold text-on-surface-variant p-sm pr-md whitespace-nowrap">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((order: Order & { tableLabel: string | null }) => (
-                      <tr
-                        key={order.id}
-                        className="border-b border-outline-variant last:border-0 hover:bg-surface-container-highest transition-colors cursor-pointer"
-                      >
-                        <td className="p-sm pl-md py-4 font-body-md text-on-surface font-semibold">
-                          #{order.orderNumber}
-                        </td>
-                        <td className="p-sm py-4 font-body-md text-on-surface-variant">
-                          {order.tableLabel ?? "Takeaway"}
-                        </td>
-                        <td className="p-sm py-4 font-body-md text-on-surface font-semibold">
-                          ₹{fmt(order.total)}
-                        </td>
-                        <td className="p-sm py-4 font-body-sm text-on-surface-variant">
-                          {new Date(order.placedAt).toLocaleTimeString("en-IN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="p-sm pr-md py-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-label-bold text-[10px] ${STATUS_COLORS[order.status]}`}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
-                              {STATUS_ICONS[order.status]}
-                            </span>
-                            {STATUS_LABELS[order.status]}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick actions column */}
-        <div className="xl:col-span-1">
-          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1 sticky top-6">
-            <h3 className="font-headline-sm text-on-surface mb-sm" style={{ fontSize: 16 }}>Quick Actions</h3>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/dashboard/kitchen"
-                className="flex w-full items-center justify-between p-4 bg-brand text-brand-foreground rounded-lg tactile-hover shadow-level-1 font-body-md font-medium"
-              >
-                <span className="flex items-center gap-sm">
-                  <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>display_settings</span>
-                  Open Kitchen Display
-                </span>
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
-              </Link>
-              <Link
-                href="/dashboard/menu"
-                className="flex w-full items-center justify-between p-4 bg-surface-container border border-outline-variant text-on-surface rounded-lg tactile-hover hover:bg-surface-container-high font-body-md font-medium transition-colors"
-              >
-                <span className="flex items-center gap-sm">
-                  <span className="material-symbols-outlined text-brand-text" style={{ fontSize: 20 }}>add_circle</span>
-                  Add Menu Item
-                </span>
-                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>arrow_forward</span>
-              </Link>
-              <Link
-                href="/dashboard/tables"
-                className="flex w-full items-center justify-between p-4 bg-surface-container border border-outline-variant text-on-surface rounded-lg tactile-hover hover:bg-surface-container-high font-body-md font-medium transition-colors"
-              >
-                <span className="flex items-center gap-sm">
-                  <span className="material-symbols-outlined text-success" style={{ fontSize: 20 }}>qr_code_scanner</span>
-                  Print QR Codes
-                </span>
-                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }}>arrow_forward</span>
-              </Link>
-            </div>
-
-            {/* Support card. Was `bg-inverse-surface`, which in dark mode
-                painted a near-white slab in the corner of an otherwise dark
-                sidebar — high contrast, but visually shouting. */}
-            <div className="mt-lg flex items-start gap-sm rounded-xl border border-outline-variant bg-surface-container p-sm">
-              <span
-                className="material-symbols-outlined text-brand-text"
-                style={{ fontSize: 22 }}
-                aria-hidden="true"
-              >
-                support_agent
+              <span className="flex flex-wrap gap-x-2 gap-y-0.5">
+                {LIVE_STATUSES.filter((s) => liveByStatus[s] > 0).map((s) => (
+                  <span key={s} className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden="true">
+                      {ORDER_STATUS_ICONS[s]}
+                    </span>
+                    <span className="tabular-nums">{liveByStatus[s]}</span> {ORDER_STATUS_LABELS[s].toLowerCase()}
+                  </span>
+                ))}
               </span>
-              <div>
-                <h4 className="font-label-bold text-label-bold uppercase text-on-surface">
-                  Need help?
-                </h4>
-                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                  Support is available 24/7.
-                </p>
-              </div>
-            </div>
-          </div>
+            )
+          }
+        />
+        <StatTile label="Orders today" icon="receipt_long" value={ordersToday} caption="Since midnight, excl. cancelled" />
+        <StatTile label="Revenue today" icon="payments" value={formatMoney(revenueToday)} caption="Order totals incl. tax" />
+        <StatTile label="Avg. ticket" icon="local_activity" value={formatMoney(avgTicket)} caption="Per order today" />
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
+          <HourlyChart data={hourlyData} />
+          <RecentOrders orders={recentOrders} canManage={canManage} failed={Boolean(recentRes.error)} />
         </div>
+
+        {/* On phones the shortcuts come straight after the KPIs; on wide
+            screens they sit in the right-hand column. */}
+        <aside className="order-first flex min-w-0 flex-col gap-6 xl:order-none">
+          <QuickActions canManage={canManage} />
+
+          <HelpCard className="hidden xl:flex" />
+        </aside>
+
+        <HelpCard className="flex xl:hidden" />
       </div>
     </div>
   );

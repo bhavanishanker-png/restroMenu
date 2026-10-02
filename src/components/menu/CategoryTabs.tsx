@@ -14,24 +14,41 @@ export function CategoryTabs({ categories }: Props) {
   // Prevent the observer from fighting with a manual tab click
   const manualScrollRef = useRef(false);
 
+  // When a filter removes the active category, fall back to the first one so
+  // the bar never shows nothing selected.
+  useEffect(() => {
+    if (categories.length === 0) return;
+    if (!categories.some((c) => c.id === activeId)) setActiveId(categories[0].id);
+  }, [categories, activeId]);
+
   // Scroll-spy via IntersectionObserver
   useEffect(() => {
     if (categories.length === 0) return;
 
+    // IntersectionObserver only reports sections whose state *changed*. The
+    // old callback picked from that batch alone, so a section that was already
+    // inside the band (e.g. Starters' tail, after a tab jump to Main Course)
+    // never re-reported when the guest scrolled back up — the bar stayed stuck
+    // on the wrong tab. Track the full in-band set and pick the first section
+    // in menu order instead.
+    const inBand = new Set<string>();
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (manualScrollRef.current) return;
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length > 0) {
-          const id = visible[0].target.id.replace("cat-", "");
-          setActiveId(id);
+        for (const e of entries) {
+          const id = e.target.id.replace("cat-", "");
+          if (e.isIntersecting) inBand.add(id);
+          else inBand.delete(id);
         }
+        if (manualScrollRef.current) return;
+        const first = categories.find((c) => inBand.has(c.id));
+        if (first) setActiveId(first.id);
       },
       {
-        // trigger when section header enters the top quarter of the viewport
-        rootMargin: "-10% 0px -75% 0px",
+        // The sticky chrome (header + search + chips + tabs) covers roughly
+        // the top quarter of a phone screen, so the "reading line" is a thin
+        // band just beneath it.
+        rootMargin: "-26% 0px -66% 0px",
         threshold: 0,
       }
     );
@@ -44,12 +61,14 @@ export function CategoryTabs({ categories }: Props) {
     return () => observer.disconnect();
   }, [categories]);
 
-  // Auto-centre the active tab pill
+  // Keep the active tab in view. Scrolls only the tab strip — scrollIntoView
+  // would also nudge the page vertically on some mobile browsers.
   useEffect(() => {
-    const activeTab = tabsRef.current?.querySelector<HTMLElement>(
-      `[data-catid="${activeId}"]`
-    );
-    activeTab?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const strip = tabsRef.current;
+    const tab = strip?.querySelector<HTMLElement>(`[data-catid="${activeId}"]`);
+    if (!strip || !tab) return;
+    const left = tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2;
+    strip.scrollTo({ left, behavior: "smooth" });
   }, [activeId]);
 
   function handleTabClick(catId: string) {
@@ -69,30 +88,49 @@ export function CategoryTabs({ categories }: Props) {
       ref={tabsRef}
       role="tablist"
       aria-label="Menu categories"
-      className="flex gap-1.5 overflow-x-auto px-margin-mobile py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="relative flex overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {categories.map((cat) => {
         const active = activeId === cat.id;
         return (
           <button
             key={cat.id}
+            type="button"
             role="tab"
             aria-selected={active}
             data-catid={cat.id}
             onClick={() => handleTabClick(cat.id)}
-            // A sliding `layoutId` pill was tempting here, but it was the only
-            // thing pulling Framer Motion onto the customer menu — ~46kB for
-            // one transition, on the screen with the strictest load budget in
-            // the app. A colour transition costs nothing and reads fine.
+            // A sliding `layoutId` indicator was tempting here, but it was the
+            // only thing pulling Framer Motion onto the customer menu — ~46kB
+            // for one transition, on the screen with the strictest load budget
+            // in the app. The underline is plain CSS.
+            //
+            // Active is signalled three ways: weight, colour and the underline
+            // bar — never colour alone.
             className={cn(
-              "shrink-0 rounded-full px-4 font-label-bold text-label-bold uppercase",
-              "min-h-[44px] transition-[background-color,color,box-shadow] duration-base ease-out-quart",
+              "relative flex min-h-[44px] shrink-0 items-center gap-1.5 px-2.5 text-[0.9375rem]",
+              "transition-colors duration-base ease-out-quart",
               active
-                ? "bg-brand text-brand-foreground shadow-glow"
-                : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+                ? "font-semibold text-on-surface"
+                : "font-medium text-on-surface-variant hover:text-on-surface"
             )}
           >
             {cat.name}
+            <span
+              className={cn(
+                "tabular rounded-full px-1.5 text-[0.6875rem] font-semibold leading-[1.125rem]",
+                active ? "bg-brand text-brand-foreground" : "bg-surface-container-high text-on-surface-variant"
+              )}
+            >
+              {cat.items.length}
+            </span>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-x-2.5 bottom-0 h-[3px] rounded-t-full bg-brand transition-transform duration-base ease-out-quart",
+                active ? "scale-x-100" : "scale-x-0"
+              )}
+            />
           </button>
         );
       })}

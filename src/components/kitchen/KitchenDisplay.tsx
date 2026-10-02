@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus, ServiceRequest, ServiceRequestType } from "@/types";
 import type { KitchenOrder, PendingChange } from "./types";
 import { KitchenHeader } from "./KitchenHeader";
-import { OrderCard } from "./OrderCard";
+import { AMBER_AFTER_MIN, OrderCard, elapsedMinutes } from "./OrderCard";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------- localStorage queue
 
@@ -31,29 +32,56 @@ type Column = {
   title: string;
   statuses: OrderStatus[];
   order: "asc" | "desc";
+  /** Material Symbols name — the column is identified by icon and title,
+   *  never by its accent colour alone. */
+  icon: string;
+  /** Top rule and count badge. */
+  accent: string;
+  badge: string;
+  empty: { title: string; body: string };
 };
 
+// New is the loudest (brand accent, inverted badge), Ready carries the success
+// hue because it is the one column that demands someone walk over — matching
+// the `ready` treatment in lib/order-status.ts. The rest are neutral.
 const COLUMNS: Column[] = [
-  { title: "New",       statuses: ["placed"],               order: "desc" },
-  { title: "Preparing", statuses: ["accepted", "preparing"], order: "asc"  },
-  { title: "Ready",     statuses: ["ready"],                 order: "asc"  },
-  { title: "Served",    statuses: ["served"],                order: "desc" },
+  {
+    title: "New",
+    statuses: ["placed"],
+    order: "desc",
+    icon: "notifications_active",
+    accent: "bg-brand",
+    badge: "bg-brand text-brand-foreground",
+    empty: { title: "Waiting for orders", body: "New tickets slide in here with a chime." },
+  },
+  {
+    title: "Preparing",
+    statuses: ["accepted", "preparing"],
+    order: "asc",
+    icon: "skillet",
+    accent: "bg-warning",
+    badge: "bg-surface-container-highest text-on-surface",
+    empty: { title: "Nothing on the stove", body: "Accept a new order to start cooking it." },
+  },
+  {
+    title: "Ready",
+    statuses: ["ready"],
+    order: "asc",
+    icon: "room_service",
+    accent: "bg-success",
+    badge: "bg-success-container text-on-success-container",
+    empty: { title: "Pass is clear", body: "Dishes marked ready wait here for pickup." },
+  },
+  {
+    title: "Served",
+    statuses: ["served"],
+    order: "desc",
+    icon: "history",
+    accent: "bg-outline",
+    badge: "bg-surface-container-high text-on-surface-variant",
+    empty: { title: "None served yet", body: "Completed orders from this shift land here." },
+  },
 ];
-
-type ColumnBadge = {
-  bg: string;
-  text: string;
-};
-
-// New is the loudest (inverted fill), Ready carries the success hue because it
-// is the one column that demands someone walk over — matching the `ready`
-// treatment in lib/order-status.ts. The rest differ by fill weight alone.
-const COLUMN_BADGE: Record<string, ColumnBadge> = {
-  New:       { bg: "bg-primary",                    text: "text-on-primary"             },
-  Preparing: { bg: "bg-surface-container-highest",  text: "text-on-surface"             },
-  Ready:     { bg: "bg-success-container",          text: "text-on-success-container"   },
-  Served:    { bg: "bg-surface-container-high",     text: "text-on-surface-variant"     },
-};
 
 function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
   const filtered = all.filter((o) => col.statuses.includes(o.status));
@@ -498,6 +526,9 @@ export function KitchenDisplay({
 
   const showBanner = !isOnline || queue.length > 0;
   const openRequestCount = serviceRequests.filter((r) => r.status === "open").length;
+  const activeOrders = orders.filter((o) => o.status !== "served" && o.status !== "cancelled");
+  const lateCount =
+    now === 0 ? 0 : activeOrders.filter((o) => elapsedMinutes(o.placedAt, now) >= AMBER_AFTER_MIN).length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface-container-lowest">
@@ -509,12 +540,18 @@ export function KitchenDisplay({
         now={now}
         serviceRequestCount={openRequestCount}
         onServiceRequestsClick={() => setServicesPanelOpen((v) => !v)}
+        activeCount={activeOrders.length}
+        lateCount={lateCount}
       />
 
       {/* Offline / pending banner */}
       {showBanner && (
-        <div className="flex items-center justify-center gap-sm bg-error-container border-b border-error/20 px-md py-xs text-on-error-container font-label-bold text-sm">
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+        <div
+          role="status"
+          className="flex items-center justify-center gap-sm border-b border-error/20 bg-error-container px-md py-2 font-label-bold text-on-error-container"
+          style={{ fontSize: 16 }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
             {!isOnline ? "wifi_off" : "sync"}
           </span>
           {!isOnline
@@ -525,35 +562,37 @@ export function KitchenDisplay({
 
       <div className="flex flex-1 overflow-hidden">
         {/* 4-column grid */}
-        <div className="flex flex-1 gap-gutter overflow-hidden p-gutter">
+        <div className="flex flex-1 gap-3 overflow-hidden p-3">
           {COLUMNS.map((col) => {
             const colOrders = columnOrders(orders, col);
-            const badge = COLUMN_BADGE[col.title];
 
             return (
               <section
                 key={col.title}
-                className="flex flex-1 flex-col bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden"
+                aria-label={`${col.title} — ${colOrders.length} orders`}
+                className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-low"
               >
+                <span aria-hidden="true" className={cn("absolute inset-x-0 top-0 h-1", col.accent)} />
+
                 {/* Column header */}
-                <div className="flex items-center gap-sm px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
-                  <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs flex-1">
+                <div className="flex shrink-0 items-center gap-2 border-b border-outline-variant bg-surface-container px-3 pb-2.5 pt-3.5">
+                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 22 }} aria-hidden="true">
+                    {col.icon}
+                  </span>
+                  <h2 className="flex-1 font-display font-bold uppercase tracking-wide text-on-surface" style={{ fontSize: 18 }}>
                     {col.title}
                   </h2>
-                  {col.title === "Served" ? (
-                    <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }}>
-                      history
-                    </span>
-                  ) : (
-                    <span className={`rounded-full px-2 py-0.5 font-bold text-xs ${badge.bg} ${badge.text}`}>
-                      {colOrders.length}
-                    </span>
-                  )}
+                  <span
+                    className={cn("grid h-8 min-w-8 place-items-center rounded-full px-2 font-mono font-bold tabular-nums", col.badge)}
+                    style={{ fontSize: 16 }}
+                  >
+                    {colOrders.length}
+                  </span>
                 </div>
 
                 {/* Cards */}
                 <div
-                  className="flex flex-col gap-sm overflow-y-auto p-sm kds-column"
+                  className="kds-column flex flex-1 flex-col gap-3 overflow-y-auto p-3"
                   style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(89,65,57,0.2) transparent" }}
                 >
                   {colOrders.map((order) => (
@@ -568,11 +607,16 @@ export function KitchenDisplay({
                   ))}
 
                   {colOrders.length === 0 && (
-                    <div className="flex flex-col items-center justify-center flex-1 rounded-xl border-2 border-dashed border-outline-variant/30 py-10 text-center">
-                      <span className="material-symbols-outlined text-on-surface-variant/40 mb-xs" style={{ fontSize: 32 }}>
-                        receipt_long
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-outline-variant px-4 py-12 text-center">
+                      <span className="material-symbols-outlined mb-1 text-on-surface-variant/50" style={{ fontSize: 40 }} aria-hidden="true">
+                        {col.icon}
                       </span>
-                      <p className="font-body-sm text-on-surface-variant">No orders</p>
+                      <p className="font-semibold text-on-surface" style={{ fontSize: 18 }}>
+                        {col.empty.title}
+                      </p>
+                      <p className="text-on-surface-variant" style={{ fontSize: 15 }}>
+                        {col.empty.body}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -583,16 +627,18 @@ export function KitchenDisplay({
 
         {/* Service requests side panel */}
         {servicesPanelOpen && (
-          <aside className="w-72 shrink-0 flex flex-col border-l border-outline-variant/30 bg-surface overflow-hidden">
-            <div className="flex items-center justify-between px-md py-sm bg-surface-container border-b border-outline-variant/30 shrink-0">
-              <h2 className="font-label-bold text-on-surface uppercase tracking-widest text-xs">
+          <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-outline-variant bg-surface">
+            <div className="flex shrink-0 items-center justify-between border-b border-outline-variant bg-surface-container py-1 pl-4 pr-1">
+              <h2 className="font-display font-bold uppercase tracking-wide text-on-surface" style={{ fontSize: 18 }}>
                 Table Requests
               </h2>
               <button
+                type="button"
                 onClick={() => setServicesPanelOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant"
+                aria-label="Close table requests"
+                className="flex h-[60px] w-[60px] items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-high"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 24 }} aria-hidden="true">close</span>
               </button>
             </div>
 
@@ -602,7 +648,10 @@ export function KitchenDisplay({
                   <span className="material-symbols-outlined text-on-surface-variant/40" style={{ fontSize: 32 }}>
                     notifications_none
                   </span>
-                  <p className="font-body-sm text-on-surface-variant">No pending requests</p>
+                  <p className="font-semibold text-on-surface" style={{ fontSize: 18 }}>No pending requests</p>
+                  <p className="text-on-surface-variant" style={{ fontSize: 15 }}>
+                    Water, bill and waiter calls from tables appear here.
+                  </p>
                 </div>
               ) : (
                 serviceRequests.map((req) => {
@@ -611,26 +660,29 @@ export function KitchenDisplay({
                   return (
                     <div
                       key={req.id}
-                      className="rounded-xl border border-outline-variant/30 bg-surface-container p-sm space-y-xs"
+                      className="space-y-2 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 shadow-level-1"
                     >
                       <div className="flex items-center gap-xs">
-                        <span className="material-symbols-outlined text-primary" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>
+                        <span className="material-symbols-outlined text-brand-text" style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
                           {meta.icon}
                         </span>
-                        <span className="font-label-bold text-on-surface flex-1">{meta.label}</span>
-                        <span className="font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
+                        <span className="flex-1 font-bold text-on-surface" style={{ fontSize: 18 }}>{meta.label}</span>
+                        <span className="text-on-surface-variant" style={{ fontSize: 14 }}>
                           {elapsed === 0 ? "just now" : `${elapsed}m ago`}
                         </span>
                       </div>
                       {req.tableLabel && (
-                        <p className="font-body-sm text-on-surface-variant" style={{ fontSize: 12 }}>
+                        <p className="text-on-surface-variant" style={{ fontSize: 16 }}>
                           Table {req.tableLabel}
                         </p>
                       )}
                       <button
+                        type="button"
                         onClick={() => handleResolveRequest(req.id)}
-                        className="w-full h-8 rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-xs hover:bg-surface-container-high transition-colors"
+                        className="flex h-[60px] w-full items-center justify-center gap-2 rounded-xl border-2 border-brand font-bold text-brand-text transition-colors hover:bg-brand hover:text-brand-foreground"
+                        style={{ fontSize: 16 }}
                       >
+                        <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">check</span>
                         Mark resolved
                       </button>
                     </div>

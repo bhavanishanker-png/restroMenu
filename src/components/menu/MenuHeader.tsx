@@ -22,20 +22,20 @@ export function MenuHeader({ restaurant, table }: Props) {
   return (
     <header className="glass-strong fixed inset-x-0 top-0 z-30 flex h-[64px] items-center gap-3 border-x-0 border-t-0 px-margin-mobile">
       {/* Logo */}
-      <div className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-container-high ring-1 ring-inset ring-outline-variant">
+      <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-subtle ring-1 ring-inset ring-brand-border">
         {restaurant.logoUrl ? (
           <Image
             src={restaurant.logoUrl}
             alt=""
             fill
-            sizes="36px"
+            sizes="40px"
             className="object-cover"
             priority
           />
         ) : (
           <span
-            className="material-symbols-outlined text-on-surface-variant"
-            style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
+            className="material-symbols-outlined text-brand-text"
+            style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}
             aria-hidden="true"
           >
             restaurant_menu
@@ -45,7 +45,7 @@ export function MenuHeader({ restaurant, table }: Props) {
 
       {/* Name */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="truncate font-display text-[1.0625rem] font-semibold leading-tight tracking-[-0.014em] text-on-surface">
+        <h1 className="truncate font-display text-title leading-tight text-on-surface">
           {restaurant.name}
         </h1>
         {restaurant.address && (
@@ -55,14 +55,26 @@ export function MenuHeader({ restaurant, table }: Props) {
         )}
       </div>
 
-      <ThemeToggle className="h-9 w-9" />
-
-      {/* Table badge */}
+      {/* Table badge — icon + label, so it still reads in greyscale. */}
       {table && (
-        <span className="shrink-0 rounded-full border border-brand-border bg-brand-subtle px-3 py-1 font-label-bold text-label-bold uppercase text-brand-text">
-          Table {table.label}
+        <span
+          className="flex shrink-0 items-center gap-1 rounded-full border border-brand-border bg-brand-subtle py-1 pl-2 pr-2.5 text-brand-text"
+          aria-label={`You are at table ${table.label}`}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
+          >
+            table_restaurant
+          </span>
+          <span className="tabular text-[0.8125rem] font-semibold leading-none">
+            {table.label}
+          </span>
         </span>
       )}
+
+      <ThemeToggle className="-mr-1.5 h-11 w-11 shrink-0" />
     </header>
   );
 }

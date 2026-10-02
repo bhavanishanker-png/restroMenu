@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -11,17 +12,18 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2, Plus, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import type { MenuCategory } from "@/types";
+import { MsIcon } from "./MsIcon";
 
 type CategoryWithCount = MenuCategory & { itemCount: number };
 
@@ -30,6 +32,8 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onChange: (updated: CategoryWithCount[]) => void;
+  /** Open with the "new category" input already showing. */
+  defaultAdding?: boolean;
 };
 
 // ---------------------------------------------------------------- draggable row
@@ -56,7 +60,6 @@ function CategoryRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   function commitRename() {
@@ -65,85 +68,145 @@ function CategoryRow({
     setEditing(false);
   }
 
+  function cancelRename() {
+    setDraft(cat.name);
+    setEditing(false);
+  }
+
   return (
-    <div
+    <li
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 rounded-lg px-2 py-2 transition-colors ${
-        selected ? "bg-surface-container-highest text-on-surface font-medium" : "hover:bg-surface-container"
-      }`}
+      className={cn(
+        "group relative flex min-h-11 items-center gap-1 rounded-xl border pr-1 transition-colors duration-fast",
+        selected
+          ? "border-brand-border bg-brand-subtle"
+          : "border-transparent hover:bg-surface-container",
+        isDragging && "z-10 border-outline-variant bg-surface-container-lowest opacity-90 shadow-level-2"
+      )}
     >
-      {/* Drag handle */}
+      {/* Selection bar — position, not just tint, marks the open category. */}
+      {selected && (
+        <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-brand" aria-hidden="true" />
+      )}
+
       <button
-        className="cursor-grab touch-none text-outline hover:text-on-surface-variant"
+        type="button"
+        className="grid h-11 w-8 shrink-0 cursor-grab touch-none place-items-center text-outline hover:text-on-surface-variant active:cursor-grabbing"
         {...attributes}
         {...listeners}
-        aria-label="Drag to reorder"
+        aria-label={`Reorder ${cat.name}`}
       >
-        <GripVertical className="h-4 w-4" />
+        <MsIcon name="drag_indicator" />
       </button>
 
       {editing ? (
-        <div className="flex flex-1 items-center gap-1">
+        <div className="flex flex-1 items-center gap-1 py-1">
           <Input
             autoFocus
             value={draft}
+            aria-label="Category name"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") commitRename();
-              if (e.key === "Escape") { setDraft(cat.name); setEditing(false); }
+              if (e.key === "Escape") cancelRename();
             }}
-            className="h-7 text-sm"
+            className="h-9 text-sm"
           />
-          <button onClick={commitRename} className="text-success hover:text-on-success-container">
-            <Check className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={commitRename}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-on-success-container hover:bg-success-container"
+            aria-label="Save name"
+          >
+            <MsIcon name="check" />
           </button>
-          <button onClick={() => { setDraft(cat.name); setEditing(false); }} className="text-on-surface-variant">
-            <X className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={cancelRename}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container-high"
+            aria-label="Cancel rename"
+          >
+            <MsIcon name="close" />
           </button>
         </div>
       ) : (
-        <button className="flex flex-1 items-center gap-2 text-left text-sm font-medium" onClick={onSelect}>
-          <span className="flex-1 truncate">{cat.name}</span>
-          <Badge variant="secondary" className="text-xs">{cat.itemCount}</Badge>
-        </button>
-      )}
+        <>
+          <button
+            type="button"
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left"
+            onClick={onSelect}
+            aria-current={selected ? "true" : undefined}
+          >
+            <span
+              className={cn(
+                "flex-1 truncate text-sm",
+                selected ? "font-semibold text-on-surface" : "font-medium text-on-surface"
+              )}
+            >
+              {cat.name}
+            </span>
+            <span
+              className={cn(
+                "grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-semibold tabular-nums",
+                selected
+                  ? "bg-brand text-brand-foreground"
+                  : "bg-surface-container-high text-on-surface-variant"
+              )}
+              aria-label={`${cat.itemCount} ${cat.itemCount === 1 ? "dish" : "dishes"}`}
+            >
+              {cat.itemCount}
+            </span>
+          </button>
 
-      {!editing && (
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-            className="rounded p-0.5 text-on-surface-variant hover:text-on-surface-variant"
-            aria-label="Rename"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="rounded p-0.5 text-on-surface-variant hover:text-error"
-            aria-label="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+          {/* Visible on hover/focus with a mouse; always visible on touch. */}
+          <div className="flex shrink-0 opacity-100 transition-opacity duration-fast lg:w-0 lg:overflow-hidden lg:opacity-0 lg:group-focus-within:w-auto lg:group-focus-within:opacity-100 lg:group-hover:w-auto lg:group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+              className="grid h-11 w-9 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              aria-label={`Rename ${cat.name}`}
+            >
+              <MsIcon name="edit" size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="grid h-11 w-9 place-items-center rounded-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+              aria-label={`Delete ${cat.name}`}
+            >
+              <MsIcon name="delete" size={18} />
+            </button>
+          </div>
+        </>
       )}
-    </div>
+    </li>
   );
 }
 
 // ---------------------------------------------------------------- main component
 
-export function CategoryList({ categories, selectedId, onSelect, onChange }: Props) {
+export function CategoryList({
+  categories,
+  selectedId,
+  onSelect,
+  onChange,
+  defaultAdding = false,
+}: Props) {
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(defaultAdding);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
+    const prev = categories;
     const oldIdx = categories.findIndex((c) => c.id === active.id);
     const newIdx = categories.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(categories, oldIdx, newIdx).map((c, i) => ({
@@ -153,14 +216,19 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
 
     onChange(reordered);
 
+    // `fetch` only rejects on network failure. A 4xx/5xx used to be ignored,
+    // leaving the new order on screen but not saved.
     try {
-      await fetch("/api/menu/categories/reorder", {
+      const res = await fetch("/api/menu/categories/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: reordered.map((c) => ({ id: c.id, sortOrder: c.sortOrder })) }),
       });
-    } catch {
-      toast.error("Failed to save category order.");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error("[categories] reorder failed", err);
+      onChange(prev);
+      toast.error("Couldn't save the new category order. Please try again.");
     }
   }
 
@@ -168,12 +236,15 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
     const prev = categories;
     onChange(prev.map((c) => (c.id === cat.id ? { ...c, name } : c)));
 
-    const res = await fetch(`/api/menu/categories/${cat.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) {
+    try {
+      const res = await fetch(`/api/menu/categories/${cat.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error("[categories] rename failed", err);
       onChange(prev);
       toast.error("Failed to rename category.");
     }
@@ -184,8 +255,11 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
     const prev = categories;
     onChange(prev.filter((c) => c.id !== cat.id));
 
-    const res = await fetch(`/api/menu/categories/${cat.id}`, { method: "DELETE" });
-    if (!res.ok) {
+    try {
+      const res = await fetch(`/api/menu/categories/${cat.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.error("[categories] delete failed", err);
       onChange(prev);
       toast.error("Failed to delete category.");
     }
@@ -209,58 +283,83 @@ export function CategoryList({ categories, selectedId, onSelect, onChange }: Pro
       onChange([...categories, { ...category, itemCount: 0 }]);
       setNewName("");
       setShowAdd(false);
+    } catch (err) {
+      console.error("[categories] create failed", err);
+      toast.error("Failed to create category. Check your connection.");
     } finally {
       setCreating(false);
     }
   }
 
+  function cancelAdd() {
+    setNewName("");
+    setShowAdd(false);
+  }
+
   return (
     <div className="flex flex-col gap-1">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-          {categories.map((cat) => (
-            <CategoryRow
-              key={cat.id}
-              cat={cat}
-              selected={selectedId === cat.id}
-              onSelect={() => onSelect(cat.id)}
-              onRename={(name) => handleRename(cat, name)}
-              onDelete={() => handleDelete(cat)}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      {categories.length > 0 && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            <ul className="flex flex-col gap-0.5">
+              {categories.map((cat) => (
+                <CategoryRow
+                  key={cat.id}
+                  cat={cat}
+                  selected={selectedId === cat.id}
+                  onSelect={() => onSelect(cat.id)}
+                  onRename={(name) => handleRename(cat, name)}
+                  onDelete={() => handleDelete(cat)}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
 
       {categories.length === 0 && !showAdd && (
-        <p className="px-2 py-4 text-center text-sm text-on-surface-variant">No categories yet.</p>
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-outline-variant px-4 py-6 text-center">
+          <MsIcon name="category" size={22} className="text-on-surface-variant" />
+          <p className="text-sm font-medium text-on-surface">No categories yet</p>
+          <p className="text-xs text-on-surface-variant">
+            Group dishes the way your printed menu does.
+          </p>
+        </div>
       )}
 
       {showAdd ? (
-        <div className="mt-1 flex items-center gap-1 px-2">
+        <div className="mt-1 flex items-center gap-1 rounded-xl border border-outline-variant bg-surface-container-low p-1.5">
           <Input
             autoFocus
-            placeholder="Category name"
+            placeholder="e.g. Starters"
+            aria-label="New category name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleCreate();
-              if (e.key === "Escape") { setNewName(""); setShowAdd(false); }
+              if (e.key === "Escape") cancelAdd();
             }}
-            className="h-8 text-sm"
+            className="h-10 text-sm"
           />
-          <Button size="sm" disabled={creating} onClick={handleCreate}>
-            {creating ? "…" : "Add"}
+          <Button variant="brand" className="h-10 shrink-0" disabled={creating || !newName.trim()} onClick={handleCreate}>
+            {creating ? "Adding…" : "Add"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => { setNewName(""); setShowAdd(false); }}>
-            <X className="h-4 w-4" />
-          </Button>
+          <button
+            type="button"
+            onClick={cancelAdd}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container-high"
+            aria-label="Cancel"
+          >
+            <MsIcon name="close" />
+          </button>
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setShowAdd(true)}
-          className="mt-1 flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+          className="mt-1 flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-outline-variant px-3 text-sm font-medium text-on-surface-variant transition-colors hover:border-outline hover:bg-surface-container hover:text-on-surface"
         >
-          <Plus className="h-4 w-4" /> Add category
+          <MsIcon name="add" /> Add category
         </button>
       )}
     </div>

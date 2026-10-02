@@ -28,3 +28,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   served: "Served",
   cancelled: "Cancelled",
 };
+
+/** Material Symbols name per status, so a status never rests on colour alone. */
+export const ORDER_STATUS_ICONS: Record<OrderStatus, string> = {
+  placed: "notifications_active",
+  accepted: "thumb_up",
+  preparing: "skillet",
+  ready: "room_service",
+  served: "done_all",
+  cancelled: "cancel",
+};

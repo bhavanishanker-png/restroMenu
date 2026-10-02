@@ -10,22 +10,24 @@ export function CartLineItem({ line }: { line: CartLine }) {
   const setQuantity = useCartStore((s) => s.setQuantity);
   const removeLine = useCartStore((s) => s.removeLine);
   const priced = priceLine(line);
+  const isLast = line.quantity <= 1;
 
   return (
-    <div className="flex gap-3 py-3">
+    <li className="flex gap-3 py-4">
       {/* Thumbnail */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-container-high">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-surface-container-high ring-1 ring-inset ring-outline-variant">
         {line.imageUrl ? (
           <Image
             src={line.imageUrl}
-            alt={line.itemName}
+            alt=""
             fill
-            sizes="80px"
+            sizes="64px"
             className="object-cover"
+            loading="lazy"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span className="material-symbols-outlined text-outline" style={{ fontSize: 28 }}>
+            <span className="material-symbols-outlined text-outline" style={{ fontSize: 26 }} aria-hidden="true">
               restaurant
             </span>
           </div>
@@ -33,60 +35,72 @@ export function CartLineItem({ line }: { line: CartLine }) {
       </div>
 
       {/* Details */}
-      <div className="flex flex-1 flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <FoodTypeMarker type={line.foodType} />
-          <span className="text-body-md font-semibold text-on-surface truncate">{line.itemName}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <FoodTypeMarker type={line.foodType} />
+              <span className="truncate text-body-md font-semibold text-on-surface">{line.itemName}</span>
+            </div>
+            {(line.variantName || line.addons.length > 0) && (
+              <p className="text-body-xs text-on-surface-variant">
+                {[line.variantName, ...line.addons.map((a) => a.name)].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {line.notes && (
+              <p className="flex items-start gap-1 text-body-xs text-on-surface-variant">
+                <span className="material-symbols-outlined mt-px" style={{ fontSize: 14 }} aria-hidden="true">
+                  edit_note
+                </span>
+                <span className="italic">{line.notes}</span>
+              </p>
+            )}
+          </div>
+          <span className="tabular shrink-0 font-display text-body-md font-semibold text-on-surface">
+            {formatMoney(priced.lineSubtotal)}
+          </span>
         </div>
 
-        {line.variantName && (
-          <p className="text-body-sm text-on-surface-variant">{line.variantName}</p>
-        )}
-        {line.addons.length > 0 && (
-          <p className="text-body-sm text-on-surface-variant">
-            {line.addons.map((a) => a.name).join(", ")}
-          </p>
-        )}
-        {line.notes && (
-          <p className="text-body-sm italic text-on-surface-variant">&ldquo;{line.notes}&rdquo;</p>
-        )}
-
-        {/* Qty stepper + price row */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center rounded-lg border border-outline-variant overflow-hidden h-9">
+        {/* Qty stepper — 44px targets. At quantity 1 the minus becomes a bin,
+            so the guest can see that the next tap removes the dish. */}
+        <div className="flex items-center justify-between">
+          <div className="flex h-11 items-center rounded-xl border border-brand-border bg-brand-subtle text-brand-text">
             <button
+              type="button"
               onClick={() => setQuantity(line.lineId, line.quantity - 1)}
-              className="flex h-full w-9 items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all"
-              aria-label="Decrease quantity"
+              className="grid h-11 w-11 place-items-center rounded-l-xl transition-colors hover:bg-brand/10 active:scale-95"
+              aria-label={isLast ? `Remove ${line.itemName}` : `Decrease ${line.itemName} quantity`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>remove</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
+                {isLast ? "delete" : "remove"}
+              </span>
             </button>
-            <span className="w-8 text-center text-body-md font-semibold text-on-surface border-x border-outline-variant">
+            <span className="tabular w-7 text-center font-display text-body-md font-semibold" aria-live="polite">
               {line.quantity}
             </span>
             <button
+              type="button"
               onClick={() => setQuantity(line.lineId, line.quantity + 1)}
-              className="flex h-full w-9 items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all"
-              aria-label="Increase quantity"
+              className="grid h-11 w-11 place-items-center rounded-r-xl transition-colors hover:bg-brand/10 active:scale-95"
+              aria-label={`Increase ${line.itemName} quantity`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">add</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="font-headline-sm text-primary" style={{ fontSize: 16 }}>
-              {formatMoney(priced.lineTotal)}
-            </span>
+          {!isLast && (
             <button
+              type="button"
               onClick={() => removeLine(line.lineId)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-outline hover:text-tertiary hover:bg-tertiary/10 transition-colors"
+              className="flex min-h-[44px] items-center gap-1 rounded-lg px-2 text-body-xs font-medium text-on-surface-variant transition-colors hover:text-error"
               aria-label={`Remove ${line.itemName}`}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>delete</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">delete</span>
+              Remove
             </button>
-          </div>
+          )}
         </div>
       </div>
-    </div>
+    </li>
   );
 }

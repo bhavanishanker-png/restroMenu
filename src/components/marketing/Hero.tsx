@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, QrCode } from "lucide-react";
-import { Aurora } from "@/components/aceternity/Aurora";
-import { Spotlight } from "@/components/aceternity/Spotlight";
 import { Button } from "@/components/ui/button";
 import { ProductPreview } from "./ProductPreview";
 
@@ -15,13 +13,6 @@ import { ProductPreview } from "./ProductPreview";
 export function Hero() {
   return (
     <section className="grain relative overflow-hidden pb-2xl pt-28 md:pb-3xl md:pt-36">
-      {/* Backdrop */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-line-grid mask-radial opacity-60" />
-        <Aurora />
-        <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" />
-      </div>
-
       <div className="relative z-10 mx-auto grid w-full max-w-content grid-cols-1 items-center gap-2xl px-margin-mobile md:px-margin-desktop lg:grid-cols-[1.05fr_1fr] lg:gap-xl">
         {/* Copy */}
         <div className="flex flex-col items-start gap-6">

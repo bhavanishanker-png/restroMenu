@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { TablesManager } from "@/components/tables/TablesManager";
+import { PageHeader } from "@/components/dashboard/PageHeader";
 import { toTable } from "@/lib/mappers";
 import type { DbRestaurantTable } from "@/types/db";
 import type { RestaurantTable } from "@/types";
@@ -18,7 +19,7 @@ export default async function TablesPage() {
 
   const supabase = createServerClient();
 
-  const [{ data: tableRows }, { data: restaurant }] = await Promise.all([
+  const [{ data: tableRows, error: tablesError }, { data: restaurant, error: restaurantError }] = await Promise.all([
     supabase
       .from("restaurant_tables")
       .select("*, table_sessions(status)")
@@ -32,6 +33,13 @@ export default async function TablesPage() {
       .single(),
   ]);
 
+  // An error used to render as "no tables yet", inviting the owner to
+  // recreate tables that already exist. Surface it via error.tsx instead.
+  if (tablesError || restaurantError) {
+    console.error("[tables page]", tablesError ?? restaurantError);
+    throw new Error("Failed to load tables.");
+  }
+
   const tables: TableEntry[] = (tableRows ?? []).map((row) => ({
     ...toTable(row as DbRestaurantTable),
     hasActiveSession:
@@ -41,13 +49,11 @@ export default async function TablesPage() {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant/30 bg-surface-container-lowest px-md py-sm shadow-level-1">
-        <div>
-          <h1 className="font-headline-sm text-on-surface" style={{ fontSize: 18 }}>Table QR Setup</h1>
-          <p className="font-body-sm text-on-surface-variant">Manage QR codes and print standees</p>
-        </div>
-      </header>
+    <div className="flex flex-col gap-0">
+      <PageHeader
+        title="Tables & QR"
+        description="Every table gets its own QR code. Download one, or print standees for the whole floor."
+      />
       <TablesManager
         initialTables={tables}
         restaurantId={session.restaurantId}

@@ -21,12 +21,19 @@ export default async function MenuPage() {
 
   const supabase = createServerClient();
 
-  const [{ data: catRows }, { data: groupRows }] = await Promise.all([
+  const [
+    { data: catRows, error: catError },
+    { data: groupRows, error: groupError },
+  ] = await Promise.all([
     supabase
       .from("menu_categories")
       .select("*, menu_items(count)")
       .eq("restaurant_id", session.restaurantId)
       .eq("is_active", true)
+      // Deleting a dish is a soft delete (`is_active = false`), and the item
+      // list only shows active dishes. Without this filter on the embedded
+      // count, every deleted dish kept inflating its category's badge.
+      .eq("menu_items.is_active", true)
       .order("sort_order", { ascending: true }),
 
     supabase
@@ -35,6 +42,13 @@ export default async function MenuPage() {
       .eq("restaurant_id", session.restaurantId)
       .order("name", { ascending: true }),
   ]);
+
+  // Never render an empty menu manager on a failed query — an owner would
+  // reasonably conclude their menu was gone. Surface it via the error boundary.
+  if (catError || groupError) {
+    console.error("[menu page]", catError ?? groupError);
+    throw new Error("Failed to load the menu. Please refresh.");
+  }
 
   const categories: CategoryWithCount[] = (catRows ?? []).map((row) => ({
     ...toMenuCategory(row as DbMenuCategory),

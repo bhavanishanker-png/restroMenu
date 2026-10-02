@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------- schemas
 
@@ -25,15 +27,67 @@ type PinFields = z.infer<typeof pinSchema>;
 type Tab = "email" | "pin";
 type StaffOption = { id: string; name: string; role: string };
 
+const TABS: { value: Tab; label: string; hint: string; icon: string }[] = [
+  { value: "email", label: "Owner / Manager", hint: "Email", icon: "mail" },
+  { value: "pin", label: "Kitchen / Waiter", hint: "PIN", icon: "dialpad" },
+];
+
+const NETWORK_ERROR = "Couldn't reach QBite. Check your connection and try again.";
+
 // ---------------------------------------------------------------- sub-components
 
-function FieldError({ msg }: { msg?: string }) {
+function Icon({ name, size = 20, className }: { name: string; size?: number; className?: string }) {
+  return (
+    <span className={cn("material-symbols-outlined", className)} style={{ fontSize: size }} aria-hidden="true">
+      {name}
+    </span>
+  );
+}
+
+function FieldError({ id, msg }: { id: string; msg?: string }) {
   if (!msg) return null;
   return (
-    <p className="font-body-sm text-body-sm text-on-error-container flex items-center gap-1 mt-xs" role="alert">
-      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>error</span>
+    <p id={id} className="mt-1 flex items-center gap-1 text-body-sm font-medium text-error">
+      <Icon name="error" size={16} />
       {msg}
     </p>
+  );
+}
+
+const LABEL = "font-label-bold text-label-bold uppercase text-on-surface-variant";
+
+function inputClass(invalid: boolean, extra?: string) {
+  return cn(
+    "h-12 w-full rounded-xl border bg-surface-container-low pl-11 pr-3 text-body-md text-on-surface",
+    "placeholder:text-on-surface-variant/50 transition-[border-color,box-shadow] duration-fast",
+    "focus:outline-none focus:ring-2",
+    invalid
+      ? "border-error focus:border-error focus:ring-error/30"
+      : "border-outline-variant hover:border-outline focus:border-brand focus:ring-brand/30",
+    extra
+  );
+}
+
+function InputIcon({ name }: { name: string }) {
+  return (
+    <Icon
+      name={name}
+      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors group-focus-within:text-brand-text"
+    />
+  );
+}
+
+function SubmitButton({ busy, children }: { busy: boolean; children: ReactNode }) {
+  return (
+    <button
+      type="submit"
+      disabled={busy}
+      aria-busy={busy}
+      className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-display font-semibold text-brand-foreground shadow-level-1 transition-[box-shadow,transform,opacity] duration-fast hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px disabled:opacity-60"
+    >
+      <span>{busy ? "Signing in…" : children}</span>
+      {!busy && <Icon name="arrow_forward" />}
+    </button>
   );
 }
 
@@ -41,10 +95,20 @@ function FieldError({ msg }: { msg?: string }) {
 
 export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlug?: string; nextPath?: string }) {
   const router = useRouter();
+  const uid = useId();
+  const ids = {
+    email: `${uid}-email`,
+    password: `${uid}-password`,
+    slug: `${uid}-slug`,
+    staff: `${uid}-staff`,
+    pin: `${uid}-pin`,
+    panel: `${uid}-panel`,
+  };
 
   const [tab, setTab] = useState<Tab>("email");
   const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -69,279 +133,346 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
   });
 
   const slug = watchPin("restaurantSlug");
+  const selectedStaffId = watchPin("staffId");
 
   useEffect(() => {
     const s = slug?.trim();
+    setStaffError(null);
     if (!s) { setStaffList([]); return; }
     let cancelled = false;
     setStaffLoading(true);
     fetch(`/api/auth/staff-list?slug=${encodeURIComponent(s)}`)
-      .then((r) => r.json())
-      .then((data: { staff?: StaffOption[] }) => {
-        if (!cancelled) setStaffList(data.staff ?? []);
+      .then(async (r) => {
+        const data = (await r.json()) as { staff?: StaffOption[]; error?: { message: string } };
+        if (cancelled) return;
+        setStaffList(data.staff ?? []);
+        // A 404 here just means the code is wrong (or still being typed).
+        if (!r.ok) {
+          setStaffError(
+            r.status === 404
+              ? "No restaurant with that code. Check it with your manager."
+              : data.error?.message ?? "Couldn't load staff names."
+          );
+        }
       })
-      .catch(() => { if (!cancelled) setStaffList([]); })
+      .catch((err: unknown) => {
+        console.error("Staff list fetch failed", err);
+        if (!cancelled) { setStaffList([]); setStaffError(NETWORK_ERROR); }
+      })
       .finally(() => { if (!cancelled) setStaffLoading(false); });
     return () => { cancelled = true; };
   }, [slug]);
 
   async function submitEmail(data: EmailFields) {
     setApiError(null);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ method: "email", ...data }),
-    });
-    const json = (await res.json()) as { error?: { message: string } };
-    if (!res.ok) { setApiError(json.error?.message ?? "Login failed."); return; }
-    router.push(nextPath);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "email", ...data }),
+      });
+      const json = (await res.json()) as { error?: { message: string } };
+      if (!res.ok) { setApiError(json.error?.message ?? "Login failed."); return; }
+      router.push(nextPath);
+    } catch (err) {
+      console.error("Email login failed", err);
+      setApiError(NETWORK_ERROR);
+    }
   }
 
   async function submitPin(data: PinFields) {
     setApiError(null);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ method: "pin", ...data }),
-    });
-    const json = (await res.json()) as { error?: { message: string } };
-    if (!res.ok) { setApiError(json.error?.message ?? "Login failed."); return; }
-    router.push(nextPath);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "pin", ...data }),
+      });
+      const json = (await res.json()) as { error?: { message: string } };
+      if (!res.ok) { setApiError(json.error?.message ?? "Login failed."); return; }
+      router.push(nextPath);
+    } catch (err) {
+      console.error("PIN login failed", err);
+      setApiError(NETWORK_ERROR);
+    }
+  }
+
+  function switchTab(next: Tab) {
+    setTab(next);
+    setApiError(null);
   }
 
   // No mount gate here on purpose. This form reads nothing that differs
   // between server and client — no cart store, no localStorage, no Date — so
   // gating it behind `mounted` bought nothing and actively caused a hydration
-  // mismatch: the server emitted an empty 520px box while the client rendered
-  // the real form. It also meant the login screen first painted as a blank
-  // card. The cart-backed components still need their gate; this one does not.
+  // mismatch. The cart-backed components still need their gate; this one does not.
   return (
-    <div className="edge-light flex w-full flex-col items-center rounded-2xl border border-outline-variant bg-surface-container-lowest/90 p-lg shadow-level-3 backdrop-blur-xl sm:p-xl">
+    <div className="edge-light flex w-full flex-col rounded-2xl border border-outline-variant bg-surface-container-lowest/95 p-5 shadow-level-3 backdrop-blur-xl sm:p-8">
       {/* Branding */}
-      <div className="mb-lg flex flex-col items-center text-center">
-        <div className="mb-md grid h-14 w-14 place-items-center rounded-2xl border border-brand-border bg-brand-subtle">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-brand-border bg-brand-subtle">
           <span
             className="material-symbols-outlined text-brand-text"
-            style={{ fontSize: 30, fontVariationSettings: "'FILL' 1" }}
+            style={{ fontSize: 26, fontVariationSettings: "'FILL' 1" }}
             aria-hidden="true"
           >
             restaurant_menu
           </span>
         </div>
-        <h1 className="font-display text-display-lg text-on-surface">QBite</h1>
-        <p className="mt-1 text-body-sm text-on-surface-variant">
-          Sign in to your restaurant workspace
-        </p>
+        <div className="min-w-0">
+          <h1 className="font-display text-[24px] font-bold leading-tight text-on-surface">Sign in to QBite</h1>
+          <p className="text-body-sm text-on-surface-variant">Your restaurant workspace</p>
+        </div>
+      </div>
+
+      {/* Sign-in method. Tabs, not a radio group: each one swaps the whole
+          form below, and arrow keys move between them. */}
+      <div
+        role="tablist"
+        aria-label="Sign-in method"
+        className="mb-5 grid grid-cols-2 gap-1 rounded-xl border border-outline-variant bg-surface-container-low p-1"
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+          const next: Tab = tab === "email" ? "pin" : "email";
+          switchTab(next);
+          document.getElementById(`${uid}-tab-${next}`)?.focus();
+        }}
+      >
+        {TABS.map((t) => {
+          const selected = tab === t.value;
+          return (
+            <button
+              key={t.value}
+              id={`${uid}-tab-${t.value}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={ids.panel}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => switchTab(t.value)}
+              className={cn(
+                "flex min-h-[48px] flex-col items-center justify-center rounded-lg px-2 py-1.5 text-center transition-[background-color,color,box-shadow] duration-fast",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                selected
+                  ? "bg-surface-container-lowest text-on-surface shadow-level-1"
+                  : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+              )}
+            >
+              <span className="flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold leading-tight sm:text-sm">
+                {/* Wrapped: the icon font's own `display` would beat `hidden`. */}
+                <span className="hidden sm:inline-flex">
+                  <Icon name={t.icon} size={16} className={selected ? "text-brand-text" : undefined} />
+                </span>
+                {t.label}
+              </span>
+              <span className="text-[11px] leading-tight text-on-surface-variant">Sign in with {t.hint}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Demo credentials */}
-      <div className="w-full mb-md p-sm rounded-xl border border-outline-variant bg-surface-container-low flex items-start justify-between gap-sm">
-        <div>
-          <p className="font-label-bold text-label-bold text-on-surface" style={{ fontSize: 12 }}>Demo Restaurant</p>
-          <p className="font-body-sm text-on-surface-variant" style={{ fontSize: 11 }}>
-            test-kitchen · testowner@qbite.dev / Test1234!
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setTab("email");
-            setApiError(null);
-            setEmailVal("email", "testowner@qbite.dev");
-            setEmailVal("password", "Test1234!");
-          }}
-          className="flex items-center gap-xs px-sm py-xs rounded-lg bg-secondary-container text-on-secondary-container font-label-bold text-label-bold hover:bg-secondary-container/80 transition-colors whitespace-nowrap shrink-0"
-          style={{ fontSize: 12 }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
-          Use Demo
-        </button>
-      </div>
-
-      {/* Tab switcher */}
-      <div className="flex w-full rounded-xl border border-outline-variant bg-surface-container p-1 gap-1 mb-md">
-        {(["email", "pin"] as Tab[]).map((t) => (
+      {tab === "email" && (
+        <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-dashed border-outline-variant bg-surface-container-low px-3 py-2.5">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-on-surface">Demo restaurant</p>
+            <p className="truncate font-mono text-[11px] text-on-surface-variant">
+              testowner@qbite.dev · Test1234!
+            </p>
+          </div>
           <button
-            key={t}
             type="button"
-            onClick={() => { setTab(t); setApiError(null); }}
-            className={`flex-1 rounded-lg py-2 font-label-bold text-label-bold transition-all ${
-              tab === t
-                ? "bg-primary-container text-on-primary-container shadow-level-1"
-                : "text-on-surface-variant hover:bg-surface-container-high"
-            }`}
+            onClick={() => {
+              setApiError(null);
+              setEmailVal("email", "testowner@qbite.dev", { shouldValidate: true });
+              setEmailVal("password", "Test1234!", { shouldValidate: true });
+            }}
+            className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 text-[13px] font-semibold text-on-surface transition-colors hover:border-outline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            {t === "email" ? "Manager / Owner" : "Kitchen / Waiter"}
+            <Icon name="bolt" size={16} className="text-brand-text" />
+            Use demo
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* API error */}
       {apiError && (
-        <div className="w-full mb-md px-4 py-3 rounded-lg border border-error/25 bg-error-container flex items-center gap-2">
-          <span className="material-symbols-outlined text-on-error-container" style={{ fontSize: 18 }}>error</span>
-          <p className="font-body-sm text-body-sm text-on-error-container">{apiError}</p>
+        <div
+          role="alert"
+          className="mb-5 flex items-start gap-2 rounded-xl border border-error/25 bg-error-container px-3 py-2.5 text-body-sm text-on-error-container"
+        >
+          <Icon name="error" size={18} className="mt-px shrink-0" />
+          <p>{apiError}</p>
         </div>
       )}
 
-      {/* Email / owner form */}
-      {tab === "email" && (
-        <form onSubmit={handleEmail(submitEmail)} className="w-full flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide">
-              Email
-            </label>
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
-                person
-              </span>
-              <input
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                {...regEmail("email")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
-              />
-            </div>
-            <FieldError msg={emailErrors.email?.message} />
-          </div>
-
-          <div className="flex flex-col gap-xs">
-            <label className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide">
-              Password
-            </label>
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
-                lock
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                {...regEmail("password")}
-                className="w-full h-12 pl-10 pr-10 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-on-surface transition-colors"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                  {showPassword ? "visibility_off" : "visibility"}
-                </span>
-              </button>
-            </div>
-            <FieldError msg={emailErrors.password?.message} />
-          </div>
-
-          <button
-            type="submit"
-            disabled={emailSubmitting}
-            className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
-          >
-            <span>{emailSubmitting ? "Signing in…" : "Sign In"}</span>
-            {!emailSubmitting && (
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
-            )}
-          </button>
-        </form>
-      )}
-
-      {/* PIN form */}
-      {tab === "pin" && (
-        <form onSubmit={handlePin(submitPin)} className="w-full flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide">
-              Restaurant Code
-            </label>
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
-                store
-              </span>
-              <input
-                placeholder="e.g. tandoori-hut"
-                {...regPin("restaurantSlug")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40"
-              />
-            </div>
-            <FieldError msg={pinErrors.restaurantSlug?.message} />
-          </div>
-
-          {staffLoading && (
-            <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
-              <span className="material-symbols-outlined animate-spin" style={{ fontSize: 16 }}>autorenew</span>
-              Loading staff…
-            </p>
-          )}
-
-          {!staffLoading && staffList.length > 0 && (
-            <div className="flex flex-col gap-xs">
-              <label className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide">
-                Your Name
-              </label>
-              <div className="flex flex-col gap-2">
-                {staffList.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setPinVal("staffId", s.id)}
-                    className={`w-full rounded-xl border-2 px-4 py-2.5 text-left font-body-md transition-all ${
-                      watchPin("staffId") === s.id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-outline-variant bg-surface-container-lowest text-on-surface hover:border-outline"
-                    }`}
-                  >
-                    {s.name}
-                    <span className="ml-2 font-label-bold text-label-bold text-on-surface-variant capitalize">
-                      {s.role}
-                    </span>
-                  </button>
-                ))}
+      <div id={ids.panel} role="tabpanel" aria-labelledby={`${uid}-tab-${tab}`}>
+        {/* Email / owner form */}
+        {tab === "email" && (
+          <form onSubmit={handleEmail(submitEmail)} noValidate className="flex flex-col gap-4">
+            <div>
+              <label htmlFor={ids.email} className={LABEL}>Email</label>
+              <div className="group relative mt-1.5">
+                <InputIcon name="person" />
+                <input
+                  id={ids.email}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@restaurant.com"
+                  aria-invalid={Boolean(emailErrors.email)}
+                  aria-describedby={emailErrors.email ? `${ids.email}-err` : undefined}
+                  {...regEmail("email")}
+                  className={inputClass(Boolean(emailErrors.email))}
+                />
               </div>
-              <FieldError msg={pinErrors.staffId?.message} />
+              <FieldError id={`${ids.email}-err`} msg={emailErrors.email?.message} />
             </div>
-          )}
 
-          <div className="flex flex-col gap-xs">
-            <label className="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide flex items-center gap-1">
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>key</span>
-              4-digit PIN
-            </label>
-            <div className="relative group">
-              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant/70 group-focus-within:text-brand-text transition-colors">
-                lock
-              </span>
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="••••"
-                {...regPin("pin")}
-                className="w-full h-12 pl-10 pr-sm bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-on-surface focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all placeholder:text-on-surface-variant/40 tracking-[0.5em]"
-              />
+            <div>
+              <label htmlFor={ids.password} className={LABEL}>Password</label>
+              <div className="group relative mt-1.5">
+                <InputIcon name="lock" />
+                <input
+                  id={ids.password}
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Your password"
+                  aria-invalid={Boolean(emailErrors.password)}
+                  aria-describedby={emailErrors.password ? `${ids.password}-err` : undefined}
+                  {...regEmail("password")}
+                  className={inputClass(Boolean(emailErrors.password), "pr-12")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-0.5 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-lg text-on-surface-variant transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  <Icon name={showPassword ? "visibility_off" : "visibility"} />
+                </button>
+              </div>
+              <FieldError id={`${ids.password}-err`} msg={emailErrors.password?.message} />
             </div>
-            <FieldError msg={pinErrors.pin?.message} />
-          </div>
 
-          <button
-            type="submit"
-            disabled={pinSubmitting}
-            className="w-full h-12 bg-brand text-brand-foreground rounded-lg font-display font-semibold flex items-center justify-center gap-2 hover:bg-brand/90 hover:shadow-glow transition-all active:translate-y-[2px] disabled:opacity-60 mt-xs"
-          >
-            <span>{pinSubmitting ? "Signing in…" : "Sign In"}</span>
-            {!pinSubmitting && (
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
+            <SubmitButton busy={emailSubmitting}>Sign in</SubmitButton>
+          </form>
+        )}
+
+        {/* PIN form */}
+        {tab === "pin" && (
+          <form onSubmit={handlePin(submitPin)} noValidate className="flex flex-col gap-4">
+            <div>
+              <label htmlFor={ids.slug} className={LABEL}>Restaurant code</label>
+              <div className="group relative mt-1.5">
+                <InputIcon name="store" />
+                <input
+                  id={ids.slug}
+                  placeholder="e.g. tandoori-hut"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-invalid={Boolean(pinErrors.restaurantSlug || staffError)}
+                  aria-describedby={`${ids.slug}-hint`}
+                  {...regPin("restaurantSlug")}
+                  className={inputClass(Boolean(pinErrors.restaurantSlug))}
+                />
+              </div>
+              {pinErrors.restaurantSlug ? (
+                <FieldError id={`${ids.slug}-hint`} msg={pinErrors.restaurantSlug.message} />
+              ) : staffError ? (
+                <FieldError id={`${ids.slug}-hint`} msg={staffError} />
+              ) : (
+                <p id={`${ids.slug}-hint`} className="mt-1 text-body-sm text-on-surface-variant">
+                  Ask your manager — it is the word after /r/ in your menu link.
+                </p>
+              )}
+            </div>
+
+            {/* Skeleton, not a spinner, while names load. */}
+            {staffLoading && (
+              <div className="flex flex-col gap-2" aria-busy="true">
+                <span className="sr-only">Loading staff names</span>
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
             )}
-          </button>
-        </form>
-      )}
+
+            {!staffLoading && staffList.length > 0 && (
+              <div role="radiogroup" aria-labelledby={ids.staff}>
+                <p id={ids.staff} className={LABEL}>Your name</p>
+                <div className="mt-1.5 flex flex-col gap-2">
+                  {staffList.map((s) => {
+                    const selected = selectedStaffId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setPinVal("staffId", s.id, { shouldValidate: true })}
+                        className={cn(
+                          "flex min-h-[48px] w-full items-center gap-3 rounded-xl border px-3 text-left transition-[border-color,background-color] duration-fast",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                          selected
+                            ? "border-brand bg-brand-subtle"
+                            : "border-outline-variant bg-surface-container-lowest hover:border-outline"
+                        )}
+                      >
+                        {/* The check icon carries selection; the border only reinforces it. */}
+                        <Icon
+                          name={selected ? "radio_button_checked" : "radio_button_unchecked"}
+                          className={selected ? "text-brand-text" : "text-on-surface-variant"}
+                        />
+                        <span className="min-w-0 flex-1 truncate font-medium text-on-surface">{s.name}</span>
+                        <span className="shrink-0 rounded-full border border-outline-variant bg-surface-container-low px-2 py-0.5 text-[11px] font-semibold capitalize text-on-surface-variant">
+                          {s.role}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <FieldError id={`${ids.staff}-err`} msg={pinErrors.staffId?.message} />
+              </div>
+            )}
+
+            {/* Name not picked yet and no list to pick from — still say so. */}
+            {!staffLoading && staffList.length === 0 && pinErrors.staffId && !staffError && !pinErrors.restaurantSlug && (
+              <FieldError id={`${ids.staff}-err`} msg="Enter your restaurant code to choose your name" />
+            )}
+
+            <div>
+              <label htmlFor={ids.pin} className={LABEL}>4-digit PIN</label>
+              <div className="group relative mt-1.5">
+                <InputIcon name="key" />
+                <input
+                  id={ids.pin}
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={4}
+                  placeholder="••••"
+                  aria-invalid={Boolean(pinErrors.pin)}
+                  aria-describedby={pinErrors.pin ? `${ids.pin}-err` : undefined}
+                  {...regPin("pin")}
+                  className={inputClass(Boolean(pinErrors.pin), "font-mono tracking-[0.5em]")}
+                />
+              </div>
+              <FieldError id={`${ids.pin}-err`} msg={pinErrors.pin?.message} />
+            </div>
+
+            <SubmitButton busy={pinSubmitting}>Sign in with PIN</SubmitButton>
+          </form>
+        )}
+      </div>
 
       {/* Security footer */}
-      <div className="mt-lg flex items-center justify-center gap-1 text-on-surface-variant opacity-70">
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>encrypted</span>
-        <span className="font-body-sm text-body-sm">Secure Staff Access</span>
-      </div>
+      <p className="mt-6 flex items-center justify-center gap-1.5 text-body-sm text-on-surface-variant">
+        <Icon name="encrypted" size={16} />
+        Staff-only access. Accounts are set up by your restaurant owner.
+      </p>
     </div>
   );
 }

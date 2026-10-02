@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InteractiveGrid } from "@/components/aceternity/InteractiveGrid";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { Hero } from "@/components/marketing/Hero";
 import { BuiltOnStrip } from "@/components/marketing/BuiltOnStrip";
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      {/* Page-wide backdrop, fixed behind every section. */}
+      <InteractiveGrid />
       <SiteHeader />
 
       {/* A skip link is the one thing a fixed header makes mandatory: without

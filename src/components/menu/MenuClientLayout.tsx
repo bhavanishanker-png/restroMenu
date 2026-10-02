@@ -141,13 +141,15 @@ export default function MenuClientLayout({ menu, token }: Props) {
             under200={under200}
             onUnder200Change={setUnder200}
           />
-          <CategoryTabs categories={filteredCategories} />
+          <div className="border-t border-outline-variant/60">
+            <CategoryTabs categories={filteredCategories} />
+          </div>
         </div>
       )}
 
       {/* Page content */}
       {isMenuTab ? (
-        <main className="pb-48 pt-[64px]">
+        <main className="pb-44 pt-[64px]">
           {filteredCategories.length === 0 && isFiltering ? (
             <div className="flex flex-col items-center gap-4 px-margin-mobile py-xl text-center">
               <div
@@ -173,6 +175,34 @@ export default function MenuClientLayout({ menu, token }: Props) {
                 Clear filters
               </button>
             </div>
+          ) : filteredCategories.length === 0 ? (
+            // No dishes at all — the restaurant hasn't published a menu yet.
+            <div className="flex flex-col items-center gap-4 px-margin-mobile py-xl text-center">
+              <div
+                className="grid h-14 w-14 place-items-center rounded-full border border-outline-variant bg-surface-container"
+                aria-hidden="true"
+              >
+                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 26 }}>
+                  menu_book
+                </span>
+              </div>
+              <div className="space-y-1">
+                <p className="font-display text-headline-sm text-on-surface">The menu is on its way</p>
+                <p className="measure-sm text-body-sm text-on-surface-variant">
+                  This restaurant hasn&rsquo;t published dishes yet. A member of staff can take your order.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("requests")}
+                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-5 font-semibold text-brand-foreground shadow-glow"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
+                  room_service
+                </span>
+                Call a waiter
+              </button>
+            </div>
           ) : (
             filteredCategories.map((cat) => (
               <MenuSection key={cat.id} category={cat} onAddItem={setSelectedItem} />
@@ -189,7 +219,14 @@ export default function MenuClientLayout({ menu, token }: Props) {
       <ItemDetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
 
       {/* Floating cart bar — sits above bottom nav, only on menu tab */}
-      {isMenuTab && <CartBar slug={slug} token={token} />}
+      {isMenuTab && (
+        <CartBar
+          slug={slug}
+          token={token}
+          orderType="dine_in"
+          settings={menu.restaurant.settings}
+        />
+      )}
 
       {/* Bottom navigation */}
       <nav
