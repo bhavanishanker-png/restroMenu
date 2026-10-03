@@ -185,11 +185,38 @@ export async function DELETE(
   const session = await getStaffSession();
   const supabase = createServerClient();
 
+  const { data: target, error: loadError } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", params.id)
+    .eq("restaurant_id", session!.restaurantId)
+    .maybeSingle();
+
+  if (loadError) {
+    console.error("[staff DELETE] load failed", loadError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to load staff member." } },
+      { status: 500 }
+    );
+  }
+  if (!target) {
+    return NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Staff member not found." } },
+      { status: 404 }
+    );
+  }
+  // Same reasoning as the role lock in PATCH: removing the owner row would
+  // leave nobody able to reach settings or the team page.
+  if (target.role === "owner") {
+    return badRequest("The owner can't be removed.");
+  }
+
   const { error } = await supabase
     .from("staff")
     .update({ is_active: false })
     .eq("id", params.id)
-    .eq("restaurant_id", session!.restaurantId);
+    .eq("restaurant_id", session!.restaurantId)
+    .neq("role", "owner");
 
   if (error) {
     console.error("[staff DELETE]", error);

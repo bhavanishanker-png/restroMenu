@@ -15,13 +15,20 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const supabase = createServerClient();
 
-  const { data: restaurant } = await supabase
+  const { data: restaurant, error: restaurantError } = await supabase
     .from("restaurants")
     .select("id")
     .eq("slug", slug)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
+  if (restaurantError) {
+    console.error("[staff-list] restaurant lookup", restaurantError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Couldn't load staff. Try again." } },
+      { status: 500 }
+    );
+  }
   if (!restaurant) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Restaurant not found." } },
@@ -29,13 +36,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { data: staff } = await supabase
+  const { data: staff, error: staffError } = await supabase
     .from("staff")
     .select("id, name, role")
     .eq("restaurant_id", restaurant.id)
     .in("role", ["kitchen", "waiter"])
     .eq("is_active", true)
     .order("name");
+
+  // An empty list would read as "this restaurant has no staff" on the login
+  // screen, so a failure must surface as an error.
+  if (staffError) {
+    console.error("[staff-list] staff lookup", staffError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Couldn't load staff. Try again." } },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ staff: staff ?? [] });
 }

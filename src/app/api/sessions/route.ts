@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { randomInt } from "crypto";
 import { createServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const createSchema = z.object({
   restaurantSlug: z.string().min(1),
@@ -9,10 +11,24 @@ const createSchema = z.object({
 
 function generateJoinCode(): string {
   // 6-digit code (100000–999999) — low collision risk even at busy restaurants
-  return String(Math.floor(100000 + Math.random() * 900000));
+  // The code gates access to the table's session, so it must not be
+  // predictable — crypto RNG, not Math.random().
+  return String(randomInt(100000, 1000000));
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+
+  if (!checkRateLimit(`sessions:${ip}`, 10, 60_000)) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
+      { status: 429 }
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

@@ -6,33 +6,59 @@ import { priceCart, buildLineId, toPaise } from "@/lib/pricing";
 import { toOrder, toRestaurantSettings } from "@/lib/mappers";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import type { CartLine, FoodType, OrderStatus } from "@/types";
+import type { CartLine, FoodType } from "@/types";
 import type { DbOrder, DbRestaurantSettings } from "@/types/db";
 import { startOfRestaurantDay } from "@/lib/restaurant-time";
 import { getRestaurantTimezone } from "@/lib/queries/restaurant-timezone";
 
 // ---------------------------------------------------------------- GET /api/orders  (staff only)
 
-const VALID_STATUSES = new Set<string>([
-  "placed", "accepted", "preparing", "ready", "served", "cancelled",
-]);
+const listQuerySchema = z.object({
+  dateFrom: z.string().datetime({ offset: true }).optional(),
+  dateTo: z.string().datetime({ offset: true }).optional(),
+  status: z
+    .enum(["all", "placed", "accepted", "preparing", "ready", "served", "cancelled"])
+    .default("all"),
+  // Characters that are PostgREST filter syntax are stripped: the term is
+  // interpolated into an .or() filter, where a comma or parenthesis would
+  // let the caller append filters of their own.
+  search: z
+    .string()
+    .max(100)
+    .default("")
+    .transform((v) => v.replace(/[,()%*\\:"]/g, "").trim()),
+  page: z.coerce.number().int().min(1).default(1),
+  // Clamped rather than rejected: the CSV export asks for "everything".
+  limit: z.coerce.number().int().min(1).default(50).transform((v) => Math.min(v, 100)),
+});
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager", "kitchen", "waiter"]);
   if (guard) return guard;
 
+  const parsedQuery = listQuerySchema.safeParse(
+    Object.fromEntries(req.nextUrl.searchParams.entries())
+  );
+  if (!parsedQuery.success) {
+    const issue = parsedQuery.error.issues[0];
+    return NextResponse.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR",
+          message: issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid query.",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
   const session = await getStaffSession();
-  const sp = req.nextUrl.searchParams;
+  const { dateTo, status: statusParam, search, page, limit } = parsedQuery.data;
 
   // Default range starts at the restaurant's midnight, not the server's.
   const dateFrom =
-    sp.get("dateFrom") ??
+    parsedQuery.data.dateFrom ??
     startOfRestaurantDay(await getRestaurantTimezone(session!.restaurantId)).toISOString();
-  const dateTo = sp.get("dateTo");
-  const statusParam = sp.get("status") ?? "all";
-  const search = sp.get("search") ?? "";
-  const page = Math.max(1, Number(sp.get("page") ?? 1));
-  const limit = Math.min(100, Math.max(1, Number(sp.get("limit") ?? 50)));
 
   const supabase = createServerClient();
 
@@ -45,13 +71,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   if (dateFrom) query = query.gte("placed_at", dateFrom);
   if (dateTo) query = query.lte("placed_at", dateTo);
-  if (statusParam !== "all" && VALID_STATUSES.has(statusParam)) {
-    query = query.eq("status", statusParam as OrderStatus);
+  if (statusParam !== "all") {
+    query = query.eq("status", statusParam);
   }
-  if (search.trim()) {
-    query = query.or(
-      `order_number.ilike.%${search.trim()}%,customer_phone.ilike.%${search.trim()}%`
-    );
+  if (search) {
+    query = query.or(`order_number.ilike.%${search}%,customer_phone.ilike.%${search}%`);
   }
 
   const { data, count, error } = await query;
@@ -487,34 +511,54 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Step 9: If paymentMethod = 'razorpay', create a Razorpay order and return its details.
   // The checkout form uses these to open the Razorpay modal without a second round-trip.
+  // The order is already committed, so a gateway failure must not turn into an
+  // error response — the guest would retry and see a duplicate. Instead the
+  // order is returned without `razorpay` and the checkout form offers a retry
+  // via POST /api/payments/razorpay.
   let razorpayPayload: { orderId: string; amount: number; keyId: string } | null = null;
   if (body.paymentMethod === "razorpay") {
-    const rzp = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID!,
-      key_secret: process.env.RAZORPAY_KEY_SECRET!,
-    });
-
-    const rzpOrder = await rzp.orders.create({
-      amount: toPaise(bill.total),
-      currency: "INR",
-      receipt: result.order_id.slice(0, 40),
-    });
-
-    // Store Razorpay order ID in payment_ref so the webhook can look up this order.
-    await supabase
-      .from("orders")
-      .update({ payment_ref: rzpOrder.id })
-      .eq("id", result.order_id);
-
-    razorpayPayload = {
-      orderId: rzpOrder.id,
-      amount: Number(rzpOrder.amount),
-      keyId: process.env.RAZORPAY_KEY_ID!,
-    };
+    razorpayPayload = await startRazorpayPayment(result.order_id, bill.total);
   }
 
   const response: Record<string, unknown> = { order: toOrder(createdOrder as DbOrder) };
   if (razorpayPayload) response.razorpay = razorpayPayload;
 
   return NextResponse.json(response, { status: 201 });
+}
+
+/** Create the gateway order and link it via payment_ref. Null on any failure (logged). */
+async function startRazorpayPayment(
+  orderId: string,
+  total: number
+): Promise<{ orderId: string; amount: number; keyId: string } | null> {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    console.error("[orders POST] RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set");
+    return null;
+  }
+
+  try {
+    const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+    const rzpOrder = await rzp.orders.create({
+      amount: toPaise(total),
+      currency: "INR",
+      receipt: orderId.slice(0, 40),
+    });
+
+    // Store Razorpay order ID in payment_ref so the webhook can look up this order.
+    const { error } = await createServerClient()
+      .from("orders")
+      .update({ payment_ref: rzpOrder.id })
+      .eq("id", orderId);
+    if (error) {
+      console.error("[orders POST] payment_ref update failed", error);
+      return null;
+    }
+
+    return { orderId: rzpOrder.id, amount: Number(rzpOrder.amount), keyId };
+  } catch (err) {
+    console.error("[orders POST] razorpay order create failed", err);
+    return null;
+  }
 }

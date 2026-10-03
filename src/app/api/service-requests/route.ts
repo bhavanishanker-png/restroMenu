@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getStaffSession, requireRole } from "@/lib/auth";
 
 const schema = z.object({
   restaurantSlug: z.string().min(1),
@@ -97,6 +98,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 // PATCH /api/service-requests — resolve a request (staff only via kitchen display)
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
+  const guard = await requireRole(["owner", "manager", "kitchen", "waiter"]);
+  if (guard) return guard;
+
   let raw: unknown;
   try {
     raw = await req.json();
@@ -116,18 +120,28 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const session = await getStaffSession();
   const supabase = createServerClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("service_requests")
     .update({ status: "resolved" })
-    .eq("id", parsed.data.id);
+    .eq("id", parsed.data.id)
+    .eq("restaurant_id", session!.restaurantId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.error("[service-requests PATCH]", error);
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Failed to resolve request." } },
       { status: 500 }
+    );
+  }
+  if (!data) {
+    return NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Service request not found." } },
+      { status: 404 }
     );
   }
 

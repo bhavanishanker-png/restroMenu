@@ -214,3 +214,30 @@ export async function fetchPublicMenu(
     menu: { restaurant: { ...restaurant, settings }, table, categories },
   };
 }
+
+// ---------------------------------------------------------------- admin helpers
+
+/**
+ * Whether a category is an active one owned by this restaurant. Item writes
+ * call this before setting category_id, so an item can never be filed under
+ * another restaurant's category.
+ */
+export async function categoryBelongsTo(
+  categoryId: string,
+  restaurantId: string
+): Promise<"ok" | "missing" | "error"> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("menu_categories")
+    .select("id")
+    .eq("id", categoryId)
+    .eq("restaurant_id", restaurantId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[categoryBelongsTo]", error);
+    return "error";
+  }
+  return data ? "ok" : "missing";
+}

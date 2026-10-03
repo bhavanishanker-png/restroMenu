@@ -210,6 +210,12 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
         return;
       }
       openRazorpayModal(orderId, json.razorpay, data);
+    } else if (data.paymentMethod === "razorpay") {
+      // The order was placed but the payment provider didn't respond. Same
+      // recovery as a failed script load: retry, or pay at the table.
+      setPendingOrderId(orderId);
+      setPaymentDismissed(true);
+      setSubmitError("Your order is placed, but online payment couldn't start. Retry, or pay at the table.");
     } else {
       clearCart();
       router.replace(`/order/${orderId}`);

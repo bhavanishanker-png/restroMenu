@@ -48,9 +48,16 @@ export async function PATCH(
     .select("id, status")
     .eq("id", params.orderId)
     .eq("restaurant_id", session!.restaurantId)
-    .single();
+    .maybeSingle();
 
-  if (fetchError || !order) {
+  if (fetchError) {
+    console.error("[status] fetch failed:", fetchError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to load the order. Try again." } },
+      { status: 500 }
+    );
+  }
+  if (!order) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Order not found." } },
       { status: 404 }
@@ -75,16 +82,35 @@ export async function PATCH(
   else if (newStatus === "ready") update.ready_at = now;
   else if (newStatus === "served") update.served_at = now;
 
-  const { error: updateError } = await supabase
+  // Compare-and-set on the status we validated against: if another device
+  // moved the order in between (e.g. the waiter cancelled it while the kitchen
+  // tapped "Ready"), no row matches and we report the conflict instead of
+  // overwriting their change with a transition that is no longer legal.
+  const { data: updated, error: updateError } = await supabase
     .from("orders")
     .update(update)
-    .eq("id", params.orderId);
+    .eq("id", params.orderId)
+    .eq("restaurant_id", session!.restaurantId)
+    .eq("status", order.status)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) {
     console.error("[status] update failed:", updateError);
     return NextResponse.json(
       { error: { code: "DB_ERROR", message: "Failed to update order status." } },
       { status: 500 }
+    );
+  }
+  if (!updated) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "STATUS_CHANGED",
+          message: "This order was updated on another device. Refresh to see its current status.",
+        },
+      },
+      { status: 409 }
     );
   }
 

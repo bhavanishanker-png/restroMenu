@@ -43,14 +43,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { orderId } = parsed.data;
   const supabase = createServerClient();
 
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    console.error("[payments/razorpay] RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set");
+    return NextResponse.json(
+      { error: { code: "PAYMENTS_UNAVAILABLE", message: "Online payment isn't available right now. Please pay at the table." } },
+      { status: 503 }
+    );
+  }
+
   // Fetch the order to get its total.
   const { data: order, error } = await supabase
     .from("orders")
-    .select("id, total, payment_status")
+    .select("id, total, status, payment_status")
     .eq("id", orderId)
-    .single();
+    .maybeSingle();
 
-  if (error || !order) {
+  if (error) {
+    console.error("[payments/razorpay] order lookup", error);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Could not start payment. Please try again." } },
+      { status: 500 }
+    );
+  }
+  if (!order) {
     return NextResponse.json(
       { error: { code: "ORDER_NOT_FOUND", message: "Order not found." } },
       { status: 404 }
@@ -63,27 +80,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 409 }
     );
   }
+  if (order.status === "cancelled") {
+    return NextResponse.json(
+      { error: { code: "ORDER_CANCELLED", message: "This order was cancelled, so it can't be paid." } },
+      { status: 409 }
+    );
+  }
 
-  const rzp = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-  });
+  const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
-  const rzpOrder = await rzp.orders.create({
-    amount: toPaise(Number(order.total)),
-    currency: "INR",
-    receipt: orderId.slice(0, 40),
-  });
+  let rzpOrder: { id: string; amount: number | string };
+  try {
+    rzpOrder = await rzp.orders.create({
+      amount: toPaise(Number(order.total)),
+      currency: "INR",
+      receipt: orderId.slice(0, 40),
+    });
+  } catch (err) {
+    console.error("[payments/razorpay] gateway order create failed", err);
+    return NextResponse.json(
+      { error: { code: "GATEWAY_ERROR", message: "The payment provider didn't respond. Try again, or pay at the table." } },
+      { status: 502 }
+    );
+  }
 
   // Store Razorpay order ID in payment_ref so the webhook can look up the order.
-  await supabase
+  // Without it the webhook can't match the payment, so don't open checkout.
+  const { error: refError } = await supabase
     .from("orders")
     .update({ payment_ref: rzpOrder.id })
     .eq("id", orderId);
 
+  if (refError) {
+    console.error("[payments/razorpay] payment_ref update failed", refError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Could not start payment. Please try again." } },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
     razorpayOrderId: rzpOrder.id,
     amount: rzpOrder.amount,
-    keyId: process.env.RAZORPAY_KEY_ID!,
+    keyId,
   });
 }

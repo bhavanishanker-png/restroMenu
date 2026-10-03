@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuItem } from "@/lib/mappers";
+import { categoryBelongsTo } from "@/lib/queries/menu";
 import type { DbMenuItem } from "@/types/db";
 
 // ---------------------------------------------------------------- GET /api/menu/items?categoryId=
@@ -87,6 +88,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const session = await getStaffSession();
   const supabase = createServerClient();
 
+  if (parsed.data.categoryId) {
+    const categoryCheck = await categoryBelongsTo(parsed.data.categoryId, session!.restaurantId);
+    if (categoryCheck === "error") {
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to create item." } },
+        { status: 500 }
+      );
+    }
+    if (categoryCheck === "missing") {
+      return NextResponse.json(
+        { error: { code: "CATEGORY_NOT_FOUND", message: "Category not found." } },
+        { status: 400 }
+      );
+    }
+  }
+
   // Get next sort_order for this category
   const { data: existing } = await supabase
     .from("menu_items")
@@ -125,9 +142,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // The item row exists from here on. If its variants or add-ons fail to
+  // save, remove it rather than leave a half-built item on the menu. A new
+  // item has no orders yet, so a hard delete is safe.
+  const rollback = async (label: string, cause: unknown): Promise<NextResponse> => {
+    console.error(`[items POST] ${label}`, cause);
+    const { error: rollbackError } = await supabase
+      .from("menu_items")
+      .delete()
+      .eq("id", item.id)
+      .eq("restaurant_id", session!.restaurantId);
+    if (rollbackError) console.error("[items POST] rollback failed", rollbackError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to save the item's variants or add-ons. Try again." } },
+      { status: 500 }
+    );
+  };
+
   // Insert variants
   if (parsed.data.variants.length > 0) {
-    await supabase.from("item_variants").insert(
+    const { error: variantError } = await supabase.from("item_variants").insert(
       parsed.data.variants.map((v, i) => ({
         item_id: item.id,
         name: v.name,
@@ -136,29 +170,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         sort_order: v.sortOrder ?? i,
       }))
     );
+    if (variantError) return rollback("variant insert", variantError);
   }
 
   // Link addon groups (verify they belong to this restaurant)
   if (parsed.data.addonGroupIds.length > 0) {
-    const { data: validGroups } = await supabase
+    const { data: validGroups, error: groupsError } = await supabase
       .from("addon_groups")
       .select("id")
       .eq("restaurant_id", session!.restaurantId)
       .in("id", parsed.data.addonGroupIds);
+    if (groupsError) return rollback("addon lookup", groupsError);
 
     if (validGroups && validGroups.length > 0) {
-      await supabase.from("item_addon_groups").insert(
+      const { error: linkError } = await supabase.from("item_addon_groups").insert(
         validGroups.map((g) => ({ item_id: item.id, group_id: g.id }))
       );
+      if (linkError) return rollback("addon link", linkError);
     }
   }
 
   // Re-fetch with full relations
-  const { data: full } = await supabase
+  const { data: full, error: reloadError } = await supabase
     .from("menu_items")
     .select("*, item_variants(*), addon_groups:item_addon_groups(group_id, addon_groups(*, addons(*)))")
     .eq("id", item.id)
+    .eq("restaurant_id", session!.restaurantId)
     .single();
+  // The item is saved; fall back to the bare row so the client still gets it.
+  if (reloadError) console.error("[items POST] reload", reloadError);
 
   return NextResponse.json(
     { item: toMenuItem((full ?? item) as unknown as DbMenuItem) },

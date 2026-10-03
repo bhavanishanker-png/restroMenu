@@ -3,7 +3,12 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuItem } from "@/lib/mappers";
+import { categoryBelongsTo } from "@/lib/queries/menu";
 import type { DbMenuItem } from "@/types/db";
+
+function dbError(message: string): NextResponse {
+  return NextResponse.json({ error: { code: "DB_ERROR", message } }, { status: 500 });
+}
 
 // ---------------------------------------------------------------- PATCH /api/menu/items/[id]
 
@@ -58,10 +63,43 @@ export async function PATCH(
 
   const session = await getStaffSession();
   const supabase = createServerClient();
+  const d = parsed.data;
+
+  // Ownership first. The variant and add-on tables have no restaurant_id, so
+  // every write below is keyed by item_id alone — without this check a
+  // manager could rewrite another restaurant's variants by sending its ID.
+  const { data: owned, error: ownedError } = await supabase
+    .from("menu_items")
+    .select("id")
+    .eq("id", params.id)
+    .eq("restaurant_id", session!.restaurantId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (ownedError) {
+    console.error("[items PATCH] ownership check", ownedError);
+    return dbError("Failed to update item.");
+  }
+  if (!owned) {
+    return NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Item not found." } },
+      { status: 404 }
+    );
+  }
+
+  if (d.categoryId) {
+    const categoryCheck = await categoryBelongsTo(d.categoryId, session!.restaurantId);
+    if (categoryCheck === "error") return dbError("Failed to update item.");
+    if (categoryCheck === "missing") {
+      return NextResponse.json(
+        { error: { code: "CATEGORY_NOT_FOUND", message: "Category not found." } },
+        { status: 400 }
+      );
+    }
+  }
 
   // Build update object for menu_items
   const update: Record<string, unknown> = {};
-  const d = parsed.data;
   if (d.categoryId !== undefined) update.category_id = d.categoryId;
   if (d.name !== undefined) update.name = d.name;
   if (d.description !== undefined) update.description = d.description;
@@ -83,18 +121,22 @@ export async function PATCH(
 
     if (error) {
       console.error("[items PATCH]", error);
-      return NextResponse.json(
-        { error: { code: "DB_ERROR", message: "Failed to update item." } },
-        { status: 500 }
-      );
+      return dbError("Failed to update item.");
     }
   }
 
   // Replace variants if provided
   if (d.variants !== undefined) {
-    await supabase.from("item_variants").delete().eq("item_id", params.id);
+    const { error: deleteError } = await supabase
+      .from("item_variants")
+      .delete()
+      .eq("item_id", params.id);
+    if (deleteError) {
+      console.error("[items PATCH] variant delete", deleteError);
+      return dbError("Failed to update variants.");
+    }
     if (d.variants.length > 0) {
-      await supabase.from("item_variants").insert(
+      const { error: insertError } = await supabase.from("item_variants").insert(
         d.variants.map((v, i) => ({
           item_id: params.id,
           name: v.name,
@@ -103,34 +145,57 @@ export async function PATCH(
           sort_order: v.sortOrder ?? i,
         }))
       );
+      if (insertError) {
+        console.error("[items PATCH] variant insert", insertError);
+        return dbError("Variants were cleared but could not be saved. Add them again.");
+      }
     }
   }
 
   // Replace addon group links if provided
   if (d.addonGroupIds !== undefined) {
-    await supabase.from("item_addon_groups").delete().eq("item_id", params.id);
+    const { error: unlinkError } = await supabase
+      .from("item_addon_groups")
+      .delete()
+      .eq("item_id", params.id);
+    if (unlinkError) {
+      console.error("[items PATCH] addon unlink", unlinkError);
+      return dbError("Failed to update add-ons.");
+    }
     if (d.addonGroupIds.length > 0) {
-      const { data: validGroups } = await supabase
+      const { data: validGroups, error: groupsError } = await supabase
         .from("addon_groups")
         .select("id")
         .eq("restaurant_id", session!.restaurantId)
         .in("id", d.addonGroupIds);
+      if (groupsError) {
+        console.error("[items PATCH] addon lookup", groupsError);
+        return dbError("Add-ons were cleared but could not be saved. Add them again.");
+      }
 
       if (validGroups && validGroups.length > 0) {
-        await supabase.from("item_addon_groups").insert(
+        const { error: linkError } = await supabase.from("item_addon_groups").insert(
           validGroups.map((g) => ({ item_id: params.id, group_id: g.id }))
         );
+        if (linkError) {
+          console.error("[items PATCH] addon link", linkError);
+          return dbError("Add-ons were cleared but could not be saved. Add them again.");
+        }
       }
     }
   }
 
-  const { data: full } = await supabase
+  const { data: full, error: reloadError } = await supabase
     .from("menu_items")
     .select("*, item_variants(*), addon_groups:item_addon_groups(group_id, addon_groups(*, addons(*)))")
     .eq("id", params.id)
     .eq("restaurant_id", session!.restaurantId)
-    .single();
+    .maybeSingle();
 
+  if (reloadError) {
+    console.error("[items PATCH] reload", reloadError);
+    return dbError("Item was saved but could not be reloaded. Refresh the page.");
+  }
   if (!full) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Item not found." } },

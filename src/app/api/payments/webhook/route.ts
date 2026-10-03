@@ -3,8 +3,10 @@ import crypto from "crypto";
 import { createServerClient } from "@/lib/supabase/server";
 
 // POST /api/payments/webhook
-// Razorpay calls this after payment events. Always returns 200 once verified —
-// non-200 responses cause Razorpay to retry indefinitely.
+// Razorpay calls this after payment events. Once verified, returns 200 for
+// anything a retry can't fix (unknown events, unknown orders, replays) and 500
+// only when our own database write fails — that's exactly the case Razorpay's
+// retry exists for, and the handler is idempotent so a retry is safe.
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text();
   const signature = req.headers.get("x-razorpay-signature") ?? "";
@@ -13,7 +15,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!webhookSecret) {
     console.error("RAZORPAY_WEBHOOK_SECRET is not set");
-    return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json(
+      { error: { code: "NOT_CONFIGURED", message: "Webhook secret is not configured." } },
+      { status: 500 }
+    );
   }
 
   const expected = crypto
@@ -39,7 +44,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     event = JSON.parse(body) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ ok: false }, { status: 400 });
+    return NextResponse.json(
+      { error: { code: "INVALID_JSON", message: "Body is not valid JSON." } },
+      { status: 400 }
+    );
   }
 
   const eventType = event.event as string;
@@ -65,11 +73,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Look up by razorpayOrderId (initial value of payment_ref) OR
   // by razorpayPaymentId (value set on first successful processing).
   // This makes the handler idempotent: a replay finds the already-updated row.
-  const { data: order } = await supabase
+  const { data: order, error: lookupError } = await supabase
     .from("orders")
     .select("id, payment_status")
     .or(`payment_ref.eq.${razorpayOrderId},payment_ref.eq.${razorpayPaymentId}`)
     .maybeSingle();
+
+  if (lookupError) {
+    console.error("Webhook: order lookup failed", lookupError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Order lookup failed." } },
+      { status: 500 }
+    );
+  }
 
   if (!order) {
     // Unknown order — still return 200 so Razorpay doesn't retry forever.
@@ -93,14 +109,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .eq("id", order.id);
 
     if (error) {
+      // A captured payment that isn't recorded is lost money. Let Razorpay
+      // retry — a transient DB failure will usually clear.
       console.error("Webhook: failed to update payment_status to paid", error);
-      // Return 200 anyway — we log and alert; Razorpay retrying won't help.
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to record payment." } },
+        { status: 500 }
+      );
     }
   } else if (eventType === "payment.failed") {
-    await supabase
+    const { error } = await supabase
       .from("orders")
       .update({ payment_status: "failed" })
       .eq("id", order.id);
+
+    if (error) {
+      console.error("Webhook: failed to update payment_status to failed", error);
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to record payment failure." } },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

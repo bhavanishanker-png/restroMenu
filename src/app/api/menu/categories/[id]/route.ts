@@ -42,16 +42,30 @@ export async function PATCH(
   if (parsed.data.name !== undefined) update.name = parsed.data.name;
   if (parsed.data.sortOrder !== undefined) update.sort_order = parsed.data.sortOrder;
 
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json(
+      { error: { code: "NO_CHANGES", message: "No fields to update." } },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("menu_categories")
     .update(update)
     .eq("id", params.id)
     .eq("restaurant_id", session!.restaurantId)
+    .eq("is_active", true)
     .select()
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     console.error("[categories PATCH]", error);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to save the category. Try again." } },
+      { status: 500 }
+    );
+  }
+  if (!data) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Category not found." } },
       { status: 404 }
