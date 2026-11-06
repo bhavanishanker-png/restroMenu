@@ -1,0 +1,39 @@
+sequenceDiagram
+  autonumber
+  actor K as Kitchen tablet
+  participant MW as Middleware
+  participant KP as Kitchen page (server)
+  participant KD as KitchenDisplay (browser)
+  participant B as GET /api/kitchen/board
+  participant S as PATCH /api/orders/[id]/status
+  participant DB as Postgres
+
+  K->>MW: GET /dashboard/kitchen
+  Note over MW: staff cookie present? If not, redirect to /login
+  MW->>KP: continue
+  KP->>DB: verify session against staff row, load board
+  KP-->>K: HTML with current orders
+  KP->>KD: initialOrders as props
+
+  loop every 8 s (sooner if Realtime nudges)
+    KD->>B: poll
+    B->>DB: active orders for the session's restaurant
+    B-->>KD: board (ignored if a local tap happened meanwhile)
+  end
+
+  K->>KD: tap "Accept"
+  KD->>KD: move card now (optimistic)
+  alt online
+    KD->>S: status = accepted
+    Note over S: role check, zod, canTransition()
+    S->>DB: UPDATE ... WHERE id AND restaurant_id AND status = 'placed'
+    alt a row matched
+      S->>DB: INSERT order_events
+      S-->>KD: 200
+    else zero rows (changed elsewhere)
+      S-->>KD: 409, card rolls back
+    end
+  else offline
+    KD->>KD: queue change in localStorage, show "Offline — N changes pending"
+    Note over KD: on reconnect replay the queue. 409 or 404 means the server wins.
+  end

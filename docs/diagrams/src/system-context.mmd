@@ -1,0 +1,39 @@
+flowchart LR
+  diner["Diner<br/>(phone browser)"]
+  kitchen["Kitchen staff<br/>(tablet, PIN login)"]
+  owner["Owner / manager<br/>(dashboard, email login)"]
+  admin["Platform admin"]
+
+  subgraph vercel["Next.js app on Vercel"]
+    mw["Middleware<br/>(cookie-presence redirect)"]
+    rsc["Server Components<br/>(first page load)"]
+    api["API routes<br/>(zod-validated, tenant-scoped)"]
+  end
+
+  subgraph supabase["Supabase"]
+    pg[("Postgres<br/>+ RLS backstop")]
+    auth["Auth<br/>(owner/manager passwords)"]
+    storage["Storage<br/>(dish images, logos)"]
+    rt["Realtime<br/>(latency accelerator only)"]
+  end
+
+  razorpay["Razorpay"]
+  claude["Claude API"]
+  sentry["Sentry"]
+
+  diner --> mw
+  kitchen --> mw
+  owner --> mw
+  admin --> mw
+  mw --> rsc
+  mw --> api
+  rsc --> pg
+  api --> pg
+  api --> auth
+  api --> storage
+  api -- "create payment order" --> razorpay
+  razorpay -- "signed webhook" --> api
+  api -- "menu import, menu assistant" --> claude
+  rt -. "nudge a refresh" .-> diner
+  rt -. "nudge a refresh" .-> kitchen
+  vercel -. errors .-> sentry

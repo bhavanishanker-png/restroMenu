@@ -1,0 +1,47 @@
+sequenceDiagram
+  autonumber
+  actor D as Diner phone
+  participant P as Menu page (server)
+  participant C as Cart (browser, Zustand)
+  participant O as POST /api/orders
+  participant DB as Postgres
+  participant R as Razorpay
+  participant W as Payment webhook
+  participant T as GET /api/orders/[id]
+
+  D->>P: GET /r/[slug]/t/[token]
+  P->>DB: restaurant by slug, table by QR token, menu
+  P-->>D: HTML with menu already rendered
+  D->>C: add items (idempotency key created on first item)
+  C-->>D: running total via pricing.ts (display only)
+  D->>O: item IDs, variants, add-ons, quantities, idempotency key
+  Note over O: rate limit per IP, validate with zod
+  O->>DB: resolve restaurant from slug and table from token
+  O->>DB: existing order with this key?
+  alt key already used
+    O-->>D: 200 with the existing order
+  else new key
+    O->>DB: load items scoped to restaurant, check availability
+    Note over O: reprice from DB rows with priceCart(). Client total ignored.
+    O->>DB: create_order RPC (order + snapshot lines + first event, one transaction)
+    alt unique violation (concurrent duplicate)
+      O->>DB: fetch the order the other request created
+      O-->>D: 200 with that order
+    else created
+      opt pay online
+        O->>R: create payment order for the server-computed amount
+      end
+      O-->>D: 201 with order (+ Razorpay details)
+    end
+  end
+  opt pay online
+    D->>R: pay in Razorpay checkout
+    R->>W: payment.captured / payment.failed
+    Note over W: verify HMAC signature first. Replays are no-ops.
+    W->>DB: set payment_status
+  end
+  loop every 15 s while the page is visible
+    D->>T: refresh order tracker
+    T->>DB: load order
+    T-->>D: status, redacted to what a guest may see
+  end

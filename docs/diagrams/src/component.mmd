@@ -1,0 +1,51 @@
+flowchart TB
+  subgraph Browser["«device» Browser (untrusted)"]
+    direction LR
+    CustomerUI["«component»<br/>Customer menu & checkout<br/>/r/[slug]/t/[token]"]
+    CartStore["«component»<br/>Cart store (Zustand + localStorage)<br/>holds idempotencyKey"]
+    Tracker["«component»<br/>Order tracker<br/>/order/[orderId]"]
+    KitchenUI["«component»<br/>Kitchen display<br/>+ offline queue"]
+    DashboardUI["«component»<br/>Staff dashboard"]
+    AdminUI["«component»<br/>Platform admin"]
+    CustomerUI --> CartStore
+  end
+
+  subgraph Server["«execution env» Next.js server (trusted)"]
+    direction LR
+    MW["«component»<br/>middleware.ts<br/>guards /dashboard, /admin"]
+    RSC["«component»<br/>Server Components<br/>initial page data"]
+    OrdersAPI["«component»<br/>Orders API"]
+    StaffAPI["«component»<br/>Staff & menu APIs"]
+    KitchenAPI["«component»<br/>Kitchen board API"]
+    PayAPI["«component»<br/>Payments API + webhook"]
+    AIAPI["«component»<br/>AI APIs + guardrails"]
+    Core["«component»<br/>lib/: pricing, auth,<br/>mappers, queries, rate-limit"]
+    OrdersAPI & StaffAPI & KitchenAPI & PayAPI & AIAPI & RSC --> Core
+  end
+
+  subgraph Supabase["«external system» Supabase"]
+    PG[("PostgreSQL<br/>+ RLS + create_order RPC")]
+    Storage[("Storage<br/>logos, dish images")]
+    Realtime["Realtime"]
+    AuthSvc["Auth"]
+  end
+
+  Razorpay["«external system»<br/>Razorpay"]
+  Claude["«external system»<br/>Claude API"]
+
+  CustomerUI -- "HTTPS JSON: IOrders" --> OrdersAPI
+  CustomerUI -- "IMenuChat" --> AIAPI
+  Tracker -- "poll GET order" --> OrdersAPI
+  KitchenUI -- "poll board / PATCH status" --> KitchenAPI
+  KitchenUI -.->|"change nudge"| Realtime
+  DashboardUI -- "session cookie" --> StaffAPI
+  AdminUI --> StaffAPI
+  Browser -.->|"page requests"| MW --> RSC
+
+  Core -- "service-role key" --> PG
+  Core --> Storage
+  StaffAPI --> AuthSvc
+  PayAPI -- "create order" --> Razorpay
+  Razorpay -- "signed webhook" --> PayAPI
+  AIAPI -- "Messages API" --> Claude
+  CustomerUI -- "checkout modal" --> Razorpay

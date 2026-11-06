@@ -1,0 +1,51 @@
+flowchart LR
+  diner["👤 Diner<br/>(no login)"]
+  kitchen["👤 Kitchen staff"]
+  waiter["👤 Waiter"]
+  manager["👤 Manager"]
+  owner["👤 Owner"]
+  admin["👤 Platform admin"]
+  razorpay["⚙️ Razorpay"]
+  claude["⚙️ Claude API"]
+
+  subgraph QBite["QBite system"]
+    direction TB
+    uc1([Scan table QR & browse menu])
+    uc2([Ask the menu assistant])
+    uc3([Build cart & place order])
+    uc4([Pay online])
+    uc5([Track order status])
+    uc6([Join a group order])
+    uc7([Call waiter / water / bill])
+
+    uc10([Log in with PIN or email])
+    uc11([Advance order on kitchen board])
+    uc12([View & cancel orders])
+    uc13([Resolve service requests])
+
+    uc20([Manage menu & stock])
+    uc21([Import menu with AI])
+    uc22([Manage tables & print QR codes])
+    uc23([Manage staff])
+    uc24([View sales reports])
+    uc25([Edit restaurant settings])
+
+    uc30([Onboard a restaurant])
+  end
+
+  diner --- uc1 & uc2 & uc3 & uc5 & uc6 & uc7
+  uc3 -.->|"«extend»"| uc4
+  uc4 --- razorpay
+  uc2 --- claude
+  uc21 --- claude
+
+  kitchen --- uc10 & uc11
+  waiter --- uc10 & uc12 & uc13
+  manager --- uc20 & uc21 & uc22 & uc23 & uc24
+  owner --- uc25
+  admin --- uc30
+
+  manager -.->|"«inherits»"| waiter
+  manager -.->|"«inherits»"| kitchen
+  owner -.->|"«inherits»"| manager
+  uc21 -.->|"«include»"| uc20

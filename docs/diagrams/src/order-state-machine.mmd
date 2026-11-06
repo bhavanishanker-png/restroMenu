@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> placed: POST /api/orders
+  placed --> accepted
+  accepted --> preparing
+  preparing --> ready
+  ready --> served
+  served --> [*]
+
+  placed --> cancelled
+  accepted --> cancelled
+  preparing --> cancelled
+  ready --> cancelled
+  cancelled --> [*]

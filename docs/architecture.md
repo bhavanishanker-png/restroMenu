@@ -4,9 +4,16 @@ QBite is a multi-tenant QR ordering platform: diners scan a table QR, order from
 
 This document shows how the pieces fit together. The *why* behind each design choice is in the [Architecture Decision Records](adr/README.md); links to them are inline.
 
+Formal UML views (use case, class, component, activity and deployment diagrams) are in [uml.md](uml.md).
+
 ---
 
 ## 1. System context
+
+![system context](diagrams/system-context.png)
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 flowchart LR
@@ -50,6 +57,8 @@ flowchart LR
   vercel -. errors .-> sentry
 ```
 
+</details>
+
 **Trust boundaries**
 
 - The **server** holds the Supabase service-role key, the Razorpay secret and the Anthropic key. None of them ever reach the browser.
@@ -67,6 +76,11 @@ flowchart LR
 
 ## 2. Order lifecycle
 
+![order state machine](diagrams/order-state-machine.png)
+
+<details>
+<summary>Mermaid source</summary>
+
 ```mermaid
 stateDiagram-v2
   [*] --> placed: POST /api/orders
@@ -83,6 +97,8 @@ stateDiagram-v2
   cancelled --> [*]
 ```
 
+</details>
+
 - Transitions are defined once (`ORDER_FLOW` in `src/types/index.ts`) and used by both the API and the kitchen UI.
 - Any other transition is rejected with **409**. An update only applies if the order is still in the status it was validated against (compare-and-set), so two devices can't overwrite each other.
 - Every change appends a row to `order_events`.
@@ -92,6 +108,11 @@ See [ADR 0004](adr/0004-order-state-machine.md).
 ---
 
 ## 3. Flow: a diner places an order
+
+![sequence place order](diagrams/sequence-place-order.png)
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -143,6 +164,8 @@ sequenceDiagram
   end
 ```
 
+</details>
+
 Key points:
 - **The client never sets a price.** The cart's total is for display. The server reprices every line from the database and snapshots name, price, add-ons and tax rate into `order_items` ([ADR 0002](adr/0002-server-side-pricing-and-snapshots.md)).
 - **Exactly one order per cart.** The idempotency key plus a unique constraint collapses double-taps, retries and concurrent duplicates into a single order ([ADR 0003](adr/0003-idempotent-order-creation.md)).
@@ -152,6 +175,11 @@ Key points:
 ---
 
 ## 4. Flow: the kitchen advances an order
+
+![sequence kitchen advance](diagrams/sequence-kitchen-advance.png)
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 sequenceDiagram
@@ -195,11 +223,18 @@ sequenceDiagram
   end
 ```
 
+</details>
+
 Why polling, not Realtime: Supabase Realtime filters rows through RLS using `auth.uid()`. Staff sign in with a signed cookie (to support PIN login on shared tablets), so to the database the browser is anonymous and receives nothing. A server route that reads with the service role and scopes to the session's restaurant is the reliable path. Realtime is kept only to trigger an earlier poll. See [ADR 0006](adr/0006-staff-sessions.md), [ADR 0007](adr/0007-kitchen-board-polling.md) and [ADR 0008](adr/0008-offline-kitchen-display.md).
 
 ---
 
 ## 5. Core data model
+
+![er data model](diagrams/er-data-model.png)
+
+<details>
+<summary>Mermaid source</summary>
 
 ```mermaid
 erDiagram
@@ -239,6 +274,8 @@ erDiagram
     timestamptz created_at
   }
 ```
+
+</details>
 
 Every tenant table carries `restaurant_id`. Money is `numeric(10,2)`. Add-on groups, service requests and group-ordering sessions are omitted for clarity; the full schema is in [`schema.sql`](schema.sql).
 

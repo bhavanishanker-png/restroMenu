@@ -1,0 +1,38 @@
+flowchart LR
+  subgraph Phone["«device» Diner's phone"]
+    B1["Browser<br/>customer pages"]
+  end
+  subgraph Tablet["«device» Kitchen tablet (10″)"]
+    B2["Browser / PWA<br/>kitchen display<br/>localStorage offline queue"]
+  end
+  subgraph Laptop["«device» Staff laptop / phone"]
+    B3["Browser<br/>dashboard"]
+  end
+
+  subgraph Vercel["«cloud» Vercel"]
+    direction TB
+    Edge["«edge runtime»<br/>middleware.ts"]
+    CDN["«CDN»<br/>static assets, images"]
+    Fn["«serverless functions»<br/>Server Components + /api/* routes<br/>env: SUPABASE_SERVICE_ROLE_KEY,<br/>ANTHROPIC_API_KEY, RAZORPAY_*"]
+  end
+
+  subgraph SB["«cloud» Supabase"]
+    direction TB
+    DB[("PostgreSQL<br/>schema + RLS + RPCs")]
+    RT["Realtime"]
+    ST[("Storage")]
+    AU["Auth"]
+  end
+
+  RZ["«cloud» Razorpay"]
+  AN["«cloud» Anthropic API"]
+
+  B1 & B2 & B3 -- "HTTPS" --> Edge --> Fn
+  B1 & B2 & B3 -- "HTTPS" --> CDN
+  B2 -.->|"WebSocket (nudge only)"| RT
+  Fn -- "HTTPS / PostgREST" --> DB
+  Fn --> ST
+  Fn --> AU
+  Fn -- "HTTPS" --> RZ
+  RZ -- "webhook" --> Fn
+  Fn -- "HTTPS" --> AN

@@ -1,0 +1,130 @@
+classDiagram
+  direction TB
+
+  class OrdersRoute {
+    <<route handler>>
+    POST /api/orders
+    GET /api/orders
+  }
+  class OrderStatusRoute {
+    <<route handler>>
+    PATCH /api/orders/:orderId/status
+  }
+  class KitchenBoardRoute {
+    <<route handler>>
+    GET /api/kitchen/board
+  }
+  class MenuChatRoute {
+    <<route handler>>
+    POST /api/ai/menu-chat
+  }
+  class MenuExtractRoute {
+    <<route handler>>
+    POST /api/ai/menu-extract
+  }
+  class WebhookRoute {
+    <<route handler>>
+    POST /api/payments/webhook
+  }
+
+  class pricing {
+    <<module>>
+    +roundMoney(value) number
+    +computeUnitPrice(...) number
+    +priceLine(line) PricedLine
+    +priceCart(lines, options) PriceBreakdown
+    +estimateReadyAt(lines, placedAt) Date
+    +formatMoney(value, currency) string
+  }
+  class auth {
+    <<module>>
+    +getStaffSession() StaffSession
+    +setSessionCookie(session)
+    +clearSessionCookie()
+    +requireRole(roles) NextResponse
+  }
+  class rateLimit {
+    <<module>>
+    +checkRateLimit(key, limit, windowMs) boolean
+  }
+  class orderPrivacy {
+    <<module>>
+    +orderIdSchema
+    +toGuestOrder(order) Order
+  }
+  class mappers {
+    <<module>>
+    +toOrder(row) Order
+    +toMenuItem(row) MenuItem
+    +toStaff() / toTable() / ... one per entity
+  }
+  class domainTypes {
+    <<module>>
+    +ORDER_FLOW
+    +canTransition(from, to) boolean
+  }
+  class queries {
+    <<module>>
+    +fetchPublicMenu(slug, token)
+    +fetchMenuCatalog(restaurantId)
+    +fetchKitchenBoard(restaurantId)
+    +fetchOrder(orderId)
+  }
+  class supabaseServer {
+    <<module, server-only>>
+    +createServerClient() service-role client
+  }
+  class guardrails {
+    <<module>>
+    +isAiFeatureEnabled(feature)
+    +enforceAiRateLimits(rules)
+    +sanitizeUserText(text)
+    +wrapUntrusted(tag, text)
+    +fileMatchesDeclaredType(bytes, type)
+    +containsHealthClaim(text)
+    +redactCurrencyAmounts(text)
+  }
+  class menuAssistant {
+    <<module>>
+    +runMenuAssistant(client, menu, history) AssistantReply
+    -search_menu tool
+    -get_item_details tool
+    -suggest_items tool
+  }
+  class menuOnboarding {
+    <<module>>
+    +ExtractionSchema
+    +reconcileDraft(extraction, catalog) MenuDraft
+  }
+  class aiClient {
+    <<module>>
+    +getAnthropicClient() Anthropic
+    +AI_MODELS
+    +FALLBACK_PARAMS
+  }
+
+  OrdersRoute ..> rateLimit
+  OrdersRoute ..> pricing
+  OrdersRoute ..> mappers
+  OrdersRoute ..> supabaseServer
+  OrderStatusRoute ..> auth
+  OrderStatusRoute ..> domainTypes
+  OrderStatusRoute ..> supabaseServer
+  KitchenBoardRoute ..> auth
+  KitchenBoardRoute ..> queries
+  MenuChatRoute ..> guardrails
+  MenuChatRoute ..> queries
+  MenuChatRoute ..> menuAssistant
+  MenuExtractRoute ..> auth
+  MenuExtractRoute ..> guardrails
+  MenuExtractRoute ..> menuOnboarding
+  MenuExtractRoute ..> queries
+  WebhookRoute ..> supabaseServer
+  menuAssistant ..> aiClient
+  menuAssistant ..> pricing
+  menuAssistant ..> guardrails
+  menuOnboarding ..> pricing
+  menuOnboarding ..> guardrails
+  guardrails ..> rateLimit
+  queries ..> mappers
+  queries ..> supabaseServer

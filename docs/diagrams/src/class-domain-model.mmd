@@ -1,0 +1,177 @@
+classDiagram
+  direction LR
+
+  class Restaurant {
+    +id: uuid
+    +slug: string
+    +name: string
+    +currency: string
+    +timezone: string
+    +isActive: boolean
+  }
+  class RestaurantSettings {
+    +restaurantId: uuid
+    +acceptsCash: boolean
+    +acceptsOnline: boolean
+    +serviceChargePct: number
+    +packingCharge: number
+    +orderNumberPrefix: string
+    +autoAcceptOrders: boolean
+  }
+  class Staff {
+    +id: uuid
+    +restaurantId: uuid
+    +name: string
+    +role: StaffRole
+    +isActive: boolean
+  }
+  class RestaurantTable {
+    +id: uuid
+    +restaurantId: uuid
+    +label: string
+    +seats: number
+    +qrToken: uuid
+    +isActive: boolean
+  }
+  class TableSession {
+    +id: uuid
+    +tableId: uuid
+    +joinCode: string
+    +status: open/billed/closed
+  }
+  class MenuCategory {
+    +id: uuid
+    +restaurantId: uuid
+    +name: string
+    +availableFrom: time
+    +availableTo: time
+    +activeDays: number[]
+  }
+  class MenuItem {
+    +id: uuid
+    +restaurantId: uuid
+    +name: string
+    +basePrice: number
+    +foodType: FoodType
+    +spiceLevel: 0..3
+    +taxRate: number
+    +isAvailable: boolean
+  }
+  class ItemVariant {
+    +id: uuid
+    +name: string
+    +priceDelta: number
+    +isDefault: boolean
+  }
+  class AddonGroup {
+    +id: uuid
+    +name: string
+    +minSelect: number
+    +maxSelect: number
+  }
+  class Addon {
+    +id: uuid
+    +name: string
+    +price: number
+  }
+  class Order {
+    +id: uuid
+    +restaurantId: uuid
+    +orderNumber: string
+    +orderType: OrderType
+    +status: OrderStatus
+    +subtotal: number
+    +taxTotal: number
+    +serviceCharge: number
+    +total: number
+    +paymentStatus: PaymentStatus
+    +placedAt: timestamp
+  }
+  class OrderItem {
+    +itemName: string «snapshot»
+    +variantName: string «snapshot»
+    +unitPrice: number «snapshot»
+    +addons: json «snapshot»
+    +taxRate: number «snapshot»
+    +quantity: number
+    +lineTotal: number
+    +notes: string
+  }
+  class OrderEvent {
+    +orderId: uuid
+    +status: OrderStatus
+    +staffId: uuid
+    +createdAt: timestamp
+  }
+  class ServiceRequest {
+    +tableId: uuid
+    +type: ServiceRequestType
+    +status: open/resolved
+  }
+
+  class OrderStatus {
+    <<enumeration>>
+    placed
+    accepted
+    preparing
+    ready
+    served
+    cancelled
+  }
+  class StaffRole {
+    <<enumeration>>
+    owner
+    manager
+    kitchen
+    waiter
+  }
+  class FoodType {
+    <<enumeration>>
+    veg
+    non_veg
+    egg
+  }
+
+  class CartLine {
+    <<value object>>
+    +lineId: string
+    +itemId: uuid
+    +basePrice: number
+    +variantPriceDelta: number
+    +addons: SelectedAddon[]
+    +quantity: number
+  }
+  class PriceBreakdown {
+    <<value object>>
+    +subtotal: number
+    +taxTotal: number
+    +serviceCharge: number
+    +packingCharge: number
+    +total: number
+    +lines: PricedLine[]
+  }
+
+  Restaurant "1" *-- "1" RestaurantSettings
+  Restaurant "1" *-- "*" Staff
+  Restaurant "1" *-- "*" RestaurantTable
+  Restaurant "1" *-- "*" MenuCategory
+  Restaurant "1" *-- "*" MenuItem
+  Restaurant "1" *-- "*" AddonGroup
+  Restaurant "1" *-- "*" Order
+  MenuCategory "0..1" o-- "*" MenuItem
+  MenuItem "1" *-- "*" ItemVariant
+  MenuItem "*" -- "*" AddonGroup
+  AddonGroup "1" *-- "*" Addon
+  RestaurantTable "1" -- "*" TableSession
+  RestaurantTable "0..1" -- "*" Order : placed at
+  TableSession "0..1" -- "*" Order : groups
+  RestaurantTable "1" -- "*" ServiceRequest
+  Order "1" *-- "1..*" OrderItem
+  Order "1" *-- "*" OrderEvent : audit log
+  Staff "0..1" -- "*" OrderEvent : changed by
+  Order ..> OrderStatus
+  Staff ..> StaffRole
+  MenuItem ..> FoodType
+  CartLine ..> MenuItem : copied from
+  PriceBreakdown ..> CartLine : computed from
+  OrderItem ..> CartLine : snapshot of

@@ -30,7 +30,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 
 ## Design Decisions
 
-How the system works and why. **[Architecture overview →](docs/architecture.md)** (diagrams, flows, scaling limits, failure modes)
+How the system works and why. **[Architecture overview →](docs/architecture.md)** (diagrams, flows, scaling limits, failure modes) · **[UML diagrams →](docs/uml.md)** (use case, class, component, activity, deployment)
 
 | Problem | Decision | ADR |
 |---|---|---|
@@ -43,6 +43,22 @@ How the system works and why. **[Architecture overview →](docs/architecture.md
 | Realtime silently delivered nothing to staff | Tenant-scoped polling; Realtime only nudges | [0007](docs/adr/0007-kitchen-board-polling.md) |
 | Kitchen wifi drops | Optimistic updates, persisted queue, server wins | [0008](docs/adr/0008-offline-kitchen-display.md) |
 | LLMs can be wrong or manipulated | AI drafts and suggests; code validates; humans approve writes | [0009](docs/adr/0009-ai-as-untrusted-component.md) |
+
+### System at a glance
+
+**Architecture**: what runs where, and the trust boundary between browser and server.
+
+![System context](docs/diagrams/system-context.png)
+
+**Placing an order**: server-side repricing, the idempotency fast path and race backstop, and payment.
+
+![Sequence: placing an order](docs/diagrams/sequence-place-order.png)
+
+**Data model**: every tenant table hangs off `restaurants`; order lines are snapshots.
+
+![ER diagram](docs/diagrams/er-data-model.png)
+
+More diagrams (order state machine, kitchen flow, class, component, activity, deployment) are in [architecture.md](docs/architecture.md) and [uml.md](docs/uml.md).
 
 ---
 

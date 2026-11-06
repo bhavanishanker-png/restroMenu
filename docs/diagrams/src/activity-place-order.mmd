@@ -1,0 +1,30 @@
+flowchart TD
+  start((●)) --> rl{"Rate limit OK?<br/>20/min per IP"}
+  rl -- no --> e429[/"429 RATE_LIMITED"/] --> stop
+  rl -- yes --> json{"Body is JSON<br/>and passes zod?"}
+  json -- no --> e400a[/"400 INVALID_JSON /<br/>VALIDATION_ERROR"/] --> stop
+  json -- yes --> rest{"Restaurant for slug<br/>exists and active?"}
+  rest -- no --> e404[/"404 RESTAURANT_NOT_FOUND"/] --> stop
+  rest -- yes --> table{"Table token belongs<br/>to this restaurant?"}
+  table -- no --> e400b[/"400 TABLE_NOT_FOUND"/] --> stop
+  table -- yes --> idem{"Order with this<br/>idempotency key exists?"}
+  idem -- yes --> ok200a[/"200 existing order"/] --> stop
+  idem -- no --> load["Load all referenced items<br/>in one query"]
+  load --> valid{"Every item, variant and<br/>add-on exists and is available?"}
+  valid -- no --> e400c[/"400 ITEM_NOT_FOUND /<br/>ITEM_UNAVAILABLE / ..."/] --> stop
+  valid -- yes --> price["Build CartLines from DB prices<br/>priceCart() → PriceBreakdown<br/>(client prices ignored)"]
+  price --> snap["Build order_items snapshots"]
+  snap --> sess{"Group sessionId given?"}
+  sess -- "yes, not open" --> e400d[/"400 SESSION_NOT_FOUND"/] --> stop
+  sess -- "no / valid" --> rpc
+
+  subgraph PG["Postgres transaction: create_order()"]
+    rpc["Lock restaurant (advisory)<br/>next_order_number()"] --> ins["INSERT orders, order_items,<br/>first order_events row"]
+  end
+
+  ins --> uniq{"23505 unique<br/>violation?"}
+  uniq -- yes --> race["Fetch the order the<br/>concurrent request created"] --> ok200b[/"200 existing order"/] --> stop
+  uniq -- "other error" --> e500[/"500 CREATE_FAILED"/] --> stop
+  uniq -- no --> pay{"paymentMethod =<br/>razorpay?"}
+  pay -- yes --> rz["Create Razorpay order<br/>(failure is not an error:<br/>guest can retry payment)"] --> ok201
+  pay -- no --> ok201[/"201 new order"/] --> stop((◉))

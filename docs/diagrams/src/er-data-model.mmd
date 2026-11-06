@@ -1,0 +1,36 @@
+erDiagram
+  restaurants ||--|| restaurant_settings : has
+  restaurants ||--o{ restaurant_tables : has
+  restaurants ||--o{ menu_categories : has
+  restaurants ||--o{ staff : employs
+  menu_categories ||--o{ menu_items : contains
+  menu_items ||--o{ item_variants : "sizes"
+  restaurants ||--o{ orders : receives
+  restaurant_tables ||--o{ orders : "placed at"
+  orders ||--o{ order_items : "snapshot lines"
+  orders ||--o{ order_events : "audit log"
+  staff ||--o{ order_events : "changed by"
+
+  orders {
+    uuid id PK
+    uuid restaurant_id FK
+    text order_number "unique per restaurant per day"
+    text status "state machine"
+    numeric total "server-computed"
+    text idempotency_key "unique"
+    text payment_status
+  }
+  order_items {
+    uuid order_id FK
+    uuid item_id "reference only"
+    text item_name "snapshot"
+    numeric unit_price "snapshot"
+    jsonb addons "snapshot"
+    numeric tax_rate "snapshot"
+  }
+  order_events {
+    uuid order_id FK
+    text status
+    uuid staff_id FK
+    timestamptz created_at
+  }

@@ -1,0 +1,21 @@
+flowchart TD
+  start((●)) --> secret{"Webhook secret<br/>configured?"}
+  secret -- no --> e500[/"500 NOT_CONFIGURED"/] --> stop
+  secret -- yes --> hmac["HMAC-SHA256(raw body, secret)"]
+  hmac --> cmp{"timingSafeEqual with<br/>x-razorpay-signature?"}
+  cmp -- no --> e400[/"400 invalid signature"/] --> stop
+  cmp -- yes --> json{"Body is valid JSON?"}
+  json -- no --> e400j[/"400 INVALID_JSON"/] --> stop
+  json -- yes --> kind{"payment.captured or<br/>payment.failed with ids?"}
+  kind -- no --> ack[/"200 acknowledge, no change"/] --> stop
+  kind -- yes --> find{"Order found by<br/>payment_ref?"}
+  find -- "lookup error" --> e500b[/"500 DB_ERROR<br/>(Razorpay retries)"/] --> stop
+  find -- "not found" --> ack2[/"200, logged<br/>(no endless retries)"/] --> stop
+  find -- yes --> paid{"Already paid?"}
+  paid -- yes --> dup[/"200 no-op (duplicate delivery)"/] --> stop
+  paid -- no --> ev{"Event type"}
+  ev -- captured --> cap["payment_status = paid<br/>payment_ref = payment id"]
+  ev -- failed --> fail["payment_status = failed"]
+  cap & fail --> wr{"Update succeeded?"}
+  wr -- no --> e500c[/"500 DB_ERROR<br/>(Razorpay retries)"/] --> stop
+  wr -- yes --> ok[/"200 OK"/] --> stop((◉))
