@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient as createSSRClient, type CookieOptions } from "@supabase/ssr";
+import { isAuthApiError } from "@supabase/supabase-js";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
@@ -69,6 +70,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       email: body.email,
       password: body.password,
     });
+
+    // Only a 4xx answer from Supabase Auth means "wrong email or password".
+    // A network failure or Supabase outage used to be reported the same way,
+    // so staff with the right password were told it was wrong and nothing
+    // was logged.
+    if (authError && !(isAuthApiError(authError) && authError.status < 500 && authError.status !== 429)) {
+      console.error("[login] Supabase Auth unavailable:", authError.name, authError.message);
+      return NextResponse.json(
+        { error: { code: "AUTH_UNAVAILABLE", message: "Sign-in is temporarily unavailable. Please try again in a moment." } },
+        { status: 503 }
+      );
+    }
 
     if (authError || !authData.user) {
       return NextResponse.json(

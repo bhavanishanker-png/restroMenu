@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { fetchPublicMenu } from "@/lib/queries/menu";
 import MenuClientLayout from "@/components/menu/MenuClientLayout";
+import { isAiFeatureEnabled } from "@/lib/ai/guardrails";
 
 type Props = {
   params: { slug: string; token: string };
@@ -32,5 +33,9 @@ export default async function MenuPage({ params }: Props) {
     notFound();
   }
 
-  return <MenuClientLayout menu={result.menu} token={token} />;
+  // Decided on the server: the client never learns whether a key exists, only whether to show the button.
+  const assistantEnabled =
+    isAiFeatureEnabled("menu_assistant") && Boolean(process.env.ANTHROPIC_API_KEY);
+
+  return <MenuClientLayout menu={result.menu} token={token} assistantEnabled={assistantEnabled} />;
 }

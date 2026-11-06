@@ -359,3 +359,53 @@ export type CreateOrderRequest = {
     notes?: string;
   }[];
 };
+
+// ---------------------------------------------------------------- ai
+// Not database rows: these are the shapes the AI routes return. Nothing here
+// is persisted until a human approves it through the regular menu APIs.
+
+/** Why an imported dish needs the owner's attention before it can be saved. */
+export type DraftIssue =
+  | 'missing_price'       // blocking: no price was readable
+  | 'unknown_food_type'   // blocking: veg / non-veg / egg not certain
+  | 'possible_duplicate'  // already on the menu (or twice in the upload)
+  | 'size_options'        // menu shows sizes (Half/Full); add them as variants
+  | 'ai_description';     // description written by AI, not read from the menu
+
+export type DraftMenuItem = {
+  name: string;
+  description: string | null;
+  descriptionSource: 'menu' | 'ai' | null;
+  basePrice: number | null;
+  foodType: FoodType | null;
+  sizeOptionsText: string | null;
+  duplicateOf: string | null;
+  issues: DraftIssue[];
+};
+
+export type DraftMenuCategory = {
+  name: string;
+  /** Set when the category already exists, so the import files dishes under it instead of creating a twin. */
+  existingCategoryId: string | null;
+  items: DraftMenuItem[];
+};
+
+export type MenuDraft = {
+  categories: DraftMenuCategory[];
+  totalItems: number;
+};
+
+export type AssistantChatTurn = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+export type AssistantSuggestion = {
+  itemId: string;
+  reason: string;
+};
+
+export type AssistantReply = {
+  reply: string;
+  suggestions: AssistantSuggestion[];
+};

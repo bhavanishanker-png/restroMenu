@@ -10,6 +10,7 @@ import { MenuHeader } from "./MenuHeader";
 import { MenuSection } from "./MenuSection";
 import { ServiceRequestPanel } from "./ServiceRequestPanel";
 import { GroupOrderSheet } from "./GroupOrderSheet";
+import { MenuAssistantSheet } from "./MenuAssistantSheet";
 import {
   Sheet,
   SheetContent,
@@ -23,9 +24,9 @@ import type { MenuItem, PublicMenu } from "@/types";
 
 type ActiveTab = "menu" | "cart" | "requests";
 
-type Props = { menu: PublicMenu; token: string };
+type Props = { menu: PublicMenu; token: string; assistantEnabled: boolean };
 
-export default function MenuClientLayout({ menu, token }: Props) {
+export default function MenuClientLayout({ menu, token, assistantEnabled }: Props) {
   const [search, setSearch] = useState("");
   const [vegOnly, setVegOnly] = useState(false);
   const [bestsellersOnly, setBestsellersOnly] = useState(false);
@@ -33,6 +34,7 @@ export default function MenuClientLayout({ menu, token }: Props) {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("menu");
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const [navMounted, setNavMounted] = useState(false);
 
@@ -140,6 +142,7 @@ export default function MenuClientLayout({ menu, token }: Props) {
             onBestsellersOnlyChange={setBestsellersOnly}
             under200={under200}
             onUnder200Change={setUnder200}
+            onAskAssistant={assistantEnabled ? () => setAssistantOpen(true) : undefined}
           />
           <div className="border-t border-outline-variant/60">
             <CategoryTabs categories={filteredCategories} />
@@ -168,12 +171,26 @@ export default function MenuClientLayout({ menu, token }: Props) {
                   Try removing a filter, or search for something else on the menu.
                 </p>
               </div>
-              <button
-                onClick={clearFilters}
-                className="min-h-[44px] rounded-lg border border-outline-variant px-5 font-label-bold text-label-bold uppercase text-on-surface transition-colors hover:border-brand/50 hover:text-brand-text"
-              >
-                Clear filters
-              </button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  onClick={clearFilters}
+                  className="min-h-[44px] rounded-lg border border-outline-variant px-5 font-label-bold text-label-bold uppercase text-on-surface transition-colors hover:border-brand/50 hover:text-brand-text"
+                >
+                  Clear filters
+                </button>
+                {assistantEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => setAssistantOpen(true)}
+                    className="flex min-h-[44px] items-center gap-1.5 rounded-lg border border-brand-border bg-brand-subtle px-5 font-semibold text-brand-text"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
+                      auto_awesome
+                    </span>
+                    Ask the menu assistant
+                  </button>
+                )}
+              </div>
             </div>
           ) : filteredCategories.length === 0 ? (
             // No dishes at all — the restaurant hasn't published a menu yet.
@@ -217,6 +234,17 @@ export default function MenuClientLayout({ menu, token }: Props) {
 
       {/* Item detail sheet */}
       <ItemDetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
+
+      {/* AI menu assistant — suggests dishes; tapping one opens the item sheet above. */}
+      {assistantEnabled && (
+        <MenuAssistantSheet
+          open={assistantOpen}
+          onOpenChange={setAssistantOpen}
+          menu={menu}
+          token={token}
+          onSelectItem={setSelectedItem}
+        />
+      )}
 
       {/* Floating cart bar — sits above bottom nav, only on menu tab */}
       {isMenuTab && (

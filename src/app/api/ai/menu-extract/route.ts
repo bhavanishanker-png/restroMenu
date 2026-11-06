@@ -1,29 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
-import { requireRole } from "@/lib/auth";
+import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { getStaffSession, requireRole } from "@/lib/auth";
+import { fetchMenuCatalog } from "@/lib/queries/menu";
+import { AI_MODELS, FALLBACK_PARAMS, getAnthropicClient } from "@/lib/ai/client";
+import {
+  aiErrorResponse,
+  clientIp,
+  enforceAiRateLimits,
+  fileMatchesDeclaredType,
+  isAiFeatureEnabled,
+} from "@/lib/ai/guardrails";
+import {
+  EXTRACTION_SYSTEM_PROMPT,
+  ExtractionSchema,
+  reconcileDraft,
+} from "@/lib/ai/menu-onboarding";
+import type { MenuDraft } from "@/types";
 
-// ─── output schema ──────────────────────────────────────────────────────────
-
-const ExtractedItem = z.object({
-  name: z.string().min(1),
-  description: z.string().nullable(),
-  basePrice: z.number().min(0),
-  foodType: z.enum(["veg", "non_veg", "egg"]).nullable(),
-});
-
-const ExtractedCategory = z.object({
-  name: z.string().min(1),
-  items: z.array(ExtractedItem),
-});
-
-const ExtractedMenuSchema = z.object({
-  categories: z.array(ExtractedCategory),
-});
-
-export type ExtractedMenu = z.infer<typeof ExtractedMenuSchema>;
-
-// ─── POST /api/ai/menu-extract ──────────────────────────────────────────────
+// Reading a multi-page menu can take a while; Vercel's default would cut it off.
+export const maxDuration = 120;
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -33,80 +29,75 @@ const ALLOWED_TYPES = new Set([
   "application/pdf",
 ]);
 
-const PROMPT = `Extract every menu item visible in this image or document.
-Return ONLY a JSON object — no markdown fences, no prose — with this exact shape:
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
-{
-  "categories": [
-    {
-      "name": "Category heading (e.g. Starters, Main Course)",
-      "items": [
-        {
-          "name": "Dish name",
-          "description": "Short description or null",
-          "basePrice": 120,
-          "foodType": "veg" | "non_veg" | "egg" | null
-        }
-      ]
-    }
-  ]
-}
-
-Rules:
-- basePrice is a plain number in the local currency (no symbol). If a price range, use the lower value. If no price visible, use 0.
-- foodType: "veg" = vegetarian, "non_veg" = non-vegetarian/meat/seafood, "egg" = egg-based, null = unknown.
-- Group items under the section heading shown in the menu. If none exists, group under "Main Menu".
-- Include every visible item — do not skip anything.
-- Return ONLY the JSON, no other text.`;
+// ─── POST /api/ai/menu-extract ──────────────────────────────────────────────
+//
+// Returns a reviewed-by-code DRAFT. It never writes the menu: the owner ticks
+// dishes in MenuExtractDialog, which saves them through the normal
+// /api/menu/categories and /api/menu/items routes (and their validation).
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager"]);
   if (guard) return guard;
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: { code: "NO_API_KEY", message: "ANTHROPIC_API_KEY is not configured." } },
-      { status: 503 }
-    );
+  const session = await getStaffSession();
+  if (!session) {
+    return aiErrorResponse("UNAUTHORIZED", "Authentication required.", 401);
   }
+
+  if (!isAiFeatureEnabled("menu_onboarding")) {
+    return aiErrorResponse("AI_DISABLED", "AI menu import is turned off.", 503);
+  }
+
+  const client = getAnthropicClient();
+  if (!client) {
+    return aiErrorResponse("NO_API_KEY", "ANTHROPIC_API_KEY is not configured.", 503);
+  }
+
+  // Each import is one large model call; cap it per restaurant and per IP.
+  const limited = enforceAiRateLimits([
+    { key: `ai-import:r:${session.restaurantId}`, limit: 10, windowMs: 60 * 60_000 },
+    { key: `ai-import:ip:${clientIp(req.headers)}`, limit: 20, windowMs: 60 * 60_000 },
+  ]);
+  if (limited) return limited;
 
   let formData: FormData;
   try {
     formData = await req.formData();
   } catch {
-    return NextResponse.json(
-      { error: { code: "INVALID_FORM", message: "Invalid multipart form data." } },
-      { status: 400 }
-    );
+    return aiErrorResponse("INVALID_FORM", "Invalid multipart form data.", 400);
   }
 
-  const file = formData.get("file") as File | null;
-  if (!file) {
-    return NextResponse.json(
-      { error: { code: "MISSING_FILE", message: "No file uploaded." } },
-      { status: 400 }
-    );
+  const entry = formData.get("file");
+  if (!(entry instanceof File)) {
+    return aiErrorResponse("MISSING_FILE", "No file uploaded.", 400);
   }
+  const file = entry;
 
   if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json(
-      { error: { code: "INVALID_TYPE", message: "Upload a JPG, PNG, WebP, or PDF file." } },
-      { status: 400 }
-    );
+    return aiErrorResponse("INVALID_TYPE", "Upload a JPG, PNG, WebP, or PDF file.", 400);
   }
-
-  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
   if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: { code: "FILE_TOO_LARGE", message: "File must be under 10 MB." } },
-      { status: 400 }
+    return aiErrorResponse("FILE_TOO_LARGE", "File must be under 10 MB.", 400);
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!fileMatchesDeclaredType(bytes, file.type)) {
+    return aiErrorResponse(
+      "INVALID_TYPE",
+      "That file isn't a real JPG, PNG, WebP or PDF. Export it again and retry.",
+      400
     );
   }
 
-  const bytes = await file.arrayBuffer();
-  const base64 = Buffer.from(bytes).toString("base64");
+  const catalog = await fetchMenuCatalog(session.restaurantId);
+  if (!catalog) {
+    return aiErrorResponse("DB_ERROR", "Couldn't load your current menu. Try again.", 500);
+  }
 
-  const contentBlock: Anthropic.MessageParam["content"][number] =
+  const base64 = Buffer.from(bytes).toString("base64");
+  const contentBlock: Anthropic.Beta.BetaContentBlockParam =
     file.type === "application/pdf"
       ? {
           type: "document",
@@ -121,60 +112,88 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           },
         };
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  let responseText: string;
+  let message: Anthropic.Beta.BetaMessage;
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [contentBlock, { type: "text", text: PROMPT }],
-        },
-      ],
-    });
-
-    const block = message.content.find((b) => b.type === "text");
-    responseText = block?.type === "text" ? block.text : "";
+    // Streamed: a long menu can need a large output budget, and a
+    // non-streaming request that size risks an HTTP timeout.
+    const stream = client.beta.messages.stream(
+      {
+        model: AI_MODELS.menuOnboarding,
+        max_tokens: 64_000,
+        ...FALLBACK_PARAMS,
+        output_config: { effort: "medium", format: betaZodOutputFormat(ExtractionSchema) },
+        system: EXTRACTION_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: [
+              contentBlock,
+              { type: "text", text: "Extract every dish from this <menu_document>." },
+            ],
+          },
+        ],
+      },
+      { timeout: 110_000 }
+    );
+    message = await stream.finalMessage();
   } catch (err) {
-    console.error("[menu-extract] Anthropic error:", err);
-    return NextResponse.json(
-      { error: { code: "AI_ERROR", message: "AI extraction failed. Please try again." } },
-      { status: 502 }
+    if (err instanceof Anthropic.RateLimitError) {
+      console.error("[menu-extract] Anthropic rate limit:", err.message);
+      return aiErrorResponse("AI_BUSY", "The AI service is busy. Try again in a minute.", 503);
+    }
+    if (err instanceof Anthropic.APIError) {
+      console.error(`[menu-extract] Anthropic API error ${err.status}:`, err.message);
+    } else {
+      console.error("[menu-extract] Anthropic call failed:", err);
+    }
+    return aiErrorResponse("AI_ERROR", "AI extraction failed. Please try again.", 502);
+  }
+
+  console.info("[menu-extract]", {
+    restaurantId: session.restaurantId,
+    stopReason: message.stop_reason,
+    inputTokens: message.usage.input_tokens,
+    outputTokens: message.usage.output_tokens,
+  });
+
+  if (message.stop_reason === "refusal") {
+    return aiErrorResponse("AI_DECLINED", "The AI couldn't process this file. Try a clearer photo of the menu.", 422);
+  }
+  if (message.stop_reason === "max_tokens") {
+    return aiErrorResponse(
+      "MENU_TOO_LONG",
+      "This menu is too long to read in one go. Upload it a few pages at a time.",
+      422
     );
   }
 
-  // Strip possible markdown fences and find the JSON object
-  const jsonMatch = responseText.replace(/```json?|```/g, "").match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error("[menu-extract] No JSON in response:", responseText.slice(0, 500));
-    return NextResponse.json(
-      { error: { code: "PARSE_ERROR", message: "Could not parse menu data from the image." } },
-      { status: 422 }
-    );
-  }
+  const text = message.content
+    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
 
   let raw: unknown;
   try {
-    raw = JSON.parse(jsonMatch[0]);
+    raw = JSON.parse(text);
   } catch {
-    return NextResponse.json(
-      { error: { code: "PARSE_ERROR", message: "AI returned malformed JSON." } },
-      { status: 422 }
-    );
+    console.error("[menu-extract] Non-JSON response:", text.slice(0, 500));
+    return aiErrorResponse("PARSE_ERROR", "AI returned malformed data. Please try again.", 422);
   }
 
-  const result = ExtractedMenuSchema.safeParse(raw);
-  if (!result.success) {
-    console.error("[menu-extract] Schema mismatch:", result.error.flatten());
-    return NextResponse.json(
-      { error: { code: "SCHEMA_ERROR", message: "AI returned unexpected data shape." } },
-      { status: 422 }
-    );
+  const parsed = ExtractionSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[menu-extract] Schema mismatch:", parsed.error.issues.slice(0, 5));
+    return aiErrorResponse("SCHEMA_ERROR", "AI returned unexpected data. Please try again.", 422);
   }
 
-  const totalItems = result.data.categories.reduce((s, c) => s + c.items.length, 0);
-  return NextResponse.json({ menu: result.data, totalItems });
+  if (!parsed.data.isMenu) {
+    return aiErrorResponse("NOT_A_MENU", "That doesn't look like a menu. Upload a photo or PDF of your menu.", 422);
+  }
+
+  const draft: MenuDraft = reconcileDraft(parsed.data, catalog);
+  if (draft.totalItems === 0) {
+    return aiErrorResponse("NO_ITEMS", "No dishes could be read. Try a sharper, well-lit photo.", 422);
+  }
+
+  return NextResponse.json({ draft });
 }

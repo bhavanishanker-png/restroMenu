@@ -12,11 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
 import { formatMoney } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
-import type { ExtractedMenu } from "@/app/api/ai/menu-extract/route";
-import type { MenuCategory } from "@/types";
+import { draftItemIsReady } from "@/lib/ai/draft";
+import type { DraftMenuItem, FoodType, MenuCategory, MenuDraft } from "@/types";
 import { MsIcon } from "./MsIcon";
-
-type ExtractedItem = ExtractedMenu["categories"][number]["items"][number];
 
 type SelectionState = Record<number, Record<number, boolean>>; // catIdx → itemIdx → selected
 
@@ -30,14 +28,26 @@ type Phase = "upload" | "processing" | "review" | "importing" | "done" | "error"
 
 type ApiError = { error?: { message?: string } };
 
-function selectAll(menu: ExtractedMenu): SelectionState {
+/**
+ * Default selection: everything except dishes that look like duplicates of
+ * what's already on the menu, so re-importing the same menu doesn't double it.
+ */
+function defaultSelection(draft: MenuDraft, includeDuplicates = false): SelectionState {
   const sel: SelectionState = {};
-  menu.categories.forEach((cat, ci) => {
+  draft.categories.forEach((cat, ci) => {
     sel[ci] = {};
-    cat.items.forEach((_, ii) => { sel[ci][ii] = true; });
+    cat.items.forEach((item, ii) => {
+      sel[ci][ii] = includeDuplicates || item.duplicateOf === null;
+    });
   });
   return sel;
 }
+
+const FOOD_TYPE_OPTIONS: { value: FoodType; label: string }[] = [
+  { value: "veg", label: "Veg" },
+  { value: "non_veg", label: "Non-veg" },
+  { value: "egg", label: "Egg" },
+];
 
 /** Tri-state tick used for categories and dishes in the review list. */
 function Tick({ state }: { state: "on" | "off" | "mixed" }) {
@@ -59,7 +69,7 @@ function Tick({ state }: { state: "on" | "off" | "mixed" }) {
 export function MenuExtractDialog({ open, onClose, onImported }: Props) {
   const [phase, setPhase] = useState<Phase>("upload");
   const [dragOver, setDragOver] = useState(false);
-  const [menu, setMenu] = useState<ExtractedMenu | null>(null);
+  const [menu, setMenu] = useState<MenuDraft | null>(null);
   const [selection, setSelection] = useState<SelectionState>({});
   const [errorMsg, setErrorMsg] = useState("");
   const [importedCount, setImportedCount] = useState(0);
@@ -92,17 +102,15 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
 
     try {
       const res = await fetch("/api/ai/menu-extract", { method: "POST", body: fd });
-      const json = (await res.json()) as ApiError & { menu?: ExtractedMenu };
-      if (!res.ok || !json.menu) {
+      const json = (await res.json()) as ApiError & { draft?: MenuDraft };
+      if (!res.ok || !json.draft) {
         setErrorMsg(json.error?.message ?? "Extraction failed.");
         setPhase("error");
         return;
       }
 
-      const extracted = json.menu;
-      setMenu(extracted);
-      // Default: all items selected
-      setSelection(selectAll(extracted));
+      setMenu(json.draft);
+      setSelection(defaultSelection(json.draft));
       setPhase("review");
     } catch (err) {
       console.error("[menu-extract] request failed", err);
@@ -131,7 +139,22 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
     }));
   }
 
-  function toggleCategory(ci: number, items: ExtractedItem[]) {
+  /** The owner fills in what the AI couldn't read (price, veg/non-veg). */
+  function patchItem(ci: number, ii: number, patch: Partial<Pick<DraftMenuItem, "basePrice" | "foodType">>) {
+    setMenu((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        categories: prev.categories.map((cat, c) =>
+          c !== ci
+            ? cat
+            : { ...cat, items: cat.items.map((item, i) => (i !== ii ? item : { ...item, ...patch })) }
+        ),
+      };
+    });
+  }
+
+  function toggleCategory(ci: number, items: DraftMenuItem[]) {
     const allOn = items.every((_, ii) => selection[ci]?.[ii]);
     setSelection((prev) => {
       const next: SelectionState = { ...prev, [ci]: {} };
@@ -143,10 +166,13 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
   const selectedItems = menu?.categories.flatMap((cat, ci) =>
     cat.items.filter((_, ii) => selection[ci]?.[ii]).map((item) => ({ cat, item }))
   ) ?? [];
-  const totalExtracted = menu?.categories.reduce((s, c) => s + c.items.length, 0) ?? 0;
+  const totalExtracted = menu?.totalItems ?? 0;
+  // A selected dish without a price or veg/non-veg marker can't be saved —
+  // the old import silently defaulted unknown dishes to "veg".
+  const needsInput = selectedItems.filter(({ item }) => !draftItemIsReady(item)).length;
 
   async function handleImport() {
-    if (!menu) return;
+    if (!menu || needsInput > 0) return;
     setPhase("importing");
     setProgress({ done: 0, total: selectedItems.length });
     let count = 0;
@@ -161,23 +187,27 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
       const selected = cat.items.filter((_, ii) => selection[ci]?.[ii]);
       if (selected.length === 0) continue;
 
-      let category: MenuCategory | null = null;
-      try {
-        const catRes = await fetch("/api/menu/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: cat.name }),
-        });
-        if (catRes.ok) {
-          ({ category } = (await catRes.json()) as { category: MenuCategory });
-        } else {
-          console.error("[menu-extract] category create failed", cat.name, catRes.status);
+      // Reuse a category that already exists instead of creating a twin.
+      let categoryId: string | null = cat.existingCategoryId;
+      if (!categoryId) {
+        try {
+          const catRes = await fetch("/api/menu/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: cat.name }),
+          });
+          if (catRes.ok) {
+            const { category } = (await catRes.json()) as { category: MenuCategory };
+            categoryId = category.id;
+          } else {
+            console.error("[menu-extract] category create failed", cat.name, catRes.status);
+          }
+        } catch (err) {
+          console.error("[menu-extract] category create failed", cat.name, err);
         }
-      } catch (err) {
-        console.error("[menu-extract] category create failed", cat.name, err);
       }
 
-      if (!category) {
+      if (!categoryId) {
         failed += selected.length;
         processed += selected.length;
         setProgress({ done: processed, total: selectedItems.length });
@@ -186,16 +216,23 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
 
       // Create items under it
       for (const item of selected) {
+        // Guarded above by needsInput; re-checked so a null can never be sent.
+        if (item.basePrice === null || item.foodType === null) {
+          failed++;
+          processed++;
+          setProgress({ done: processed, total: selectedItems.length });
+          continue;
+        }
         try {
           const itemRes = await fetch("/api/menu/items", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              categoryId: category.id,
+              categoryId,
               name: item.name,
-              description: item.description ?? null,
+              description: item.description,
               basePrice: item.basePrice,
-              foodType: item.foodType ?? "veg",
+              foodType: item.foodType,
               imageUrl: null,
               isAvailable: true,
               variants: [],
@@ -285,7 +322,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
               <ol className="grid gap-2 sm:grid-cols-3">
                 {[
                   { icon: "upload_file", text: "Upload a clear photo or PDF" },
-                  { icon: "auto_awesome", text: "AI drafts categories, dishes & prices" },
+                  { icon: "auto_awesome", text: "AI drafts dishes and flags anything unclear" },
                   { icon: "fact_check", text: "You review before anything is saved" },
                 ].map((s) => (
                   <li
@@ -353,7 +390,7 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
                   variant="ghost"
                   size="sm"
                   className="h-11 text-brand-text"
-                  onClick={() => setSelection(selectAll(menu))}
+                  onClick={() => setSelection(defaultSelection(menu, true))}
                 >
                   Select all
                 </Button>
@@ -371,7 +408,14 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
                       className="flex min-h-11 w-full items-center gap-3 bg-surface-container-low px-5 py-2 text-left transition-colors hover:bg-surface-container"
                     >
                       <Tick state={allOn ? "on" : someOn ? "mixed" : "off"} />
-                      <span className="flex-1 text-sm font-semibold text-on-surface">{cat.name}</span>
+                      <span className="flex-1 text-sm font-semibold text-on-surface">
+                        {cat.name}
+                        {cat.existingCategoryId && (
+                          <span className="ml-2 rounded-full border border-outline-variant px-2 py-0.5 text-[11px] font-medium text-on-surface-variant">
+                            Adds to existing
+                          </span>
+                        )}
+                      </span>
                       <span className="text-xs tabular-nums text-on-surface-variant">
                         {cat.items.length} {cat.items.length === 1 ? "dish" : "dishes"}
                       </span>
@@ -380,17 +424,15 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
                     <ul>
                       {cat.items.map((item, ii) => {
                         const on = selection[ci]?.[ii] ?? false;
+                        const ready = draftItemIsReady(item);
                         return (
-                          <li key={ii}>
+                          <li key={ii} className={cn(!on && "opacity-55")}>
                             <button
                               type="button"
                               role="checkbox"
                               aria-checked={on}
                               onClick={() => toggleItem(ci, ii)}
-                              className={cn(
-                                "flex min-h-11 w-full items-start gap-3 px-5 py-2.5 text-left transition-colors hover:bg-surface-container-low",
-                                !on && "opacity-55"
-                              )}
+                              className="flex min-h-11 w-full items-start gap-3 px-5 py-2.5 text-left transition-colors hover:bg-surface-container-low"
                             >
                               <span className="mt-0.5"><Tick state={on ? "on" : "off"} /></span>
                               {item.foodType && (
@@ -400,14 +442,77 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
                                 <span className="block truncate text-sm text-on-surface">{item.name}</span>
                                 {item.description && (
                                   <span className="block truncate text-xs text-on-surface-variant">
+                                    {item.descriptionSource === "ai" && (
+                                      <span className="mr-1 font-semibold text-brand-text">AI draft ·</span>
+                                    )}
                                     {item.description}
                                   </span>
                                 )}
                               </span>
                               <span className="shrink-0 text-sm font-semibold tabular-nums text-on-surface">
-                                {item.basePrice > 0 ? formatMoney(item.basePrice) : "No price"}
+                                {item.basePrice !== null ? formatMoney(item.basePrice) : "No price"}
                               </span>
                             </button>
+
+                            {/* Notes the owner should read; text + icon, never colour alone. */}
+                            {(item.duplicateOf || item.sizeOptionsText) && (
+                              <div className="space-y-1 px-5 pb-2 pl-[52px] text-xs">
+                                {item.duplicateOf && (
+                                  <p className="flex items-center gap-1 text-on-warning-container">
+                                    <MsIcon name="content_copy" size={14} />
+                                    Already on your menu as &ldquo;{item.duplicateOf}&rdquo; — unticked
+                                  </p>
+                                )}
+                                {item.sizeOptionsText && (
+                                  <p className="flex items-center gap-1 text-on-surface-variant">
+                                    <MsIcon name="straighten" size={14} />
+                                    Sizes: {item.sizeOptionsText} — add them as variants after importing
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Fields the AI couldn't fill with confidence. */}
+                            {on && !ready && (
+                              <div className="mx-5 mb-2.5 ml-[52px] space-y-2 rounded-xl border border-warning/40 bg-warning-container/40 p-2.5">
+                                <p className="flex items-center gap-1 text-xs font-semibold text-on-warning-container">
+                                  <MsIcon name="edit_note" size={16} /> Needs your input
+                                </p>
+                                {item.foodType === null && (
+                                  <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Food type for ${item.name}`}>
+                                    {FOOD_TYPE_OPTIONS.map((opt) => (
+                                      <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => patchItem(ci, ii, { foodType: opt.value })}
+                                        className="flex h-11 items-center gap-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 text-xs font-semibold text-on-surface hover:border-brand-border"
+                                      >
+                                        <FoodTypeMarker type={opt.value} /> {opt.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {item.basePrice === null && (
+                                  <label className="flex items-center gap-2 text-xs text-on-surface-variant">
+                                    Price
+                                    <input
+                                      type="number"
+                                      inputMode="decimal"
+                                      min={1}
+                                      max={99999}
+                                      placeholder="e.g. 180"
+                                      onBlur={(e) => {
+                                        const value = Number(e.target.value);
+                                        if (Number.isFinite(value) && value > 0 && value <= 99999) {
+                                          patchItem(ci, ii, { basePrice: value });
+                                        }
+                                      }}
+                                      className="h-11 w-28 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 text-sm tabular-nums text-on-surface"
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            )}
                           </li>
                         );
                       })}
@@ -477,11 +582,16 @@ export function MenuExtractDialog({ open, onClose, onImported }: Props) {
             <Button variant="ghost" size="touch" className="px-3" onClick={reset}>
               Different file
             </Button>
+            {needsInput > 0 && (
+              <p className="text-xs text-on-warning-container" role="status">
+                {needsInput} {needsInput === 1 ? "dish needs" : "dishes need"} a price or veg/non-veg
+              </p>
+            )}
             <Button
               variant="brand"
               size="touch"
               onClick={handleImport}
-              disabled={selectedItems.length === 0}
+              disabled={selectedItems.length === 0 || needsInput > 0}
             >
               <MsIcon name="download" /> Import {selectedItems.length}{" "}
               {selectedItems.length === 1 ? "dish" : "dishes"}

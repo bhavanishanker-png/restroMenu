@@ -13,10 +13,12 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 - Cart with per-item notes, item stepper, bill breakdown
 - Checkout: name + phone, then Cash or Razorpay
 - Live order status tracker: Placed → Accepted → Preparing → Ready → Served
+- **AI menu assistant** — ask "something spicy and veg?" or "कुछ मीठा?" and get tappable dish suggestions, in the diner's own language
 
 ### Restaurant
 - **Kitchen display** — real-time order cards, sound alert on new order, one tap to advance status, amber/red urgency timers
 - **Menu manager** — add/edit/delete categories and items, drag to reorder, one-tap availability toggle
+- **AI menu import** — upload a photo or PDF of a printed menu; AI drafts the dishes, flags duplicates and anything it couldn't read, and the owner reviews before anything is saved
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
 - **Dashboard** — today's order count, revenue, average ticket
 - **Staff login** — email (owner/manager) or 4-digit PIN (kitchen/waiter)
@@ -39,6 +41,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 | Storage | Supabase Storage |
 | Payments | Razorpay |
 | State | Zustand (cart) + TanStack Query (server state) |
+| AI | Claude API (`@anthropic-ai/sdk`) — server-side only |
 | Error tracking | Sentry |
 | Deployment | Vercel |
 
@@ -70,8 +73,12 @@ ADMIN_SECRET=qbite-dev-admin-secret-change-before-prod
 RAZORPAY_KEY_ID=rzp_test_...
 RAZORPAY_KEY_SECRET=...
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_...
-ANTHROPIC_API_KEY=sk-ant-...          # AI Menu Extractor
+ANTHROPIC_API_KEY=sk-ant-...          # AI menu import + AI menu assistant (server-only)
+AI_MENU_ONBOARDING_ENABLED=true       # set "false" to switch off AI menu import
+AI_MENU_ASSISTANT_ENABLED=true        # set "false" to switch off the customer assistant
 ```
+
+Without `ANTHROPIC_API_KEY` the app works normally: the **Ask AI** button is hidden from customers and AI import returns a clear "not configured" error.
 
 ### 3. Database setup
 
@@ -139,6 +146,12 @@ src/
     admin/         # Super-admin components
     ui/            # shadcn/ui primitives + custom atoms
   lib/
+    ai/            # AI features (server-only, except draft.ts)
+      client.ts          # Anthropic client, model per feature, refusal fallback
+      guardrails.ts      # Shared AI guardrails: rate limits, kill switches, input/output checks
+      menu-onboarding.ts # AI menu import: extraction schema + checks against the existing menu
+      menu-assistant.ts  # Customer assistant agent and its read-only tools
+      draft.ts           # Client-safe "is this imported dish ready to save" rule
     pricing.ts     # All money math — the only place arithmetic on prices happens
     queries/       # Supabase data fetching
     mappers.ts     # DB row → TS type (snake_case → camelCase)
@@ -179,6 +192,15 @@ docs/
 
 **Cart** — Zustand store persisted to `localStorage`, scoped per `(restaurant_slug, table_id)`. Cart data is never trusted server-side for pricing.
 
+**AI features** — The model is treated as untrusted. Both AI features follow the same rules (`src/lib/ai/guardrails.ts`):
+- **Suggest, never act.** AI import only produces a draft the owner approves; dishes are saved through the normal menu APIs. The customer assistant only suggests dishes; the diner taps one to open the usual item sheet. No AI tool can write to the cart, orders or menu.
+- **Tenant-scoped, read-only tools.** The restaurant comes from the slug + table QR token (assistant) or the staff session (import), resolved on the server.
+- **Everything the model returns is checked in code.** Suggested dish IDs must be available dishes of this restaurant; imported prices are validated and rounded via `pricing.ts`.
+- **No money from the model.** Prices on suggestion cards come from the database; any amount the model writes is redacted, so it can never quote a wrong total.
+- **No invented health claims.** The menu has no allergen data, so allergy/diet claims are filtered and diners are told to ask staff. An imported dish is only marked veg on clear evidence (a printed marker) — never guessed from its name.
+- **Untrusted input is fenced as data**, length-capped and stripped of control characters; uploads are checked by their actual file bytes.
+- **Rate-limited and switchable.** Per IP, table and restaurant limits, plus an env kill switch per feature. Logs record counts and token usage only, never what diners typed.
+
 **Kitchen realtime** — Supabase Realtime subscription on the `orders` table. Optimistic status updates queue to `localStorage` when offline and sync on reconnect.
 
 ---
@@ -217,6 +239,13 @@ docs/
 | Ready | Your food is on its way |
 | Served | Done — enjoy! |
 
+#### Asking the menu assistant
+1. Tap **Ask AI** in the filter row (or **Ask the menu assistant** when a search finds nothing).
+2. Type what you feel like — a flavour, a budget, "for two", in any language — or tap a suggestion.
+3. Tap a suggested dish to open it, choose size and add-ons, and add it to your cart as usual.
+
+The assistant can't place orders, change your cart, or confirm allergens. For allergies or dietary needs, ask the staff.
+
 #### Tips
 - Out-of-stock items appear faded and cannot be added.
 - Use the **Veg only** filter to hide non-veg items.
@@ -241,6 +270,12 @@ docs/
 3. **Reorder** — drag any category or item to a new position.
 4. **Toggle availability** — flip the switch on any item to mark it out of stock. Customers see it greyed out immediately.
 5. **Edit / Delete** — use the kebab menu (⋮) on any item or category.
+6. **Import a menu with AI** — click **Import with AI** and upload a clear photo or PDF of your printed menu (JPG, PNG, WebP or PDF, up to 10 MB). Then review the draft:
+   - Dishes already on your menu are unticked, and existing categories are reused rather than duplicated.
+   - Dishes marked **Needs your input** are missing a price or a veg/non-veg/egg marker — fill them in; **Import** stays disabled until you do.
+   - Descriptions labelled **AI draft** were written by AI because none was printed — check them.
+   - If a dish shows sizes (e.g. Half / Full), add them as variants after importing.
+   - Nothing is saved until you click **Import**.
 
 #### Table Manager (`/dashboard/tables`)
 1. **Add a table** — click **+ Table**, enter a label (e.g. "T1", "Patio 3").

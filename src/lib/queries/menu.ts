@@ -241,3 +241,40 @@ export async function categoryBelongsTo(
   }
   return data ? "ok" : "missing";
 }
+
+/** Names already on a restaurant's menu, for reconciling an AI import against. */
+export type MenuCatalog = {
+  categories: { id: string; name: string }[];
+  items: { id: string; name: string; categoryId: string | null }[];
+};
+
+export async function fetchMenuCatalog(restaurantId: string): Promise<MenuCatalog | null> {
+  const supabase = createServerClient();
+
+  const [catResult, itemResult] = await Promise.all([
+    supabase
+      .from("menu_categories")
+      .select("id, name")
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true),
+    supabase
+      .from("menu_items")
+      .select("id, name, category_id")
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true),
+  ]);
+
+  if (catResult.error || itemResult.error) {
+    console.error("[fetchMenuCatalog]", catResult.error ?? itemResult.error);
+    return null;
+  }
+
+  return {
+    categories: (catResult.data ?? []).map((c) => ({ id: c.id as string, name: c.name as string })),
+    items: (itemResult.data ?? []).map((i) => ({
+      id: i.id as string,
+      name: i.name as string,
+      categoryId: (i.category_id as string | null) ?? null,
+    })),
+  };
+}

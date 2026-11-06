@@ -11,6 +11,8 @@ type Props = {
   onBestsellersOnlyChange: (v: boolean) => void;
   under200: boolean;
   onUnder200Change: (v: boolean) => void;
+  /** Present only when the AI menu assistant is enabled for this restaurant. */
+  onAskAssistant?: () => void;
 };
 
 type ChipProps = {
@@ -70,6 +72,7 @@ export function MenuFilters({
   vegOnly, onVegOnlyChange,
   bestsellersOnly, onBestsellersOnlyChange,
   under200, onUnder200Change,
+  onAskAssistant,
 }: Props) {
   return (
     <div className="px-margin-mobile pt-2">
@@ -124,6 +127,25 @@ export function MenuFilters({
         aria-label="Filter dishes"
         className="-mx-margin-mobile flex gap-2 overflow-x-auto px-margin-mobile [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
+        {onAskAssistant && (
+          // An action, not a toggle — so a plain button, not a FilterChip with aria-pressed.
+          <button
+            type="button"
+            onClick={onAskAssistant}
+            className="group flex min-h-[44px] shrink-0 items-center"
+          >
+            <span className="flex h-8 items-center gap-1.5 rounded-full border border-brand-border bg-brand-subtle pl-2 pr-3 text-[0.8125rem] font-semibold text-brand-text transition-transform duration-fast ease-out-quart group-active:scale-95">
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}
+                aria-hidden="true"
+              >
+                auto_awesome
+              </span>
+              Ask AI
+            </span>
+          </button>
+        )}
         <FilterChip
           active={vegOnly}
           onClick={() => onVegOnlyChange(!vegOnly)}
