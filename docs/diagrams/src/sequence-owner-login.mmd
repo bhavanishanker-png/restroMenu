@@ -1,0 +1,43 @@
+sequenceDiagram
+  autonumber
+  actor O as Owner (browser)
+  participant L as POST /api/auth/login
+  participant SA as Supabase Auth
+  participant DB as Postgres
+  participant MW as Middleware
+  participant D as Dashboard page / API route
+
+  O->>L: { method: "email", email, password }
+  Note over L: validate with zod
+  L->>SA: signInWithPassword
+  alt Auth unreachable or 5xx / 429
+    SA-->>L: error
+    L-->>O: 503 AUTH_UNAVAILABLE (not "wrong password")
+  else wrong email or password (4xx)
+    SA-->>L: error
+    L-->>O: 401 INVALID_CREDENTIALS
+  else signed in
+    SA-->>L: user
+    L->>DB: staff row for this auth user,<br/>role owner/manager, is_active
+    alt no active staff row
+      L-->>O: 403 NOT_STAFF
+    else found
+      Note over L: sign {staffId, restaurantId, role, exp: 8h}<br/>with HMAC-SHA256
+      L-->>O: 200 + Set-Cookie qbite-staff (HttpOnly, SameSite=Lax)
+    end
+  end
+
+  O->>MW: GET /dashboard/menu
+  alt no qbite-staff cookie
+    MW-->>O: redirect /login?next=/dashboard/menu
+  else cookie present
+    MW->>D: continue
+    D->>D: getStaffSession(): verify signature and expiry
+    D->>DB: staff still active? read current role
+    alt invalid, expired or staff removed
+      D-->>O: treated as signed out (401 / redirect)
+    else valid
+      Note over D: role comes from DB, not the cookie.<br/>restaurantId scopes every query.
+      D-->>O: page rendered for this restaurant
+    end
+  end

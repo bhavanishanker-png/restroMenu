@@ -4,7 +4,7 @@ QBite is a multi-tenant QR ordering platform: diners scan a table QR, order from
 
 This document shows how the pieces fit together. The *why* behind each design choice is in the [Architecture Decision Records](adr/README.md); links to them are inline.
 
-Formal UML views (use case, class, component, activity and deployment diagrams) are in [uml.md](uml.md).
+The complete set of UML diagrams (use case, class, component, deployment, state machine, activity, and sequence diagrams for diners, kitchen staff and owners) is in [uml.md](uml.md).
 
 ---
 

@@ -1,0 +1,45 @@
+sequenceDiagram
+  autonumber
+  actor O as Owner
+  participant UI as MenuExtractDialog (browser)
+  participant X as POST /api/ai/menu-extract
+  participant G as guardrails.ts
+  participant DB as Postgres
+  participant C as Claude API
+  participant M as POST /api/menu/categories<br/>POST /api/menu/items
+
+  O->>UI: choose menu photo or PDF
+  UI->>X: multipart upload
+  X->>X: requireRole(owner, manager)<br/>restaurantId from session
+  X->>G: kill switch on? rate limit<br/>(10/h per restaurant, 20/h per IP)
+  alt disabled or limited
+    X-->>UI: 503 / 429
+  end
+  X->>G: type, size ≤ 10 MB,<br/>magic bytes match declared type
+  alt bad file
+    X-->>UI: 400
+  end
+  X->>DB: fetchMenuCatalog(restaurantId)<br/>existing categories and dishes
+  X->>C: image + system prompt<br/>(menu text is untrusted data),<br/>structured output schema
+  C-->>X: extraction JSON
+  alt refusal, cut off, invalid JSON or "not a menu"
+    X-->>UI: error with a clear message
+  else valid
+    X->>X: zod re-validate, then reconcileDraft():<br/>• match existing categories<br/>• flag duplicates by name<br/>• round and range-check prices (pricing.ts)<br/>• veg only from a printed marker<br/>• drop AI text with health claims
+    X-->>UI: 200 { draft }  (nothing saved yet)
+  end
+
+  UI-->>O: review screen: duplicates unticked,<br/>missing price / veg marker flagged
+  O->>UI: fill missing prices and food types, untick
+  Note over UI: Import is disabled while any<br/>selected dish is missing price or food type
+  O->>UI: Import
+  loop each selected category
+    opt category is new
+      UI->>M: create category
+    end
+    loop each selected dish
+      UI->>M: create item (zod, requireRole,<br/>category must belong to restaurant)
+      M->>DB: INSERT scoped to restaurant_id
+    end
+  end
+  UI-->>O: "N imported, M failed" (failures are counted, not hidden)

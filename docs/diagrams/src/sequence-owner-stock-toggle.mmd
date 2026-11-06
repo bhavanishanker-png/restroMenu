@@ -1,0 +1,33 @@
+sequenceDiagram
+  autonumber
+  actor O as Owner
+  participant UI as Menu manager (browser)
+  participant P as PATCH /api/menu/items/[id]
+  participant DB as Postgres
+  actor D as Diner
+  participant MP as Menu page (server)
+  participant OR as POST /api/orders
+
+  O->>UI: toggle "Available" off
+  UI->>UI: update the list immediately (optimistic)
+  UI->>P: { isAvailable: false }
+  P->>P: requireRole(owner, manager), zod
+  P->>DB: does the item belong to session.restaurantId?
+  alt not this restaurant's item
+    P-->>UI: 404
+  else owned
+    P->>DB: UPDATE menu_items SET is_available = false<br/>WHERE id AND restaurant_id
+    P-->>UI: 200
+  end
+  alt request failed
+    UI->>UI: roll back the toggle
+    UI-->>O: toast "Couldn't update … still available"
+  end
+
+  D->>MP: open or reload the menu
+  MP->>DB: menu for slug + table token
+  MP-->>D: dish shown at 40% opacity,<br/>"Unavailable", not tappable
+
+  D->>OR: order from a cart filled earlier with that dish
+  OR->>DB: load items, check is_available
+  OR-->>D: 400 ITEM_UNAVAILABLE (no order created)

@@ -30,7 +30,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 
 ## Design Decisions
 
-How the system works and why. **[Architecture overview →](docs/architecture.md)** (diagrams, flows, scaling limits, failure modes) · **[UML diagrams →](docs/uml.md)** (use case, class, component, activity, deployment)
+How the system works and why. **[Architecture overview →](docs/architecture.md)** (diagrams, flows, scaling limits, failure modes) · **[UML diagrams →](docs/uml.md)** (13 diagrams: use case, class, component, deployment, state machine, activity, sequence)
 
 | Problem | Decision | ADR |
 |---|---|---|
@@ -58,7 +58,7 @@ How the system works and why. **[Architecture overview →](docs/architecture.md
 
 ![ER diagram](docs/diagrams/er-data-model.png)
 
-More diagrams (order state machine, kitchen flow, class, component, activity, deployment) are in [architecture.md](docs/architecture.md) and [uml.md](docs/uml.md).
+All UML diagrams, including the kitchen and restaurant-owner flows, are in [uml.md](docs/uml.md). The narrative, scaling limits and failure modes are in [architecture.md](docs/architecture.md).
 
 ---
 
