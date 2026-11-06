@@ -1,6 +1,6 @@
 # QBite — QR Restaurant Ordering Platform
 
-A multi-tenant web app where customers scan a QR code at their table, browse the menu, and place orders — no app install, no login. Orders land instantly on the kitchen display. One deployment, many restaurants.
+A multi-tenant web app where customers scan a QR code at their table, browse the menu, and place orders — no app install, no login. Orders reach the kitchen display within seconds. One deployment, many restaurants.
 
 ---
 
@@ -16,7 +16,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 - **AI menu assistant** — ask "something spicy and veg?" or "कुछ मीठा?" and get tappable dish suggestions, in the diner's own language
 
 ### Restaurant
-- **Kitchen display** — real-time order cards, sound alert on new order, one tap to advance status, amber/red urgency timers
+- **Kitchen display** — live order cards, sound alert on new order, one tap to advance status, amber/red urgency timers
 - **Menu manager** — add/edit/delete categories and items, drag to reorder, one-tap availability toggle
 - **AI menu import** — upload a photo or PDF of a printed menu; AI drafts the dishes, flags duplicates and anything it couldn't read, and the owner reviews before anything is saved
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
@@ -25,6 +25,24 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 
 ### Platform
 - Super-admin panel to onboard and manage restaurants
+
+---
+
+## Design Decisions
+
+How the system works and why. **[Architecture overview →](docs/architecture.md)** (diagrams, flows, scaling limits, failure modes)
+
+| Problem | Decision | ADR |
+|---|---|---|
+| Many restaurants, one deployment, zero data leaks | Shared Postgres; server-derived `restaurant_id` on every query, RLS as backstop | [0001](docs/adr/0001-shared-database-multi-tenancy.md) |
+| A tampered request or a menu price change must never alter a bill | Server reprices every order; order lines snapshot name and price | [0002](docs/adr/0002-server-side-pricing-and-snapshots.md) |
+| Flaky networks cause double orders | Client idempotency key + unique constraint, race-safe | [0003](docs/adr/0003-idempotent-order-creation.md) |
+| Several devices update one order | One-way state machine, compare-and-set, audit log | [0004](docs/adr/0004-order-state-machine.md) |
+| Short order numbers broke on day two | Day-scoped uniqueness + per-restaurant advisory lock | [0005](docs/adr/0005-daily-order-numbers.md) |
+| PIN login on shared tablets, instant revocation | Signed cookie for identity, staff row checked every request | [0006](docs/adr/0006-staff-sessions.md) |
+| Realtime silently delivered nothing to staff | Tenant-scoped polling; Realtime only nudges | [0007](docs/adr/0007-kitchen-board-polling.md) |
+| Kitchen wifi drops | Optimistic updates, persisted queue, server wins | [0008](docs/adr/0008-offline-kitchen-display.md) |
+| LLMs can be wrong or manipulated | AI drafts and suggests; code validates; humans approve writes | [0009](docs/adr/0009-ai-as-untrusted-component.md) |
 
 ---
 
@@ -37,7 +55,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 | Styling | Tailwind CSS + shadcn/ui |
 | Database | Supabase (Postgres + RLS) |
 | Auth | Supabase Auth + custom PIN login |
-| Realtime | Supabase Realtime |
+| Realtime | Polling + Supabase Realtime as an accelerator |
 | Storage | Supabase Storage |
 | Payments | Razorpay |
 | State | Zustand (cart) + TanStack Query (server state) |
@@ -201,9 +219,7 @@ docs/
 - **Untrusted input is fenced as data**, length-capped and stripped of control characters; uploads are checked by their actual file bytes.
 - **Rate-limited and switchable.** Per IP, table and restaurant limits, plus an env kill switch per feature. Logs record counts and token usage only, never what diners typed.
 
-**Kitchen realtime** — Supabase Realtime subscription on the `orders` table. Optimistic status updates queue to `localStorage` when offline and sync on reconnect.
-
-**Design decisions** — The reasoning behind each of these (options considered, trade-offs, known limitations, scaling limits) is written up as Architecture Decision Records in [`docs/adr/`](docs/adr/README.md).
+**Kitchen board** — Polls a tenant-scoped server route every 8 s; Supabase Realtime only triggers an earlier poll, because staff cookie sessions aren't visible to RLS. Optimistic status updates queue to `localStorage` when offline and sync on reconnect. See [ADR 0007](docs/adr/0007-kitchen-board-polling.md).
 
 ---
 
