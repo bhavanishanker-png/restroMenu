@@ -76,11 +76,6 @@ flowchart LR
 
 ## 2. Order lifecycle
 
-![order state machine](diagrams/order-state-machine.png)
-
-<details>
-<summary>Mermaid source</summary>
-
 ```mermaid
 stateDiagram-v2
   [*] --> placed: POST /api/orders
@@ -96,8 +91,6 @@ stateDiagram-v2
   ready --> cancelled
   cancelled --> [*]
 ```
-
-</details>
 
 - Transitions are defined once (`ORDER_FLOW` in `src/types/index.ts`) and used by both the API and the kitchen UI.
 - Any other transition is rejected with **409**. An update only applies if the order is still in the status it was validated against (compare-and-set), so two devices can't overwrite each other.
@@ -176,11 +169,6 @@ Key points:
 
 ## 4. Flow: the kitchen advances an order
 
-![sequence kitchen advance](diagrams/sequence-kitchen-advance.png)
-
-<details>
-<summary>Mermaid source</summary>
-
 ```mermaid
 sequenceDiagram
   autonumber
@@ -222,8 +210,6 @@ sequenceDiagram
     Note over KD: on reconnect replay the queue. 409 or 404 means the server wins.
   end
 ```
-
-</details>
 
 Why polling, not Realtime: Supabase Realtime filters rows through RLS using `auth.uid()`. Staff sign in with a signed cookie (to support PIN login on shared tablets), so to the database the browser is anonymous and receives nothing. A server route that reads with the service role and scopes to the session's restaurant is the reliable path. Realtime is kept only to trigger an earlier poll. See [ADR 0006](adr/0006-staff-sessions.md), [ADR 0007](adr/0007-kitchen-board-polling.md) and [ADR 0008](adr/0008-offline-kitchen-display.md).
 

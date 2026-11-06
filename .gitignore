@@ -43,3 +43,10 @@ stitch_*/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Rendered diagrams: only the ones shown in README.md are committed.
+# The rest render from Mermaid source in docs/uml.md and docs/architecture.md.
+docs/diagrams/*.png
+!docs/diagrams/system-context.png
+!docs/diagrams/sequence-place-order.png
+!docs/diagrams/er-data-model.png

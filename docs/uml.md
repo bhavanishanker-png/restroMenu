@@ -23,11 +23,6 @@ Mermaid has no native use case or deployment syntax, so those two use flowchart 
 
 Who can do what. Staff roles nest: a manager can do everything a waiter or kitchen user can, and an owner everything a manager can (enforced by `requireRole()` in `src/lib/auth.ts` and the `roles` lists in `DashboardNav.tsx`).
 
-![use case](diagrams/use-case.png)
-
-<details>
-<summary>Mermaid source</summary>
-
 ```mermaid
 flowchart LR
   diner["👤 Diner<br/>(no login)"]
@@ -82,8 +77,6 @@ flowchart LR
   uc21 -.->|"«include»"| uc20
 ```
 
-</details>
-
 ---
 
 ## 2. Class diagram — domain model
@@ -92,11 +85,6 @@ The types in `src/types/index.ts`, which mirror `docs/schema.sql`. Fields are tr
 - `OrderItem` holds **no reference to price data** in `MenuItem`. It is a snapshot ([ADR 0002](adr/0002-server-side-pricing-and-snapshots.md)).
 - `CartLine` and `PriceBreakdown` are client/compute shapes, not tables.
 - Every tenant-owned class carries `restaurantId`.
-
-![class domain model](diagrams/class-domain-model.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 classDiagram
@@ -278,18 +266,11 @@ classDiagram
   OrderItem ..> CartLine : snapshot of
 ```
 
-</details>
-
 ---
 
 ## 3. Class diagram — server modules
 
 The modules are plain TypeScript modules, not classes, so each box is drawn as a «module» with its exported functions. Arrows are "uses" dependencies. The important property is direction: route handlers depend on `lib/`, `lib/` never depends on routes, and **only `pricing.ts` does money arithmetic**.
-
-![class server modules](diagrams/class-server-modules.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 classDiagram
@@ -424,18 +405,11 @@ classDiagram
   queries ..> supabaseServer
 ```
 
-</details>
-
 ---
 
 ## 4. Component diagram
 
 The deployable pieces and the interfaces between them. The dashed boundary is the trust boundary: everything in the browser is untrusted, and the service-role key exists only inside the server components.
-
-![component](diagrams/component.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 flowchart TB
@@ -491,18 +465,11 @@ flowchart TB
   CustomerUI -- "checkout modal" --> Razorpay
 ```
 
-</details>
-
 ---
 
 ## 5. Activity diagram — `POST /api/orders`
 
 Every decision the route makes, in order (`src/app/api/orders/route.ts`, "Step 1" to "Step 9"). Swimlanes: the route handler and Postgres. Note the two idempotency exits that both return **200** with the existing order.
-
-![activity place order](diagrams/activity-place-order.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 flowchart TD
@@ -537,18 +504,11 @@ flowchart TD
   pay -- no --> ok201[/"201 new order"/] --> stop((◉))
 ```
 
-</details>
-
 ---
 
 ## 6. Activity diagram — Razorpay webhook
 
 Payment state only changes after the signature is verified, and the handler is safe to receive the same event twice: a replay finds the row by its updated `payment_ref` and sees it is already paid (`src/app/api/payments/webhook/route.ts`).
-
-![activity razorpay webhook](diagrams/activity-razorpay-webhook.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 flowchart TD
@@ -574,8 +534,6 @@ flowchart TD
   wr -- yes --> ok[/"200 OK"/] --> stop((◉))
 ```
 
-</details>
-
 The response codes are deliberate: a **500 asks Razorpay to retry** (used when a captured payment could be lost), while a 200 stops retries for events that can never succeed.
 
 ---
@@ -583,11 +541,6 @@ The response codes are deliberate: a **500 asks Razorpay to retry** (used when a
 ## 7. Deployment diagram
 
 Where each piece runs in production.
-
-![deployment](diagrams/deployment.png)
-
-<details>
-<summary>Mermaid source</summary>
 
 ```mermaid
 flowchart LR
@@ -629,8 +582,6 @@ flowchart LR
   RZ -- "webhook" --> Fn
   Fn -- "HTTPS" --> AN
 ```
-
-</details>
 
 **Deployment notes**
 - Secrets live only in Vercel's server environment. `NEXT_PUBLIC_*` variables (Supabase URL, anon key, Razorpay key id) are the only values shipped to browsers.

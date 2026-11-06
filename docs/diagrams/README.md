@@ -1,6 +1,6 @@
 # Diagram images
 
-PNGs rendered from the Mermaid sources in `src/` (the same code that sits in a collapsible "Mermaid source" block under each image in `docs/architecture.md` and `docs/uml.md`).
+Mermaid sources for every diagram are in `src/`. Only the three PNGs shown in the top-level README are committed (`system-context`, `sequence-place-order`, `er-data-model`). The other PNGs are git-ignored; GitHub draws those diagrams straight from the Mermaid blocks in `docs/uml.md` and `docs/architecture.md`.
 
 To regenerate after editing a diagram, update both the `.mmd` file and the block in the doc, then run from the repo root:
 
