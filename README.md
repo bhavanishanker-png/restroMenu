@@ -203,6 +203,8 @@ docs/
 
 **Kitchen realtime** — Supabase Realtime subscription on the `orders` table. Optimistic status updates queue to `localStorage` when offline and sync on reconnect.
 
+**Design decisions** — The reasoning behind each of these (options considered, trade-offs, known limitations, scaling limits) is written up as Architecture Decision Records in [`docs/adr/`](docs/adr/README.md).
+
 ---
 
 ## Five Things That Break This App If Done Wrong
