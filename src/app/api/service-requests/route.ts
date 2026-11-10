@@ -17,7 +17,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     "unknown";
 
   // 10 requests per IP per minute — enough for any table, blocks spam
-  if (!checkRateLimit(`service-requests:${ip}`, 10, 60_000)) {
+  if (!(await checkRateLimit(`service-requests:${ip}`, 10, 60_000))) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait." } },
       { status: 429 }

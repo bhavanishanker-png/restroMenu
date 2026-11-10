@@ -39,7 +39,7 @@ Where code is more reliable than a model, code does the work: duplicate detectio
 - ✅ The rules are testable without calling the model (`src/lib/ai/*.test.ts`).
 - ⚠️ Some legitimate value is given up: the assistant can't add to the cart in one step, and owners must confirm uncertain veg markers.
 - ⚠️ Regex-based filters (currency, health claims) are English-centric. The system prompt covers other languages, but the code backstop is weaker there.
-- ⚠️ Rate limits are in memory until the Redis migration, so on serverless they're approximate.
+- ✅ Rate limits use shared Redis counters. If Redis is unreachable they fall back to per-instance in-memory limits, so they are approximate only during an outage.
 - 📌 Next step: an evaluation set of real menus and diner questions, to measure accuracy before changing prompts or models.
 
 ## Where it lives

@@ -68,7 +68,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Each import is one large model call; cap it per restaurant and per IP.
-  const limited = enforceAiRateLimits([
+  const limited = await enforceAiRateLimits([
     { key: `ai-import:r:${session.restaurantId}`, limit: 10, windowMs: 60 * 60_000 },
     { key: `ai-import:ip:${clientIp(req.headers)}`, limit: 20, windowMs: 60 * 60_000 },
   ]);

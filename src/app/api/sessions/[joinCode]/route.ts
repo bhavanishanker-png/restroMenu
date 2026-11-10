@@ -18,7 +18,7 @@ export async function GET(
   // 900k. Without a limit, walking the codes leaks the token of every open
   // session — enough to order to that table from anywhere. 10/min is plenty
   // for a guest mistyping a code.
-  if (!checkRateLimit(`session-join:${ip}`, 10, 60_000)) {
+  if (!(await checkRateLimit(`session-join:${ip}`, 10, 60_000))) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many attempts. Please wait a minute." } },
       { status: 429 }

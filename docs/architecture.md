@@ -288,7 +288,7 @@ What to do, in order of effort:
 4. **Read replica** for reports and dashboards, keeping the primary for order writes.
 
 Other limits to know:
-- **Rate limits are in memory.** On serverless, each instance counts separately, so limits are approximate. Moving them to Redis makes them exact.
+- **Rate limits use Redis (Upstash)** when `UPSTASH_REDIS_REST_*` is set, so every serverless instance shares one counter. If Redis is down or slow (over 1 s), a request falls back to a per-instance in-memory limit and logs it: weaker for a moment, never unlimited, and an outage never blocks ordering.
 - **Database connections.** `supabase-js` talks to Postgres over HTTP through PostgREST, which pools connections, so serverless fan-out doesn't open a Postgres connection per function instance.
 - **Order-number lock.** Serialised per restaurant only. Contention is one restaurant's simultaneous checkouts, never platform-wide.
 - **Noisy tenants.** All restaurants share one database. A very large tenant can be moved to its own project later; the `restaurant_id` column makes that mechanical.
@@ -317,4 +317,4 @@ Stated in the ADRs, collected here:
 - The status update and its `order_events` insert are separate statements, not one transaction ([0004](adr/0004-order-state-machine.md)).
 - The order-number business day is UTC, so in India numbers reset at 05:30 local time ([0005](adr/0005-daily-order-numbers.md)).
 - Kitchen and tracker polling is the first scaling limit (section 6).
-- Rate limits are per instance until moved to Redis.
+- Rate limits are per instance only while Redis is unconfigured or unreachable.

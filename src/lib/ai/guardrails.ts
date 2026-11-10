@@ -61,13 +61,13 @@ export const AI_LIMITS = {
 type RateRule = { key: string; limit: number; windowMs: number };
 
 /**
- * Applies every rule; the first that fails returns a 429. Built on the
- * in-memory limiter, so on serverless each instance counts separately —
- * the Redis migration in rate-limit.ts makes these exact.
+ * Applies every rule; the first that fails returns a 429. Counters live in
+ * Redis when configured, so they are shared across serverless instances
+ * (see rate-limit.ts for the in-memory fallback).
  */
-export function enforceAiRateLimits(rules: RateRule[]): NextResponse | null {
+export async function enforceAiRateLimits(rules: RateRule[]): Promise<NextResponse | null> {
   for (const rule of rules) {
-    if (!checkRateLimit(rule.key, rule.limit, rule.windowMs)) {
+    if (!(await checkRateLimit(rule.key, rule.limit, rule.windowMs))) {
       return aiErrorResponse(
         "RATE_LIMITED",
         "Too many AI requests. Please wait a minute and try again.",

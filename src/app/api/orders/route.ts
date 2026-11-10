@@ -181,7 +181,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     req.headers.get("x-real-ip") ??
     "unknown";
 
-  if (!checkRateLimit(`orders:${ip}`, 20, 60_000)) {
+  if (!(await checkRateLimit(`orders:${ip}`, 20, 60_000))) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
       { status: 429 }

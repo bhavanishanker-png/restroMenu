@@ -34,7 +34,7 @@ Option 4.
 - ✅ One session model for password and PIN logins.
 - ⚠️ One extra indexed query per request. Acceptable; it's the price of revocation.
 - ⚠️ **Supabase Realtime can't see these users.** RLS policies identify staff via `auth.uid()`, which a custom cookie never sets, so the browser's anon client reads no orders. This forced the polling design in [0007](0007-kitchen-board-polling.md).
-- ⚠️ The PIN rate limiter is in memory, so on serverless each instance counts separately. Moving it to Redis makes the limit exact.
+- ✅ The PIN rate limiter uses shared Redis counters, so the 5-attempts limit holds across serverless instances. (Falls back to per-instance in memory if Redis is unavailable.)
 
 ## Where it lives
 

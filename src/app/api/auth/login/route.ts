@@ -133,7 +133,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     "unknown";
 
   // 5 attempts per IP per 10 minutes.
-  if (!checkRateLimit(`pin:${ip}`, 5, 10 * 60_000)) {
+  if (!(await checkRateLimit(`pin:${ip}`, 5, 10 * 60_000))) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many attempts. Try again in 10 minutes." } },
       { status: 429 }

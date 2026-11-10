@@ -63,7 +63,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Customer-facing and pay-per-call: capped per IP, per table and per restaurant.
-  const limited = enforceAiRateLimits([
+  const limited = await enforceAiRateLimits([
     { key: `ai-chat:ip:${clientIp(req.headers)}`, limit: 15, windowMs: 5 * 60_000 },
     { key: `ai-chat:t:${token}`, limit: 40, windowMs: 60 * 60_000 },
     { key: `ai-chat:r:${slug}`, limit: 400, windowMs: 60 * 60_000 },

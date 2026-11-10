@@ -521,7 +521,7 @@ flowchart LR
 
 **Deployment notes**
 - Secrets live only in Vercel's server environment. `NEXT_PUBLIC_*` variables (Supabase URL, anon key, Razorpay key id) are the only values shipped to browsers.
-- Serverless instances don't share memory, so the in-memory rate limiter in `src/lib/rate-limit.ts` is per instance. Moving it to Redis is listed in [architecture.md §8](architecture.md#8-known-gaps).
+- Rate-limit counters live in Upstash Redis (`UPSTASH_REDIS_REST_URL` / `_TOKEN`), shared by all serverless instances. Without it, `src/lib/rate-limit.ts` falls back to a per-instance in-memory counter.
 
 ---
 

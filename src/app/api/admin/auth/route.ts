@@ -12,7 +12,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     req.headers.get("x-real-ip") ??
     "unknown";
-  if (!checkRateLimit(`admin-auth:${ip}`, 5, 15 * 60_000)) {
+  if (!(await checkRateLimit(`admin-auth:${ip}`, 5, 15 * 60_000))) {
     return NextResponse.json(
       { error: { code: "RATE_LIMITED", message: "Too many attempts. Try again in 15 minutes." } },
       { status: 429 }
