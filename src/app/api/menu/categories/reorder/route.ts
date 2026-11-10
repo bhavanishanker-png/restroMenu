@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
+import { invalidatesPublicMenu } from "@/lib/queries/menu";
 
 const schema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), sortOrder: z.number().int().min(0) })).min(1),
 });
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePost(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager"]);
   if (guard) return guard;
 
@@ -71,3 +72,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = invalidatesPublicMenu(handlePost);

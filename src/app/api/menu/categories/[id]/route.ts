@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuCategory } from "@/lib/mappers";
 import type { DbMenuCategory } from "@/types/db";
+import { invalidatesPublicMenu } from "@/lib/queries/menu";
 
 // ---------------------------------------------------------------- PATCH /api/menu/categories/[id]
 
@@ -12,7 +13,7 @@ const patchSchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
 });
 
-export async function PATCH(
+async function handlePatch(
   req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
@@ -77,7 +78,7 @@ export async function PATCH(
 
 // ---------------------------------------------------------------- DELETE /api/menu/categories/[id]
 
-export async function DELETE(
+async function handleDelete(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
@@ -103,3 +104,7 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+
+export const PATCH = invalidatesPublicMenu(handlePatch);
+
+export const DELETE = invalidatesPublicMenu(handleDelete);

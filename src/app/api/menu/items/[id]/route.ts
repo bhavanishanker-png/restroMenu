@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuItem } from "@/lib/mappers";
-import { categoryBelongsTo } from "@/lib/queries/menu";
+import { categoryBelongsTo, invalidatesPublicMenu } from "@/lib/queries/menu";
 import type { DbMenuItem } from "@/types/db";
 
 function dbError(message: string): NextResponse {
@@ -38,7 +38,7 @@ const patchSchema = z.object({
   addonGroupIds: z.array(z.string().uuid()).optional(),
 });
 
-export async function PATCH(
+async function handlePatch(
   req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
@@ -208,7 +208,7 @@ export async function PATCH(
 
 // ---------------------------------------------------------------- DELETE /api/menu/items/[id]
 
-export async function DELETE(
+async function handleDelete(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
@@ -234,3 +234,7 @@ export async function DELETE(
 
   return NextResponse.json({ ok: true });
 }
+
+export const PATCH = invalidatesPublicMenu(handlePatch);
+
+export const DELETE = invalidatesPublicMenu(handleDelete);

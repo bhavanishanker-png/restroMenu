@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { toRestaurant } from "@/lib/mappers";
 import type { DbRestaurant } from "@/types/db";
+import { revalidateRestaurantSlugs } from "@/lib/queries/menu";
 
 // ---------------------------------------------------------------- GET /api/admin/restaurants
 
@@ -170,6 +171,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
+
+  // A customer may have scanned this slug before it existed; drop the cached "not found".
+  revalidateRestaurantSlugs();
 
   return NextResponse.json(
     { restaurant: toRestaurant(restaurant as DbRestaurant) },

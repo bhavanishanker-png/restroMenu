@@ -59,3 +59,6 @@ evals/menu-extract/cases/*.webp
 evals/menu-extract/cases/*.gif
 evals/menu-extract/cases/*.pdf
 evals/menu-extract/excluded/
+
+# Personal interview notes (not part of the project)
+interview-prep.md

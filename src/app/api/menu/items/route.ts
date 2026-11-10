@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuItem } from "@/lib/mappers";
-import { categoryBelongsTo } from "@/lib/queries/menu";
+import { categoryBelongsTo, invalidatesPublicMenu } from "@/lib/queries/menu";
 import type { DbMenuItem } from "@/types/db";
 
 // ---------------------------------------------------------------- GET /api/menu/items?categoryId=
@@ -65,7 +65,7 @@ const createSchema = z.object({
   addonGroupIds: z.array(z.string().uuid()).default([]),
 });
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePost(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager"]);
   if (guard) return guard;
 
@@ -205,3 +205,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     { status: 201 }
   );
 }
+
+export const POST = invalidatesPublicMenu(handlePost);

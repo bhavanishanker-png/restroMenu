@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toRestaurantSettings } from "@/lib/mappers";
 import type { DbRestaurantSettings } from "@/types/db";
+import { invalidatesPublicMenu } from "@/lib/queries/menu";
 
 // ---------------------------------------------------------------- GET /api/settings
 
@@ -73,7 +74,7 @@ const patchSchema = z.object({
     .optional(),
 });
 
-export async function PATCH(req: NextRequest): Promise<NextResponse> {
+async function handlePatch(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner"]);
   if (guard) return guard;
 
@@ -173,3 +174,5 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     ...(brandingChanged ? { logoUrl: body.logoUrl ?? null } : {}),
   });
 }
+
+export const PATCH = invalidatesPublicMenu(handlePatch);

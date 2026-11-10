@@ -1,8 +1,13 @@
+import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
+import type { NextResponse } from "next/server";
+import { getStaffSession } from "@/lib/auth";
 import { format, getDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { createServerClient } from "@/lib/supabase/server";
 import { toAddonGroup, toRestaurant, toRestaurantSettings } from "@/lib/mappers";
 import type {
+  MenuCategory,
   MenuCategoryWithItems,
   MenuItem,
   PublicMenu,
@@ -101,43 +106,145 @@ function mapCategory(raw: RawCategory): MenuCategoryWithItems {
 }
 
 function isCategoryAvailableNow(
-  cat: DbMenuCategory,
+  cat: Pick<MenuCategory, "activeDays" | "availableFrom" | "availableTo">,
   timezone: string,
   now: Date
 ): boolean {
   const zonedNow = toZonedTime(now, timezone);
-  if (cat.active_days && cat.active_days.length > 0) {
-    if (!cat.active_days.includes(getDay(zonedNow))) return false;
+  if (cat.activeDays && cat.activeDays.length > 0) {
+    if (!cat.activeDays.includes(getDay(zonedNow))) return false;
   }
-  if (cat.available_from && cat.available_to) {
+  if (cat.availableFrom && cat.availableTo) {
     const currentTime = format(zonedNow, "HH:mm");
-    if (currentTime < cat.available_from || currentTime >= cat.available_to) return false;
+    if (currentTime < cat.availableFrom || currentTime >= cat.availableTo) return false;
   }
   return true;
 }
 
-// ---------------------------------------------------------------- public API
+// ---------------------------------------------------------------- public menu cache
+//
+// Every QR scan, cart, checkout and AI chat message reads the full menu, and
+// the menu rarely changes, so it is cached in the Next.js Data Cache.
+//
+//  - Cached: restaurant + settings + categories/items for one restaurant.
+//  - NOT cached: the table QR token check, and the breakfast/lunch time-window
+//    filter — both run on every request.
+//  - Never used for money: POST /api/orders reprices from menu_items directly.
+//
+// Freshness: every route that writes menu data calls revalidatePublicMenu()
+// (or is wrapped in invalidatesPublicMenu()), so owner edits show up on the
+// next request. MENU_CACHE_SECONDS only bounds staleness for edits made
+// outside the app, e.g. directly in the Supabase dashboard.
+//
+// Errors are thrown inside the cached loaders, so a failed read is never
+// cached — only a successful result or a genuine "not found".
 
-export type FetchMenuResult =
-  | { ok: true; menu: PublicMenu }
-  | { ok: false; code: "RESTAURANT_NOT_FOUND" | "TABLE_NOT_FOUND" | "MENU_ERROR" };
+const MENU_CACHE_SECONDS = 60;
+const RESTAURANT_SLUGS_TAG = "restaurant-slugs";
 
-export async function fetchPublicMenu(
-  slug: string,
-  tableToken: string | null
-): Promise<FetchMenuResult> {
+export function menuCacheTag(restaurantId: string): string {
+  return `menu:${restaurantId}`;
+}
+
+/** Call after any write to a restaurant's menu, settings or profile. */
+export function revalidatePublicMenu(restaurantId: string): void {
+  revalidateTag(menuCacheTag(restaurantId));
+}
+
+/**
+ * Wraps a staff route handler that writes menu data. After the handler
+ * finishes — success, error response or throw — the signed-in staff member's
+ * menu cache is cleared. Clearing on failure too is deliberate: a multi-step
+ * write (item, then variants, then add-ons) can fail halfway, and the cache
+ * must then show what is actually in the database.
+ */
+export function invalidatesPublicMenu<Args extends unknown[]>(
+  handler: (...args: Args) => Promise<NextResponse>
+): (...args: Args) => Promise<NextResponse> {
+  return async (...args: Args) => {
+    try {
+      return await handler(...args);
+    } finally {
+      // Unauthenticated requests get no session, wrote nothing, and clear nothing.
+      const session = await getStaffSession().catch((err: unknown) => {
+        console.error("[invalidatesPublicMenu] session lookup failed; menu cache not cleared", err);
+        return null;
+      });
+      if (session) revalidatePublicMenu(session.restaurantId);
+    }
+  };
+}
+
+/** Call after a restaurant is created, renamed (slug) or (de)activated. */
+export function revalidateRestaurantSlugs(): void {
+  revalidateTag(RESTAURANT_SLUGS_TAG);
+}
+
+type CachedMenuData = {
+  restaurant: Restaurant;
+  settings: RestaurantSettings;
+  /** All active categories; the time-window filter is applied per request. */
+  categories: MenuCategoryWithItems[];
+};
+
+async function loadRestaurantIdBySlug(slug: string): Promise<{ restaurantId: string | null }> {
   const supabase = createServerClient();
-
-  const { data: rawRestaurant, error: restaurantError } = await supabase
+  const { data, error } = await supabase
     .from("restaurants")
-    .select("*, restaurant_settings(*)")
+    .select("id")
     .eq("slug", slug)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
-  if (restaurantError || !rawRestaurant) {
-    return { ok: false, code: "RESTAURANT_NOT_FOUND" };
+  if (error) throw new Error(`restaurant lookup failed: ${error.message}`);
+  // Wrapped in an object: the Data Cache does not store a bare null.
+  return { restaurantId: data ? (data.id as string) : null };
+}
+
+async function loadMenuData(restaurantId: string): Promise<CachedMenuData | null> {
+  const supabase = createServerClient();
+
+  const [restaurantResult, menuResult] = await Promise.all([
+    supabase
+      .from("restaurants")
+      .select("*, restaurant_settings(*)")
+      .eq("id", restaurantId)
+      .eq("is_active", true)
+      .maybeSingle(),
+    // Full menu — one nested query
+    supabase
+      .from("menu_categories")
+      .select(
+        `
+      id, restaurant_id, name, sort_order, available_from, available_to, active_days, is_active, created_at,
+      menu_items(
+        id, restaurant_id, category_id, name, description, image_url,
+        base_price, cost_price, food_type, spice_level, prep_minutes, tax_rate,
+        kitchen_station, tags, is_available, sort_order, is_active,
+        item_variants(id, item_id, name, price_delta, is_default, sort_order),
+        item_addon_groups(
+          addon_groups(
+            id, restaurant_id, name, min_select, max_select,
+            addons(id, group_id, name, price)
+          )
+        )
+      )
+    `
+      )
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true)
+      .order("sort_order"),
+  ]);
+
+  if (restaurantResult.error) {
+    throw new Error(`restaurant load failed: ${restaurantResult.error.message}`);
   }
+  if (menuResult.error) {
+    throw new Error(`menu load failed: ${menuResult.error.message}`);
+  }
+
+  const rawRestaurant = restaurantResult.data;
+  if (!rawRestaurant) return null;
 
   const restaurant: Restaurant = toRestaurant(rawRestaurant);
 
@@ -158,60 +265,102 @@ export async function fetchPublicMenu(
         autoAcceptOrders: false,
       };
 
-  // Optionally resolve table
-  let table: PublicMenu["table"] = null;
-  if (tableToken) {
-    const { data: rawTable } = await supabase
-      .from("restaurant_tables")
-      .select("id, label")
-      .eq("qr_token", tableToken)
-      .eq("restaurant_id", restaurant.id)
-      .eq("is_active", true)
-      .single();
+  return {
+    restaurant,
+    settings,
+    categories: ((menuResult.data ?? []) as RawCategory[]).map(mapCategory),
+  };
+}
 
-    if (!rawTable) {
-      return { ok: false, code: "TABLE_NOT_FOUND" };
-    }
-    table = { id: rawTable.id, label: rawTable.label };
-  }
+/*
+ * Two layers:
+ *  - unstable_cache (Data Cache): shared across requests and customers.
+ *  - React cache(): within one render, generateMetadata and the page share a
+ *    single load instead of each calling the loaders.
+ * The unstable_cache wrapper is built per call so its tag can carry the id.
+ */
+const getRestaurantIdBySlug = cache((slug: string) =>
+  unstable_cache(() => loadRestaurantIdBySlug(slug), ["public-menu-slug", slug], {
+    revalidate: MENU_CACHE_SECONDS,
+    tags: [RESTAURANT_SLUGS_TAG],
+  })()
+);
 
-  // Full menu — one nested query
-  const { data: rawCategories, error: menuError } = await supabase
-    .from("menu_categories")
-    .select(
-      `
-      id, restaurant_id, name, sort_order, available_from, available_to, active_days, is_active, created_at,
-      menu_items(
-        id, restaurant_id, category_id, name, description, image_url,
-        base_price, cost_price, food_type, spice_level, prep_minutes, tax_rate,
-        kitchen_station, tags, is_available, sort_order, is_active,
-        item_variants(id, item_id, name, price_delta, is_default, sort_order),
-        item_addon_groups(
-          addon_groups(
-            id, restaurant_id, name, min_select, max_select,
-            addons(id, group_id, name, price)
-          )
-        )
-      )
-    `
-    )
-    .eq("restaurant_id", restaurant.id)
+const getMenuData = cache((restaurantId: string) =>
+  unstable_cache(() => loadMenuData(restaurantId), ["public-menu", restaurantId], {
+    revalidate: MENU_CACHE_SECONDS,
+    tags: [menuCacheTag(restaurantId)],
+  })()
+);
+
+// ---------------------------------------------------------------- public API
+
+export type FetchMenuResult =
+  | { ok: true; menu: PublicMenu }
+  | { ok: false; code: "RESTAURANT_NOT_FOUND" | "TABLE_NOT_FOUND" | "MENU_ERROR" };
+
+/** Not cached: a deactivated table must stop working on the next scan. */
+async function resolveTable(
+  restaurantId: string,
+  tableToken: string
+): Promise<PublicMenu["table"] | "not_found" | "error"> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("restaurant_tables")
+    .select("id, label")
+    .eq("qr_token", tableToken)
+    .eq("restaurant_id", restaurantId)
     .eq("is_active", true)
-    .order("sort_order");
+    .maybeSingle();
 
-  if (menuError) {
-    console.error("[fetchPublicMenu]", menuError);
+  if (error) {
+    console.error("[fetchPublicMenu] table lookup", error);
+    return "error";
+  }
+  return data ? { id: data.id as string, label: data.label as string } : "not_found";
+}
+
+export async function fetchPublicMenu(
+  slug: string,
+  tableToken: string | null
+): Promise<FetchMenuResult> {
+  let restaurantId: string | null;
+  try {
+    ({ restaurantId } = await getRestaurantIdBySlug(slug));
+  } catch (err) {
+    console.error("[fetchPublicMenu] restaurant lookup", err);
     return { ok: false, code: "MENU_ERROR" };
   }
+  if (!restaurantId) return { ok: false, code: "RESTAURANT_NOT_FOUND" };
 
+  // The table check and the (usually cached) menu load are independent.
+  const [tableResult, menuResult] = await Promise.all([
+    tableToken ? resolveTable(restaurantId, tableToken) : Promise.resolve(null),
+    getMenuData(restaurantId).then(
+      (data) => ({ ok: true as const, data }),
+      (err: unknown) => ({ ok: false as const, err })
+    ),
+  ]);
+
+  if (!menuResult.ok) {
+    console.error("[fetchPublicMenu] menu load", menuResult.err);
+    return { ok: false, code: "MENU_ERROR" };
+  }
+  if (!menuResult.data) return { ok: false, code: "RESTAURANT_NOT_FOUND" };
+  if (tableResult === "error") return { ok: false, code: "MENU_ERROR" };
+  if (tableResult === "not_found") return { ok: false, code: "TABLE_NOT_FOUND" };
+
+  const { restaurant, settings, categories: allCategories } = menuResult.data;
+
+  // Time windows depend on the current time, so they are applied after the cache.
   const now = new Date();
-  const categories: MenuCategoryWithItems[] = (rawCategories as RawCategory[])
-    .filter((cat) => isCategoryAvailableNow(cat, restaurant.timezone, now))
-    .map(mapCategory);
+  const categories = allCategories.filter((cat) =>
+    isCategoryAvailableNow(cat, restaurant.timezone, now)
+  );
 
   return {
     ok: true,
-    menu: { restaurant: { ...restaurant, settings }, table, categories },
+    menu: { restaurant: { ...restaurant, settings }, table: tableResult, categories },
   };
 }
 

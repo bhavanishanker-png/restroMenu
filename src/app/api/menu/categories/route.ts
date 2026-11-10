@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { toMenuCategory } from "@/lib/mappers";
 import type { DbMenuCategory } from "@/types/db";
+import { invalidatesPublicMenu } from "@/lib/queries/menu";
 
 // ---------------------------------------------------------------- GET /api/menu/categories
 
@@ -43,7 +44,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handlePost(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager"]);
   if (guard) return guard;
 
@@ -97,3 +98,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ category: toMenuCategory(data as DbMenuCategory) }, { status: 201 });
 }
+
+export const POST = invalidatesPublicMenu(handlePost);
