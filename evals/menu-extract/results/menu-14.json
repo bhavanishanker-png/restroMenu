@@ -1,0 +1,128 @@
+{
+  "fingerprint": "e2a7bd227472d7e4",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:04:08.787Z",
+  "durationMs": 12865,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "SMALL PLATES",
+          "items": [
+            {
+              "name": "Nachos Mexicano",
+              "printedDescription": "Tortilla Chips + Cheese Sauce + Beans + Salsa ~ Loaded & Loved. 400 g.",
+              "price": 450,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Sauté Vegetables",
+              "printedDescription": "Veggies + Garlic + Parmesan ~ Wholesome. 250 g.",
+              "price": 430,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Stuffed Mushrooms",
+              "printedDescription": "Mushrooms + Spice Blend + Herbs ~ Earthy. 250 g.",
+              "price": 390,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Swiss Filo Rolls",
+              "printedDescription": "Spinach + Cheese + Herbs ~ Flaky. 280 g.",
+              "price": 490,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Fiery Paneer with Crackling Spinach",
+              "printedDescription": "Paneer + Hot Garlic Sauce + Crisp Spinach ~ Tangy. 350 g.",
+              "price": 480,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Greeny Pesto Paneer",
+              "printedDescription": "Paneer + Pesto + Parmesan Shaving ~ Fresh. 350 g.",
+              "price": 490,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Peri Peri Mozzarella Sticks",
+              "printedDescription": "Mozzarella + Peri Peri + Crispy Shell ~ Stretchy. 280 g.",
+              "price": 480,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Jalapeño Cheese Fritters",
+              "printedDescription": "Cheese + Jalapeño + Crispy Shell ~ Meltdown. 350 g.",
+              "price": 450,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Crispy Lotus Stem",
+              "printedDescription": "Lotus Stem + Honey Chilli Glaze ~ Wok-Worthy. 300 g.",
+              "price": 410,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "QUICHE",
+          "items": [
+            {
+              "name": "Cheesy Veggie",
+              "printedDescription": "Veggies + Cheese + Buttery Crust ~ Wholesome.",
+              "price": 410,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Caramelised Onion & Mushroom",
+              "printedDescription": "Caramelised Onion + Mushroom + Buttery Crust ~ Umami.",
+              "price": 410,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 6381,
+      "outputTokens": 1509
+    },
+    "stopReason": "end_turn"
+  }
+}

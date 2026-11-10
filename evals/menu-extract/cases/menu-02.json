@@ -1,0 +1,81 @@
+{
+  "source": "Claude-labelled from the image, unverified. Template with real dish names.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Fried Rice",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Sirloin Steak",
+      "price": 11,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Spicy Chicken",
+      "price": 12,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Grilled Salmon Fish",
+      "price": 13,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Deep Bake Goose",
+      "price": 14,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Avocado Toast",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Spaghetti Pasta",
+      "price": 11,
+      "foodType": null
+    },
+    {
+      "name": "Chicken Pie",
+      "price": 12,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Fish Sandwich",
+      "price": 13,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Vegetable Salad",
+      "price": 14,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mineral Water",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Jasmine Tea",
+      "price": 11,
+      "foodType": "veg"
+    },
+    {
+      "name": "Lemonade",
+      "price": 12,
+      "foodType": "veg"
+    },
+    {
+      "name": "Fresh Juice",
+      "price": 13,
+      "foodType": "veg"
+    },
+    {
+      "name": "Smoothie",
+      "price": 14,
+      "foodType": "veg"
+    }
+  ]
+}

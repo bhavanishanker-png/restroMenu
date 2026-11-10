@@ -1,0 +1,598 @@
+{
+  "fingerprint": "b8b6299056a2e39a",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:04:53.345Z",
+  "durationMs": 53398,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Chowmien",
+          "items": [
+            {
+              "name": "Chowmien",
+              "printedDescription": null,
+              "price": 25,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 50 / Half 25",
+              "suggestedDescription": "Stir-fried noodles tossed Indo-Chinese style."
+            },
+            {
+              "name": "Veg chilli chowmien mix",
+              "printedDescription": null,
+              "price": 55,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 110 / Half 55",
+              "suggestedDescription": "Stir-fried noodles mixed with spicy vegetable chilli."
+            },
+            {
+              "name": "Paneer chilli chowmien",
+              "printedDescription": null,
+              "price": 65,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 130 / Half 65",
+              "suggestedDescription": "Stir-fried noodles served with spicy chilli paneer."
+            },
+            {
+              "name": "Egg chowmien",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 80 / Half 40",
+              "suggestedDescription": "Stir-fried noodles tossed with scrambled egg."
+            },
+            {
+              "name": "Mix chowmien",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 180 / Half 90",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Paneer+veg chilli chowmien",
+              "printedDescription": null,
+              "price": 75,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 150 / Half 75",
+              "suggestedDescription": "Stir-fried noodles with paneer and spicy vegetable chilli."
+            },
+            {
+              "name": "Chicken+paneer chilli chowmien",
+              "printedDescription": null,
+              "price": 85,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 170 / Half 85",
+              "suggestedDescription": "Stir-fried noodles with chicken and chilli paneer."
+            },
+            {
+              "name": "Veg chilli + egg chowmien",
+              "printedDescription": null,
+              "price": 65,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 130 / Half 65",
+              "suggestedDescription": "Stir-fried noodles with vegetable chilli and egg."
+            },
+            {
+              "name": "Paneer chilli+egg chowmien",
+              "printedDescription": null,
+              "price": 65,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 130 / Half 65",
+              "suggestedDescription": "Stir-fried noodles with chilli paneer and egg."
+            },
+            {
+              "name": "Chicken chowmien",
+              "printedDescription": null,
+              "price": 75,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 150 / Half 75",
+              "suggestedDescription": "Stir-fried noodles tossed with chicken."
+            },
+            {
+              "name": "Chicken egg chowmien",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 180 / Half 90",
+              "suggestedDescription": "Stir-fried noodles tossed with chicken and egg."
+            }
+          ]
+        },
+        {
+          "name": "Soup",
+          "items": [
+            {
+              "name": "Veg soup",
+              "printedDescription": null,
+              "price": 20,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot Indo-Chinese style soup with vegetables."
+            },
+            {
+              "name": "Chicken soup",
+              "printedDescription": null,
+              "price": 25,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot Indo-Chinese style soup with chicken."
+            },
+            {
+              "name": "Paneer soup",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot Indo-Chinese style soup with paneer."
+            },
+            {
+              "name": "Egg soup",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot Indo-Chinese style soup with egg."
+            },
+            {
+              "name": "Veg + paneer soup",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with vegetables and paneer."
+            },
+            {
+              "name": "Chicken + egg soup",
+              "printedDescription": null,
+              "price": 35,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with chicken and egg."
+            },
+            {
+              "name": "Chicken + paneer soup",
+              "printedDescription": null,
+              "price": 35,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with chicken and paneer."
+            },
+            {
+              "name": "Veg + egg soup",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with vegetables and egg."
+            },
+            {
+              "name": "Paneer + egg soup",
+              "printedDescription": null,
+              "price": 35,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with paneer and egg."
+            },
+            {
+              "name": "Egg+ Chicken+paneer soup",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with egg, chicken and paneer."
+            },
+            {
+              "name": "Chicken+veg+egg soup",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Hot soup with chicken, vegetables and egg."
+            },
+            {
+              "name": "Mix soup",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Chicken",
+          "items": [
+            {
+              "name": "Chicken curry",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 160 / Half 80",
+              "suggestedDescription": "Chicken cooked in a spiced curry gravy."
+            },
+            {
+              "name": "Pot kaleji",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 120 / Half 60",
+              "suggestedDescription": "Spiced liver preparation cooked in a pot."
+            },
+            {
+              "name": "Omelette",
+              "printedDescription": null,
+              "price": 15,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "2 anda 30 / 1 anda 15",
+              "suggestedDescription": "Fluffy egg omelette cooked on the griddle."
+            },
+            {
+              "name": "Egg pouch",
+              "printedDescription": null,
+              "price": 15,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "2 anda 25 / 1 anda 15",
+              "suggestedDescription": "Eggs cooked sunny-side style with soft yolks."
+            },
+            {
+              "name": "Egg fry",
+              "printedDescription": null,
+              "price": 15,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "2 anda 25 / 1 anda 15",
+              "suggestedDescription": "Pan-fried eggs."
+            }
+          ]
+        },
+        {
+          "name": "Roll",
+          "items": [
+            {
+              "name": "Veg roll",
+              "printedDescription": null,
+              "price": 20,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll filled with vegetables."
+            },
+            {
+              "name": "Single egg roll",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll layered with one egg."
+            },
+            {
+              "name": "Double egg roll",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll layered with two eggs."
+            },
+            {
+              "name": "Chicken roll",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll filled with chicken."
+            },
+            {
+              "name": "Double egg chicken roll",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll with two eggs and chicken filling."
+            },
+            {
+              "name": "Paneer roll",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll filled with paneer."
+            },
+            {
+              "name": "Paneer egg roll",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Egg-layered flatbread roll filled with paneer."
+            },
+            {
+              "name": "Chicken + paneer roll",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll filled with chicken and paneer."
+            },
+            {
+              "name": "Veg + chicken roll",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll filled with vegetables and chicken."
+            },
+            {
+              "name": "Veg chilli + egg roll",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Egg-layered roll filled with spicy vegetable chilli."
+            },
+            {
+              "name": "Mix roll",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chowmien roll",
+              "printedDescription": null,
+              "price": 25,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Flatbread roll stuffed with stir-fried noodles."
+            }
+          ]
+        },
+        {
+          "name": "Pasta",
+          "items": [
+            {
+              "name": "Plain pasta",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 60 / Half 30",
+              "suggestedDescription": "Simple stir-fried pasta in Indo-Chinese style."
+            },
+            {
+              "name": "Chicken pasta",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 120 / Half 60",
+              "suggestedDescription": "Pasta tossed with chicken."
+            },
+            {
+              "name": "Paneer pasta",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 120 / Half 60",
+              "suggestedDescription": "Pasta tossed with paneer."
+            },
+            {
+              "name": "Egg pasta",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 80 / Half 40",
+              "suggestedDescription": "Pasta tossed with egg."
+            },
+            {
+              "name": "Egg+ paneer pasta",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 120 / Half 60",
+              "suggestedDescription": "Pasta tossed with egg and paneer."
+            },
+            {
+              "name": "Chicken+paneer+egg pasta",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 160 / Half 80",
+              "suggestedDescription": "Pasta tossed with chicken, paneer and egg."
+            },
+            {
+              "name": "Veg Manchurian pasta",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 100 / Half 50",
+              "suggestedDescription": "Pasta tossed with vegetable Manchurian balls."
+            },
+            {
+              "name": "Chicken+egg pasta",
+              "printedDescription": null,
+              "price": 70,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 140 / Half 70",
+              "suggestedDescription": "Pasta tossed with chicken and egg."
+            },
+            {
+              "name": "Veg Manchurian+egg pasta",
+              "printedDescription": null,
+              "price": 65,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 130 / Half 65",
+              "suggestedDescription": "Pasta tossed with vegetable Manchurian and egg."
+            },
+            {
+              "name": "Veg+paneer pasta",
+              "printedDescription": null,
+              "price": 70,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 140 / Half 70",
+              "suggestedDescription": "Pasta tossed with vegetables and paneer."
+            },
+            {
+              "name": "Mix pasta",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 180 / Half 90",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chicken+paneer pasta",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 160 / Half 80",
+              "suggestedDescription": "Pasta tossed with chicken and paneer."
+            }
+          ]
+        },
+        {
+          "name": "Chilli",
+          "items": [
+            {
+              "name": "Veg chilli",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 60 / Half 30",
+              "suggestedDescription": "Vegetables tossed in a spicy Indo-Chinese chilli sauce."
+            },
+            {
+              "name": "Paneer chilli",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Full 80 / Half 40",
+              "suggestedDescription": "Paneer cubes tossed with peppers in spicy chilli sauce."
+            },
+            {
+              "name": "Chicken chilli",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 100 / Half 50",
+              "suggestedDescription": "Chicken pieces tossed with peppers in spicy chilli sauce."
+            },
+            {
+              "name": "Chicken chilli boneless",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 160 / Half 80",
+              "suggestedDescription": "Boneless chicken tossed with peppers in spicy chilli sauce."
+            },
+            {
+              "name": "Paneer +chicken chilli",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 180 / Half 90",
+              "suggestedDescription": "Paneer and chicken tossed in spicy chilli sauce."
+            },
+            {
+              "name": "Veg +chicken+paneer chilli",
+              "printedDescription": null,
+              "price": 110,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 220 / Half 110",
+              "suggestedDescription": "Vegetables, chicken and paneer tossed in spicy chilli sauce."
+            },
+            {
+              "name": "Veg+paneer chilli",
+              "printedDescription": null,
+              "price": 60,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 120 / Half 60",
+              "suggestedDescription": "Vegetables and paneer tossed in spicy chilli sauce."
+            },
+            {
+              "name": "Veg Manchurian",
+              "printedDescription": null,
+              "price": 40,
+              "foodType": "veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 80 / Half 40",
+              "suggestedDescription": "Fried vegetable balls in a tangy Manchurian sauce."
+            },
+            {
+              "name": "Veg+chicken chilli",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": "Full 160 / Half 80",
+              "suggestedDescription": "Vegetables and chicken tossed in spicy chilli sauce."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 2674,
+      "outputTokens": 7674
+    },
+    "stopReason": "end_turn"
+  }
+}

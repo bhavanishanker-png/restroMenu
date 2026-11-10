@@ -1,0 +1,340 @@
+{
+  "fingerprint": "fdc5f79ffafd2318",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:55.887Z",
+  "durationMs": 28990,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Vegetables Special",
+          "items": [
+            {
+              "name": "Jeera Aloo",
+              "printedDescription": null,
+              "price": 100,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 100 / Full 160",
+              "suggestedDescription": "Potatoes tossed with cumin seeds and mild spices."
+            },
+            {
+              "name": "Dum Aloo",
+              "printedDescription": null,
+              "price": 110,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 110 / Full 190",
+              "suggestedDescription": "Baby potatoes slow-cooked in a rich spiced gravy."
+            },
+            {
+              "name": "Gobhi Aloo",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 90 / Full 150",
+              "suggestedDescription": "Cauliflower and potatoes stir-cooked with onions and spices."
+            },
+            {
+              "name": "Aloo Matar",
+              "printedDescription": null,
+              "price": 100,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 100 / Full 160",
+              "suggestedDescription": "Potatoes and green peas simmered in a tomato-onion curry."
+            },
+            {
+              "name": "Kashmiri Dum Aloo",
+              "printedDescription": null,
+              "price": 140,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 140 / Full 250",
+              "suggestedDescription": "Kashmiri-style baby potatoes slow-cooked in a fragrant red gravy."
+            },
+            {
+              "name": "Stuff Dum Aloo",
+              "printedDescription": null,
+              "price": 160,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 160 / Full 270",
+              "suggestedDescription": "Stuffed potatoes slow-cooked in a rich spiced gravy."
+            },
+            {
+              "name": "Aloo Do Pyaja",
+              "printedDescription": null,
+              "price": 130,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 130 / Full 220",
+              "suggestedDescription": "Potatoes cooked with plenty of onions in a spiced masala."
+            },
+            {
+              "name": "Gobhi Masala",
+              "printedDescription": null,
+              "price": 120,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 120 / Full 200",
+              "suggestedDescription": "Cauliflower florets cooked in a thick spiced masala gravy."
+            },
+            {
+              "name": "Mix Veg",
+              "printedDescription": null,
+              "price": 160,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 160 / Full 270",
+              "suggestedDescription": "Assorted seasonal vegetables cooked together in a spiced gravy."
+            },
+            {
+              "name": "Malai Kofta",
+              "printedDescription": null,
+              "price": 180,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 180 / Full 320",
+              "suggestedDescription": "Soft fried dumplings served in a rich, creamy gravy."
+            },
+            {
+              "name": "Kaju Curry",
+              "printedDescription": null,
+              "price": 180,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 180 / Full 320",
+              "suggestedDescription": "Cashews simmered in a rich, mildly spiced curry."
+            },
+            {
+              "name": "Palak Fry",
+              "printedDescription": null,
+              "price": 130,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 130 / Full 220",
+              "suggestedDescription": "Spinach sautéed with garlic, onions and spices."
+            },
+            {
+              "name": "Spl. Sev Bhaji",
+              "printedDescription": null,
+              "price": 100,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 100 / Full 160",
+              "suggestedDescription": "Spicy tomato-onion curry topped with crunchy sev."
+            },
+            {
+              "name": "Matar Mushroom",
+              "printedDescription": null,
+              "price": 160,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 160 / Full 270",
+              "suggestedDescription": "Mushrooms and green peas cooked in a spiced onion-tomato gravy."
+            },
+            {
+              "name": "Mushroom Do Pyaja",
+              "printedDescription": null,
+              "price": 150,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 150 / Full 260",
+              "suggestedDescription": "Mushrooms cooked with plenty of onions in a spiced masala."
+            },
+            {
+              "name": "Kadhai Mushroom",
+              "printedDescription": null,
+              "price": 170,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 170 / Full 280",
+              "suggestedDescription": "Mushrooms tossed with capsicum and onions in kadhai masala."
+            },
+            {
+              "name": "Handi Mushroom",
+              "printedDescription": null,
+              "price": 180,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 180 / Full 290",
+              "suggestedDescription": "Mushrooms slow-cooked in a pot with a rich spiced gravy."
+            },
+            {
+              "name": "Mushroom Masala",
+              "printedDescription": null,
+              "price": 180,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 180 / Full 300",
+              "suggestedDescription": "Mushrooms cooked in a thick, spiced onion-tomato masala."
+            },
+            {
+              "name": "Paneer Mushroom",
+              "printedDescription": null,
+              "price": 190,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 190 / Full 330",
+              "suggestedDescription": "Paneer cubes and mushrooms cooked together in a spiced gravy."
+            },
+            {
+              "name": "Chana Masala",
+              "printedDescription": null,
+              "price": 150,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 150 / Full 260",
+              "suggestedDescription": "Chickpeas simmered in a tangy, spiced onion-tomato gravy."
+            },
+            {
+              "name": "Sarso ka saag",
+              "printedDescription": null,
+              "price": 170,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": "Half 170 / Full 310",
+              "suggestedDescription": "Punjabi-style mustard greens slow-cooked with spices."
+            }
+          ]
+        },
+        {
+          "name": "Daal",
+          "items": [
+            {
+              "name": "Dal Fry",
+              "printedDescription": null,
+              "price": 80,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Half 80 / Full 130",
+              "suggestedDescription": "Yellow lentils cooked and tempered with onions, tomatoes and spices."
+            },
+            {
+              "name": "Dal Tadka",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Half 90 / Full 150",
+              "suggestedDescription": "Lentils finished with a sizzling tempering of cumin, garlic and chillies."
+            },
+            {
+              "name": "Punjabi Dal Tadka",
+              "printedDescription": null,
+              "price": 100,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Half 100 / Full 170",
+              "suggestedDescription": "Punjabi-style lentils with a robust spiced tempering."
+            },
+            {
+              "name": "Dal Makhni",
+              "printedDescription": null,
+              "price": 130,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Half 130 / Full 200",
+              "suggestedDescription": "Black lentils and kidney beans slow-cooked in a rich, buttery gravy."
+            },
+            {
+              "name": "Kadhi Pakora",
+              "printedDescription": null,
+              "price": 90,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Half 90 / Full 150",
+              "suggestedDescription": "Fried gram flour fritters in a tangy yogurt-based curry."
+            }
+          ]
+        },
+        {
+          "name": "Tandoori Tikka",
+          "items": [
+            {
+              "name": "Paneer Tikka",
+              "printedDescription": null,
+              "price": 220,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Marinated paneer cubes grilled in the tandoor."
+            },
+            {
+              "name": "Paneer Malai Tikka",
+              "printedDescription": null,
+              "price": 250,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer in a creamy, mild marinade grilled in the tandoor."
+            },
+            {
+              "name": "Soya Chaap Tandoori",
+              "printedDescription": null,
+              "price": 200,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Spiced soya chaap grilled in the tandoor."
+            },
+            {
+              "name": "Soya Malai Chaap",
+              "printedDescription": null,
+              "price": 220,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Soya chaap in a creamy, mild marinade, grilled until golden."
+            },
+            {
+              "name": "Jaipuri Achari Chaap",
+              "printedDescription": null,
+              "price": 220,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Soya chaap marinated in tangy pickle spices and grilled."
+            },
+            {
+              "name": "Mashrrom Tikka",
+              "printedDescription": null,
+              "price": 280,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Marinated mushrooms grilled in the tandoor."
+            },
+            {
+              "name": "Veg Sheek Kabab",
+              "printedDescription": null,
+              "price": 350,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Minced spiced vegetables shaped on skewers and grilled."
+            },
+            {
+              "name": "Pudina Chaap",
+              "printedDescription": null,
+              "price": 250,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Soya chaap marinated with mint and spices, then grilled."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 4029,
+      "outputTokens": 3887
+    },
+    "stopReason": "end_turn"
+  }
+}

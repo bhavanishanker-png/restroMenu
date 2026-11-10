@@ -1,0 +1,76 @@
+{
+  "source": "Claude-labelled from the image, unverified. Breakfast board, 194x259 px. Low-confidence prices: Masala Chees Omlate, Bread Omlate. Lowest of a/b prices used.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Poori Bhaji",
+      "price": 50,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chhole Bhature",
+      "price": 50,
+      "foodType": "veg"
+    },
+    {
+      "name": "Aloo Paratha",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Onion Paratha",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Paratha",
+      "price": 50,
+      "foodType": "veg"
+    },
+    {
+      "name": "Poha",
+      "price": 20,
+      "foodType": "veg"
+    },
+    {
+      "name": "Bread Toast With Buter Jam",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Masala Omlate",
+      "price": 35,
+      "foodType": "egg"
+    },
+    {
+      "name": "Plain Omlate",
+      "price": 25,
+      "foodType": "egg"
+    },
+    {
+      "name": "Masala Chees Omlate",
+      "price": 39,
+      "foodType": "egg"
+    },
+    {
+      "name": "Bread Omlate",
+      "price": 30,
+      "foodType": "egg"
+    },
+    {
+      "name": "Boiled Egg",
+      "price": 25,
+      "foodType": "egg"
+    },
+    {
+      "name": "Tea/Coffee",
+      "price": 20,
+      "foodType": "veg"
+    },
+    {
+      "name": "Milk",
+      "price": 15,
+      "foodType": "veg"
+    }
+  ]
+}

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { fetchMenuCatalog } from "@/lib/queries/menu";
-import { AI_MODELS, FALLBACK_PARAMS, getAnthropicClient } from "@/lib/ai/client";
+import { getAnthropicClient } from "@/lib/ai/client";
 import {
   aiErrorResponse,
   clientIp,
@@ -11,11 +10,13 @@ import {
   fileMatchesDeclaredType,
   isAiFeatureEnabled,
 } from "@/lib/ai/guardrails";
+import { reconcileDraft } from "@/lib/ai/menu-onboarding";
 import {
-  EXTRACTION_SYSTEM_PROMPT,
-  ExtractionSchema,
-  reconcileDraft,
-} from "@/lib/ai/menu-onboarding";
+  extractMenu,
+  type ExtractFailureCode,
+  type ExtractResult,
+  type MenuMediaType,
+} from "@/lib/ai/menu-extract";
 import type { MenuDraft } from "@/types";
 
 // Reading a multi-page menu can take a while; Vercel's default would cut it off.
@@ -30,6 +31,17 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+const EXTRACT_FAILURES: Record<ExtractFailureCode, { message: string; status: number }> = {
+  AI_DECLINED: { message: "The AI couldn't process this file. Try a clearer photo of the menu.", status: 422 },
+  MENU_TOO_LONG: {
+    message: "This menu is too long to read in one go. Upload it a few pages at a time.",
+    status: 422,
+  },
+  PARSE_ERROR: { message: "AI returned malformed data. Please try again.", status: 422 },
+  SCHEMA_ERROR: { message: "AI returned unexpected data. Please try again.", status: 422 },
+  NOT_A_MENU: { message: "That doesn't look like a menu. Upload a photo or PDF of your menu.", status: 422 },
+};
 
 // ─── POST /api/ai/menu-extract ──────────────────────────────────────────────
 //
@@ -96,46 +108,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return aiErrorResponse("DB_ERROR", "Couldn't load your current menu. Try again.", 500);
   }
 
-  const base64 = Buffer.from(bytes).toString("base64");
-  const contentBlock: Anthropic.Beta.BetaContentBlockParam =
-    file.type === "application/pdf"
-      ? {
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: base64 },
-        }
-      : {
-          type: "image",
-          source: {
-            type: "base64",
-            media_type: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
-            data: base64,
-          },
-        };
-
-  let message: Anthropic.Beta.BetaMessage;
+  let result: ExtractResult;
   try {
-    // Streamed: a long menu can need a large output budget, and a
-    // non-streaming request that size risks an HTTP timeout.
-    const stream = client.beta.messages.stream(
-      {
-        model: AI_MODELS.menuOnboarding,
-        max_tokens: 64_000,
-        ...FALLBACK_PARAMS,
-        output_config: { effort: "medium", format: betaZodOutputFormat(ExtractionSchema) },
-        system: EXTRACTION_SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              contentBlock,
-              { type: "text", text: "Extract every dish from this <menu_document>." },
-            ],
-          },
-        ],
-      },
-      { timeout: 110_000 }
-    );
-    message = await stream.finalMessage();
+    result = await extractMenu(client, bytes, file.type as MenuMediaType);
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       console.error("[menu-extract] Anthropic rate limit:", err.message);
@@ -151,46 +126,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   console.info("[menu-extract]", {
     restaurantId: session.restaurantId,
-    stopReason: message.stop_reason,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
+    stopReason: result.stopReason,
+    inputTokens: result.usage.inputTokens,
+    outputTokens: result.usage.outputTokens,
   });
 
-  if (message.stop_reason === "refusal") {
-    return aiErrorResponse("AI_DECLINED", "The AI couldn't process this file. Try a clearer photo of the menu.", 422);
-  }
-  if (message.stop_reason === "max_tokens") {
-    return aiErrorResponse(
-      "MENU_TOO_LONG",
-      "This menu is too long to read in one go. Upload it a few pages at a time.",
-      422
-    );
+  if (!result.ok) {
+    if (result.detail) console.error(`[menu-extract] ${result.code}:`, result.detail);
+    const { message, status } = EXTRACT_FAILURES[result.code];
+    return aiErrorResponse(result.code, message, status);
   }
 
-  const text = message.content
-    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(text);
-  } catch {
-    console.error("[menu-extract] Non-JSON response:", text.slice(0, 500));
-    return aiErrorResponse("PARSE_ERROR", "AI returned malformed data. Please try again.", 422);
-  }
-
-  const parsed = ExtractionSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error("[menu-extract] Schema mismatch:", parsed.error.issues.slice(0, 5));
-    return aiErrorResponse("SCHEMA_ERROR", "AI returned unexpected data. Please try again.", 422);
-  }
-
-  if (!parsed.data.isMenu) {
-    return aiErrorResponse("NOT_A_MENU", "That doesn't look like a menu. Upload a photo or PDF of your menu.", 422);
-  }
-
-  const draft: MenuDraft = reconcileDraft(parsed.data, catalog);
+  const draft: MenuDraft = reconcileDraft(result.extraction, catalog);
   if (draft.totalItems === 0) {
     return aiErrorResponse("NO_ITEMS", "No dishes could be read. Try a sharper, well-lit photo.", 422);
   }

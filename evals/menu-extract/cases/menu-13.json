@@ -1,0 +1,76 @@
+{
+  "source": "Claude-labelled from the image, unverified. Hotel Rajnandini, Bengali. Red non-veg square on the mutton heading. Thalis include fish/mutton per their Bengali descriptions.",
+  "hasVegMarkers": true,
+  "dishes": [
+    {
+      "name": "Mutton Dhaba",
+      "price": 430,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Mutton Kolhapuri (4 Pcs)",
+      "price": 430,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Kadai Mutton",
+      "price": 430,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Mutton Kosha (4 Pcs)",
+      "price": 380,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "RN- Special Mutton (4 Pcs)",
+      "price": 480,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Vetki Masala Curry (4 Pcs)",
+      "price": 410,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Katla Kalia (2 Pcs)",
+      "price": 250,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Katla Fry (2 Pcs)",
+      "price": 210,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Prawn Malai Curry (3 Pcs)",
+      "price": 490,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Daab Chingri (3 Pcs)",
+      "price": 490,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Bangali Bhoj Thali",
+      "price": 999,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Sahi Bangla Thali",
+      "price": 1449,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Badsahi Thali",
+      "price": 1649,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Moha Bhoj Thali",
+      "price": 1999,
+      "foodType": "non_veg"
+    }
+  ]
+}

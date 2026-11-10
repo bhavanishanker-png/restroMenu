@@ -1,0 +1,191 @@
+{
+  "fingerprint": "8aec26a93a41e75d",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:26.888Z",
+  "durationMs": 18055,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "COFFEE",
+          "items": [
+            {
+              "name": "INSTANT COFFEE",
+              "printedDescription": null,
+              "price": 8,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A quick, simple cup of coffee made from instant granules."
+            },
+            {
+              "name": "LATTE",
+              "printedDescription": null,
+              "price": 6,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A smooth, mellow espresso-based coffee finished with a light layer of foam."
+            },
+            {
+              "name": "AMERICANO",
+              "printedDescription": null,
+              "price": 9,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso lengthened with hot water for a clean, full-bodied cup."
+            },
+            {
+              "name": "MOCCA",
+              "printedDescription": null,
+              "price": 6,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso blended with chocolate for a rich, sweet coffee."
+            },
+            {
+              "name": "CAPPUCCINO",
+              "printedDescription": null,
+              "price": 6,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A classic espresso drink crowned with a thick, velvety foam."
+            },
+            {
+              "name": "BLUE MOUNTAIN COFFEE",
+              "printedDescription": null,
+              "price": 4,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A prized Jamaican coffee known for its mild, smooth flavour."
+            },
+            {
+              "name": "CARAMEL MACCHIATO",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso layered with foam and finished with a sweet caramel drizzle."
+            },
+            {
+              "name": "BLACK COFFEE",
+              "printedDescription": null,
+              "price": 7,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A straightforward, bold cup of freshly brewed coffee served black."
+            },
+            {
+              "name": "KOPI LUWAK",
+              "printedDescription": null,
+              "price": 8,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A rare Indonesian coffee made from beans processed by the civet."
+            }
+          ]
+        },
+        {
+          "name": "FOOD",
+          "items": [
+            {
+              "name": "HAM AND CHEESE SANDWICH",
+              "printedDescription": null,
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A classic sandwich filled with sliced ham and melted cheese."
+            },
+            {
+              "name": "TUNA SANDWICH",
+              "printedDescription": null,
+              "price": 9,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A satisfying sandwich filled with savoury tuna."
+            },
+            {
+              "name": "EGGS WITH BACON AND AVOCADO",
+              "printedDescription": null,
+              "price": 12,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Eggs served alongside crispy bacon and fresh avocado."
+            },
+            {
+              "name": "ESCALOPES WITH POTATOES",
+              "printedDescription": null,
+              "price": 8,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Thin, pan-fried escalopes served with potatoes."
+            },
+            {
+              "name": "FISH AND CHIPS",
+              "printedDescription": null,
+              "price": 9,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Crispy battered fish served with golden fried chips."
+            },
+            {
+              "name": "STRAWBERRY MOUSSE",
+              "printedDescription": null,
+              "price": 8,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A light, airy dessert bursting with sweet strawberry flavour."
+            },
+            {
+              "name": "CHOCOLATE CAKE",
+              "printedDescription": null,
+              "price": 7,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A rich, moist slice of chocolate cake."
+            },
+            {
+              "name": "CHEESECAKE",
+              "printedDescription": null,
+              "price": 9,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A smooth, creamy cheesecake on a crumbly biscuit base."
+            },
+            {
+              "name": "RED VELVET CAKE",
+              "printedDescription": null,
+              "price": 11,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A soft, crimson-coloured cake layered with sweet frosting."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 2840,
+      "outputTokens": 2226
+    },
+    "stopReason": "end_turn"
+  }
+}

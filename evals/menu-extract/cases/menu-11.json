@@ -1,0 +1,196 @@
+{
+  "source": "Claude-labelled from the image, unverified. Metro Grill; section titled 'Veg Curries of North India' (section-level veg label).",
+  "hasVegMarkers": true,
+  "dishes": [
+    {
+      "name": "Kadai Paneer",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Butter Masala",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Tikka Masala",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Lababdar",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mutter Paneer",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Reshmi",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Palak Paneer",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Methi Chaman",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Pudina Paneer Kali Mirch",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Shahi Paneer",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Sham Savera",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Shahi Korma",
+      "price": 575,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Bhurji",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Hyderabadi",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Pasanda",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Malai Kofta",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg. Kofta",
+      "price": 499,
+      "foodType": "veg"
+    },
+    {
+      "name": "Beetroot Kofta Curry",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Soya Chaap Hyderabadi",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg Keema Curry (Nutrilla)",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Soya Tikka Masala",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mushroom Do Piyaza",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kadai Mushroom",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Dhingri Mutter Hara Pyaaz",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Khumbh Kaju Mutter",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mutter Methi Malai",
+      "price": 550,
+      "foodType": "veg"
+    },
+    {
+      "name": "Boiled Vegetable",
+      "price": 450,
+      "foodType": "veg"
+    },
+    {
+      "name": "Vegetable Shahi Korma",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg Kohla Puri",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Corn Palak",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Banarsi Dum Aloo",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Adarki Kadai Gobhi",
+      "price": 499,
+      "foodType": "veg"
+    },
+    {
+      "name": "Jeera Aloo",
+      "price": 475,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chole Rawal Pindi",
+      "price": 499,
+      "foodType": "veg"
+    },
+    {
+      "name": "Zanat-E-Numa",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg. Jalfrezi",
+      "price": 525,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mix Vegetable",
+      "price": 499,
+      "foodType": "veg"
+    },
+    {
+      "name": "Aloo Gobhi",
+      "price": 499,
+      "foodType": "veg"
+    }
+  ]
+}

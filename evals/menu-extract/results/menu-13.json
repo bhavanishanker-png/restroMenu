@@ -1,0 +1,160 @@
+{
+  "fingerprint": "dfd3ad5edf3b66a7",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:59.938Z",
+  "durationMs": 25889,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "INDIAN MAIN COURSE (NON-VEG) MUTTON",
+          "items": [
+            {
+              "name": "MUTTON DHABA",
+              "printedDescription": "Mutton Dhaba is a very popular north Indian dish. It is cooked in curd with various spices.",
+              "price": 430,
+              "foodType": "non_veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "MUTTON KOLHAPURI ( 4 PCS )",
+              "printedDescription": "A mutton curry that hails from Maharashtra, Kolhapur recipe. It's a piece of mutton combined with a hot spicy gravy.",
+              "price": 430,
+              "foodType": "non_veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "KADAI MUTTON",
+              "printedDescription": "This is a smooth curry with lots of flavour comes with a delicious.",
+              "price": 430,
+              "foodType": "non_veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "MUTTON KOSHA ( 4 PCS )",
+              "printedDescription": "A very rich and spicy mutton curry with thick consistency.",
+              "price": 380,
+              "foodType": "non_veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "RN- SPECIAL MUTTON ( 4 PCS )",
+              "printedDescription": "It's Hotel Rajnandini Indian main course chef special dish. a delicious curry which is made in yogurt cashew and poppy seeds paste that given it a rich flavour.",
+              "price": 480,
+              "foodType": "non_veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "BENGALI CUISINE বাঙালিয়ানা",
+          "items": [
+            {
+              "name": "VETKI MASALA CURRY(4PCS)",
+              "printedDescription": "a dish where tender Bhetki fish is slow-cooked in a bold & aromatic masala gravy.",
+              "price": 410,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "KATLA KALIA (2PCS)",
+              "printedDescription": "A dish steeped in tradition, Katla Kalia is a rich and flavorful Bengali delicacy where succulent Katla fish is slow-cooked in a thick, aromatic gravy.",
+              "price": 250,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "KATLA FRY (2PCS)",
+              "printedDescription": "Katla fish is marinated with aromatic spices and shallow-fried to crispy perfection. Every bite is a perfect blend of crunch and succulence!",
+              "price": 210,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "PRAWN MALAI CURRY (3PCS)",
+              "printedDescription": "Prawn Malai Curry is a creamy, coconut-infused masterpiece where succulent prawns are slow-cooked in a rich, aromatic gravy.",
+              "price": 490,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "DAAB CHINGRI (3PCS)",
+              "printedDescription": "this dish is an explosion of flavors, blending the richness of seafood with the creaminess of coconut.",
+              "price": 490,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "BENGALI CUISINE বাঙালী থালি",
+          "items": [
+            {
+              "name": "BANGALI BHOJ THALI",
+              "printedDescription": "বাসমতী রাইস, সালাদ, পাঁচ রকম ভাজা, পাঁচ মেশালি সব্জি, সোনা মুগ ডাল, কাতলা কালিয়া মটন কষা অথবা চিকেন কষা, চাটনি, পাপর, দই, রসগোল্লা ও মুখশুধি।",
+              "price": 999,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "SAHI BANGLA THALI",
+              "printedDescription": "বাসমতী রাইস, ভেজ পোলাও,সালাদ, পাঁচ রকম ভাজা,লুচি,পাঁচ মেশালি সব্জি, ভেজ ডাল, পনির কড়াই কাতলা কালিয়া,ডাব চিংড়ি,মটন কষা অথবা চিকেন কষা, চাটনি, পাপর, দই, রসগোল্লা ও মুখশুধি।",
+              "price": 1449,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "BADSAHI THALI",
+              "printedDescription": "বাসমতী রাইস, ভেজ পোলাও, সালাদ, পাঁচ রকম ভাজা,লুচি, মুড়িঘন্ট ডাল, পনির কড়াই কাতলা কালিয়া, ডাব চিংড়ি অথবা চিংড়ি মালাই কাড়ি, ভেটকি পাতুরি,মটন কষা অথবা চিকেন কষা, চাটনি, পাপর, দই, রসগোল্লা,রাজনন্দিনী স্পেশাল মকটেল ও মুখশুধি।",
+              "price": 1649,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "MOHA BHOJ THALI",
+              "printedDescription": "বাসমতী রাইস, ভেজ পোলাও, সালাদ, পাঁচ রকম ভাজা, মুড়িঘন্ট ডাল, লুচি, পনির কড়াই, কাতলা কালিয়া, ডাব চিংড়ি অথবা চিংড়ি মালাই কাড়ি, ভেটকি পাতুরি,মটন কষা, চিকেন কষা, চাটনি, পাপর, দই, রসগোল্লা,ফিরনি, রাজনন্দিনী স্পেশাল মকটেল ও মুখশুধি।",
+              "price": 1999,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 3797,
+      "outputTokens": 3559
+    },
+    "stopReason": "end_turn"
+  }
+}

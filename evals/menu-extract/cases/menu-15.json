@@ -1,0 +1,311 @@
+{
+  "source": "Claude-labelled from the image, unverified. Somu Chinese Foods; FULL/HALF columns, HALF (lowest) used. Egg+chicken combos are non_veg. 'Mix' = chicken+egg (non_veg).",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Chowmien",
+      "price": 25,
+      "foodType": null
+    },
+    {
+      "name": "Veg Chilli Chowmien Mix",
+      "price": 55,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Chilli Chowmien",
+      "price": 65,
+      "foodType": "veg"
+    },
+    {
+      "name": "Egg Chowmien",
+      "price": 40,
+      "foodType": "egg"
+    },
+    {
+      "name": "Mix Chowmien",
+      "price": 90,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Paneer+Veg Chilli Chowmien",
+      "price": 75,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken+Paneer Chilli Chowmien",
+      "price": 85,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Chilli + Egg Chowmien",
+      "price": 65,
+      "foodType": "egg"
+    },
+    {
+      "name": "Paneer Chilli+Egg Chowmien",
+      "price": 65,
+      "foodType": "egg"
+    },
+    {
+      "name": "Chicken Chowmien",
+      "price": 75,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Egg Chowmien",
+      "price": 90,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Soup",
+      "price": 20,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken Soup",
+      "price": 25,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Paneer Soup",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Egg Soup",
+      "price": 30,
+      "foodType": "egg"
+    },
+    {
+      "name": "Veg + Paneer Soup",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken + Egg Soup",
+      "price": 35,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken + Paneer Soup",
+      "price": 35,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg + Egg Soup",
+      "price": 30,
+      "foodType": "egg"
+    },
+    {
+      "name": "Paneer + Egg Soup",
+      "price": 35,
+      "foodType": "egg"
+    },
+    {
+      "name": "Egg+Chicken+Paneer Soup",
+      "price": 40,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken+Veg+Egg Soup",
+      "price": 40,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Mix Soup",
+      "price": 40,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Curry",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Pot Kaleji",
+      "price": 60,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Omelette",
+      "price": 15,
+      "foodType": "egg"
+    },
+    {
+      "name": "Egg Pouch",
+      "price": 15,
+      "foodType": "egg"
+    },
+    {
+      "name": "Egg Fry",
+      "price": 15,
+      "foodType": "egg"
+    },
+    {
+      "name": "Veg Roll",
+      "price": 20,
+      "foodType": "veg"
+    },
+    {
+      "name": "Single Egg Roll",
+      "price": 30,
+      "foodType": "egg"
+    },
+    {
+      "name": "Double Egg Roll",
+      "price": 40,
+      "foodType": "egg"
+    },
+    {
+      "name": "Chicken Roll",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Double Egg Chicken Roll",
+      "price": 90,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Paneer Roll",
+      "price": 50,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Egg Roll",
+      "price": 60,
+      "foodType": "egg"
+    },
+    {
+      "name": "Chicken + Paneer Roll",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg + Chicken Roll",
+      "price": 60,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Chilli + Egg Roll",
+      "price": 40,
+      "foodType": "egg"
+    },
+    {
+      "name": "Mix Roll",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chowmien Roll",
+      "price": 25,
+      "foodType": null
+    },
+    {
+      "name": "Plain Pasta",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken Pasta",
+      "price": 60,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Paneer Pasta",
+      "price": 60,
+      "foodType": "veg"
+    },
+    {
+      "name": "Egg Pasta",
+      "price": 40,
+      "foodType": "egg"
+    },
+    {
+      "name": "Egg+ Paneer Pasta",
+      "price": 60,
+      "foodType": "egg"
+    },
+    {
+      "name": "Chicken+Paneer+Egg Pasta",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Manchurian Pasta",
+      "price": 50,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken+Egg Pasta",
+      "price": 70,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Manchurian+Egg Pasta",
+      "price": 65,
+      "foodType": "egg"
+    },
+    {
+      "name": "Veg+Paneer Pasta",
+      "price": 70,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mix Pasta",
+      "price": 90,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken+Paneer Pasta",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg Chilli",
+      "price": 30,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Chilli",
+      "price": 40,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken Chilli",
+      "price": 50,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Chilli Boneless",
+      "price": 80,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Paneer +Chicken Chilli",
+      "price": 90,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg +Chicken+Paneer Chilli",
+      "price": 110,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veg+Paneer Chilli",
+      "price": 60,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg Manchurian",
+      "price": 40,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg+Chicken Chilli",
+      "price": 80,
+      "foodType": "non_veg"
+    }
+  ]
+}

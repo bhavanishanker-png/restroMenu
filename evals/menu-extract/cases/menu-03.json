@@ -1,0 +1,266 @@
+{
+  "source": "Claude-labelled from the image, unverified. Template; Chicken Parmesan printed 11 times, Cabonara twice. Descriptions are lorem ipsum.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Fresh Juice",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "House Beers",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "All Soda",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Soda Water",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Ginger Ale",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Smoothies",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Fizzy Drinks",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "English Tea",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Green Tea",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Lemonade",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cabonara",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "BBQ Chicken Pizza",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Veggie Pizza",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "All Day Breakfast With Coffee",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Fish Chip Cheese",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Potatoes Wedge",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cheese Chips",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Garlic Bread",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Meat Balls Pasta",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Cabonara",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Super Cheesy Pasta",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mac N Cheese",
+      "price": 10,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chicken With Salad",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Red Velvet Cheese Cake",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Flat White",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cafe Latte",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cappuccino",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mocha",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Americano",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Macchiato",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Black Coffee",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Espresso",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "The Classic Burger",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Charcoal Burger",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Chicken Burger",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Chicken Parmesan",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Classic Tiramisu",
+      "price": 10,
+      "foodType": "egg"
+    },
+    {
+      "name": "Chocolate Cake",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Crème Brûlée",
+      "price": 10,
+      "foodType": "egg"
+    },
+    {
+      "name": "Baked Alaska",
+      "price": 10,
+      "foodType": "egg"
+    },
+    {
+      "name": "Green Tea Parfait",
+      "price": 10,
+      "foodType": null
+    },
+    {
+      "name": "Panna Cotta",
+      "price": 10,
+      "foodType": null
+    }
+  ]
+}

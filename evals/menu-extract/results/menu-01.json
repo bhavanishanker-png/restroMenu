@@ -1,0 +1,141 @@
+{
+  "fingerprint": "3cfab17d9d31d360",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:10.601Z",
+  "durationMs": 13681,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Breakfast",
+          "items": [
+            {
+              "name": "POORI BHAJI",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Deep-fried puffed wheat breads served with a spiced potato curry."
+            },
+            {
+              "name": "CHHOLE BHATURE",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Spicy chickpea curry served with fluffy deep-fried bread."
+            },
+            {
+              "name": "ALOO PARATHA",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Rs. 30 / Rs. 50",
+              "suggestedDescription": "Griddle-cooked flatbread stuffed with spiced mashed potato."
+            },
+            {
+              "name": "ONION PARATHA",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Rs. 30 / Rs. 50",
+              "suggestedDescription": "Griddle-cooked flatbread stuffed with spiced onions."
+            },
+            {
+              "name": "PANEER PARATHA",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Rs. 50 / Rs. 70",
+              "suggestedDescription": "Griddle-cooked flatbread stuffed with spiced crumbled paneer."
+            },
+            {
+              "name": "POHA",
+              "printedDescription": null,
+              "price": 20,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Rs. 20 / Rs. 40",
+              "suggestedDescription": "Flattened rice tempered with onions, spices and herbs."
+            },
+            {
+              "name": "BREAD TOAST WITH BUTER JAM",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Toasted bread slices served with butter and jam."
+            },
+            {
+              "name": "MASALA OMLATE",
+              "printedDescription": null,
+              "price": 35,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Omelette cooked with onions, chillies and spices."
+            },
+            {
+              "name": "PLAIN OMLATE",
+              "printedDescription": null,
+              "price": 25,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A simple, classic egg omelette."
+            },
+            {
+              "name": "MASALA CHEES OMLATE",
+              "printedDescription": null,
+              "price": 50,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Spiced omelette filled with melted cheese."
+            },
+            {
+              "name": "BOILED EGG",
+              "printedDescription": null,
+              "price": 20,
+              "foodType": "egg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Eggs boiled in their shells and served simply."
+            },
+            {
+              "name": "TEA/COFFEE",
+              "printedDescription": null,
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A hot cup of freshly made tea or coffee."
+            },
+            {
+              "name": "MILK",
+              "printedDescription": null,
+              "price": 30,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A glass of milk."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 1721,
+      "outputTokens": 1638
+    },
+    "stopReason": "end_turn"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "source": "Claude-labelled from the image, unverified. Zorko (pure-veg chain). Green 'J' icon = Jain available, NOT a veg marker. '+15/+30/+40' are add-ons; base price used. Cheese injector / double cheese / grill offers treated as add-ons, not dishes.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Mexican King Burger",
+      "price": 89,
+      "foodType": "veg"
+    },
+    {
+      "name": "Spicy Salsa Barbeque Burger",
+      "price": 79,
+      "foodType": "veg"
+    },
+    {
+      "name": "Korean Burger",
+      "price": 69,
+      "foodType": "veg"
+    },
+    {
+      "name": "Double Tikki Burger",
+      "price": 79,
+      "foodType": "veg"
+    },
+    {
+      "name": "Classic OG Burger",
+      "price": 49,
+      "foodType": "veg"
+    },
+    {
+      "name": "Royal Paneer Grilled Burger",
+      "price": 139,
+      "foodType": "veg"
+    },
+    {
+      "name": "Peri Peri French Fries",
+      "price": 99,
+      "foodType": "veg"
+    },
+    {
+      "name": "Salted French Fries",
+      "price": 79,
+      "foodType": "veg"
+    },
+    {
+      "name": "Korean Cheesy Fries",
+      "price": 149,
+      "foodType": "veg"
+    },
+    {
+      "name": "Sizzling Italian Fries",
+      "price": 159,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mexican Salsa Wrap",
+      "price": 129,
+      "foodType": "veg"
+    },
+    {
+      "name": "Classic Veg Wrap",
+      "price": 109,
+      "foodType": "veg"
+    },
+    {
+      "name": "Grilled Paneer Wrap",
+      "price": 149,
+      "foodType": "veg"
+    }
+  ]
+}

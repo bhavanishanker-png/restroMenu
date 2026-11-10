@@ -1,0 +1,96 @@
+{
+  "source": "Claude-labelled from the image, unverified. Cafe template with real dish names.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Instant Coffee",
+      "price": 8,
+      "foodType": "veg"
+    },
+    {
+      "name": "Latte",
+      "price": 6,
+      "foodType": "veg"
+    },
+    {
+      "name": "Americano",
+      "price": 9,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mocca",
+      "price": 6,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cappuccino",
+      "price": 6,
+      "foodType": "veg"
+    },
+    {
+      "name": "Blue Mountain Coffee",
+      "price": 4,
+      "foodType": "veg"
+    },
+    {
+      "name": "Caramel Macchiato",
+      "price": 5,
+      "foodType": "veg"
+    },
+    {
+      "name": "Black Coffee",
+      "price": 7,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kopi Luwak",
+      "price": 8,
+      "foodType": "veg"
+    },
+    {
+      "name": "Ham And Cheese Sandwich",
+      "price": 10,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Tuna Sandwich",
+      "price": 9,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Eggs With Bacon And Avocado",
+      "price": 12,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Escalopes With Potatoes",
+      "price": 8,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Fish And Chips",
+      "price": 9,
+      "foodType": "non_veg"
+    },
+    {
+      "name": "Strawberry Mousse",
+      "price": 8,
+      "foodType": null
+    },
+    {
+      "name": "Chocolate Cake",
+      "price": 7,
+      "foodType": null
+    },
+    {
+      "name": "Cheesecake",
+      "price": 9,
+      "foodType": null
+    },
+    {
+      "name": "Red Velvet Cake",
+      "price": 11,
+      "foodType": null
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "fingerprint": "ff926a22f99cd08b",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:08.821Z",
+  "durationMs": 11900,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "MAIN COURSE",
+          "items": [
+            {
+              "name": "Fried Rice",
+              "printedDescription": null,
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Wok-tossed rice stir-fried with vegetables and seasonings."
+            },
+            {
+              "name": "Sirloin Steak",
+              "printedDescription": null,
+              "price": 11,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A juicy cut of sirloin beef, grilled to your liking."
+            },
+            {
+              "name": "Spicy Chicken",
+              "printedDescription": null,
+              "price": 12,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Tender chicken pieces cooked in a fiery, flavourful sauce."
+            },
+            {
+              "name": "Grilled Salmon Fish",
+              "printedDescription": null,
+              "price": 13,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Salmon fillet grilled until flaky and lightly charred."
+            },
+            {
+              "name": "Deep Bake Goose",
+              "printedDescription": null,
+              "price": 14,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Slow-baked goose with crisp skin and rich, tender meat."
+            }
+          ]
+        },
+        {
+          "name": "APPETIZERS",
+          "items": [
+            {
+              "name": "Avocado Toast",
+              "printedDescription": null,
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Toasted bread topped with smashed seasoned avocado."
+            },
+            {
+              "name": "Spaghetti Pasta",
+              "printedDescription": null,
+              "price": 11,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Classic spaghetti tossed in a savoury sauce."
+            },
+            {
+              "name": "Chicken Pie",
+              "printedDescription": null,
+              "price": 12,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Golden pastry filled with savoury chicken filling."
+            },
+            {
+              "name": "Fish Sandwich",
+              "printedDescription": null,
+              "price": 13,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A sandwich filled with a seasoned fish fillet."
+            },
+            {
+              "name": "Vegetable Salad",
+              "printedDescription": null,
+              "price": 14,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A fresh mix of crisp seasonal vegetables."
+            }
+          ]
+        },
+        {
+          "name": "DRINKS",
+          "items": [
+            {
+              "name": "Mineral Water",
+              "printedDescription": null,
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Chilled bottled mineral water."
+            },
+            {
+              "name": "Jasmine Tea",
+              "printedDescription": null,
+              "price": 11,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Fragrant tea infused with jasmine blossoms."
+            },
+            {
+              "name": "Lemonade",
+              "printedDescription": null,
+              "price": 12,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Refreshing sweet and tangy lemon drink."
+            },
+            {
+              "name": "Fresh Juice",
+              "printedDescription": null,
+              "price": 13,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Freshly squeezed fruit juice."
+            },
+            {
+              "name": "Smoothie",
+              "printedDescription": null,
+              "price": 14,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A thick, blended fruit drink."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 2101,
+      "outputTokens": 1426
+    },
+    "stopReason": "end_turn"
+  }
+}

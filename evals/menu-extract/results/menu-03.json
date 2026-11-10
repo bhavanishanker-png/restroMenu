@@ -1,0 +1,437 @@
+{
+  "fingerprint": "763fb83a83111f31",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:34.024Z",
+  "durationMs": 37098,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Main Course",
+          "items": [
+            {
+              "name": "Cabonara",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chicken Parmesan",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "BBQ Chicken Pizza",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Veggie Pizza",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "All Day Breakfast with Coffee",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Food Starter",
+          "items": [
+            {
+              "name": "Fish Chip Cheese",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Potatoes Wedge",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Cheese Chips",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Garlic Bread",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Fresh Drinks",
+          "items": [
+            {
+              "name": "Fresh Juice",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Freshly squeezed fruit juice."
+            },
+            {
+              "name": "House Beers",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A selection of the house beers."
+            },
+            {
+              "name": "All Soda",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Your choice of chilled soft drink."
+            },
+            {
+              "name": "Soda Water",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Chilled sparkling water."
+            },
+            {
+              "name": "Ginger Ale",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A crisp, bubbly ginger-flavoured soft drink."
+            },
+            {
+              "name": "Smoothies",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Thick blended fruit smoothies."
+            },
+            {
+              "name": "Fizzy Drinks",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A choice of chilled carbonated drinks."
+            },
+            {
+              "name": "English Tea",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A classic cup of English black tea."
+            },
+            {
+              "name": "Green Tea",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A light, fragrant cup of green tea."
+            },
+            {
+              "name": "Lemonade",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Refreshing chilled lemonade."
+            }
+          ]
+        },
+        {
+          "name": "Pasta",
+          "items": [
+            {
+              "name": "Meat Balls Pasta",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Cabonara",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Super Cheesy Pasta",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Special Menu",
+          "items": [
+            {
+              "name": "Mac N Cheese",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chicken with Salad",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Red Velvet Cheese Cake",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "House Coffee",
+          "items": [
+            {
+              "name": "Flat White",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso topped with smooth, velvety steamed milk."
+            },
+            {
+              "name": "Cafe Latte",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso with plenty of steamed milk and a light foam."
+            },
+            {
+              "name": "Cappuccino",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso with steamed milk and a thick layer of foam."
+            },
+            {
+              "name": "Mocha",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso blended with chocolate and steamed milk."
+            },
+            {
+              "name": "Americano",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso lengthened with hot water."
+            },
+            {
+              "name": "Macchiato",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Espresso marked with a small dash of milk foam."
+            },
+            {
+              "name": "Black Coffee",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Freshly brewed coffee served black."
+            },
+            {
+              "name": "Espresso",
+              "printedDescription": null,
+              "price": 5,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": "A short, intense shot of coffee."
+            }
+          ]
+        },
+        {
+          "name": "Burger",
+          "items": [
+            {
+              "name": "The Classic Burger",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Charcoal Burger",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chicken Burger",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": "non_veg",
+              "foodTypeSource": "dish_name",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Dessert Menu",
+          "items": [
+            {
+              "name": "Classic Tiramisu",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Chocolate Cake",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Crème Brûlée",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Baked Alaska",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Green Tea Parfait",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Panna Cotta",
+              "printedDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+              "price": 10,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 4387,
+      "outputTokens": 4879
+    },
+    "stopReason": "end_turn"
+  }
+}

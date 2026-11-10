@@ -50,3 +50,12 @@ docs/diagrams/*.png
 !docs/diagrams/system-context.png
 !docs/diagrams/sequence-place-order.png
 !docs/diagrams/er-data-model.png
+
+# Menu-import eval: photos stay local (labels, results and report are committed).
+evals/menu-extract/cases/*.jpg
+evals/menu-extract/cases/*.jpeg
+evals/menu-extract/cases/*.png
+evals/menu-extract/cases/*.webp
+evals/menu-extract/cases/*.gif
+evals/menu-extract/cases/*.pdf
+evals/menu-extract/excluded/

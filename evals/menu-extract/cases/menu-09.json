@@ -1,0 +1,176 @@
+{
+  "source": "Claude-labelled from the image, unverified. North Indian veg; Half/Full pricing, Half (lowest) used.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Jeera Aloo",
+      "price": 100,
+      "foodType": "veg"
+    },
+    {
+      "name": "Dum Aloo",
+      "price": 110,
+      "foodType": "veg"
+    },
+    {
+      "name": "Gobhi Aloo",
+      "price": 90,
+      "foodType": "veg"
+    },
+    {
+      "name": "Aloo Matar",
+      "price": 100,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kashmiri Dum Aloo",
+      "price": 140,
+      "foodType": "veg"
+    },
+    {
+      "name": "Stuff Dum Aloo",
+      "price": 160,
+      "foodType": "veg"
+    },
+    {
+      "name": "Aloo Do Pyaja",
+      "price": 130,
+      "foodType": "veg"
+    },
+    {
+      "name": "Gobhi Masala",
+      "price": 120,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mix Veg",
+      "price": 160,
+      "foodType": "veg"
+    },
+    {
+      "name": "Malai Kofta",
+      "price": 180,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kaju Curry",
+      "price": 180,
+      "foodType": "veg"
+    },
+    {
+      "name": "Palak Fry",
+      "price": 130,
+      "foodType": "veg"
+    },
+    {
+      "name": "Spl. Sev Bhaji",
+      "price": 100,
+      "foodType": "veg"
+    },
+    {
+      "name": "Matar Mushroom",
+      "price": 160,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mushroom Do Pyaja",
+      "price": 150,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kadhai Mushroom",
+      "price": 170,
+      "foodType": "veg"
+    },
+    {
+      "name": "Handi Mushroom",
+      "price": 180,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mushroom Masala",
+      "price": 180,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Mushroom",
+      "price": 190,
+      "foodType": "veg"
+    },
+    {
+      "name": "Chana Masala",
+      "price": 150,
+      "foodType": "veg"
+    },
+    {
+      "name": "Sarso Ka Saag",
+      "price": 170,
+      "foodType": "veg"
+    },
+    {
+      "name": "Dal Fry",
+      "price": 80,
+      "foodType": "veg"
+    },
+    {
+      "name": "Dal Tadka",
+      "price": 90,
+      "foodType": "veg"
+    },
+    {
+      "name": "Punjabi Dal Tadka",
+      "price": 100,
+      "foodType": "veg"
+    },
+    {
+      "name": "Dal Makhni",
+      "price": 130,
+      "foodType": "veg"
+    },
+    {
+      "name": "Kadhi Pakora",
+      "price": 90,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Tikka",
+      "price": 220,
+      "foodType": "veg"
+    },
+    {
+      "name": "Paneer Malai Tikka",
+      "price": 250,
+      "foodType": "veg"
+    },
+    {
+      "name": "Soya Chaap Tandoori",
+      "price": 200,
+      "foodType": "veg"
+    },
+    {
+      "name": "Soya Malai Chaap",
+      "price": 220,
+      "foodType": "veg"
+    },
+    {
+      "name": "Jaipuri Achari Chaap",
+      "price": 220,
+      "foodType": "veg"
+    },
+    {
+      "name": "Mashrrom Tikka",
+      "price": 280,
+      "foodType": "veg"
+    },
+    {
+      "name": "Veg Sheek Kabab",
+      "price": 350,
+      "foodType": "veg"
+    },
+    {
+      "name": "Pudina Chaap",
+      "price": 250,
+      "foodType": "veg"
+    }
+  ]
+}

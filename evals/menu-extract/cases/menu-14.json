@@ -1,0 +1,61 @@
+{
+  "source": "Claude-labelled from the image, unverified. The Kitchen. Only a 'Not available in Jain' icon, no veg markers. Quiches labelled null: may or may not contain egg.",
+  "hasVegMarkers": false,
+  "dishes": [
+    {
+      "name": "Nachos Mexicano",
+      "price": 450,
+      "foodType": "veg"
+    },
+    {
+      "name": "Sauté Vegetables",
+      "price": 430,
+      "foodType": "veg"
+    },
+    {
+      "name": "Stuffed Mushrooms",
+      "price": 390,
+      "foodType": "veg"
+    },
+    {
+      "name": "Swiss Filo Rolls",
+      "price": 490,
+      "foodType": "veg"
+    },
+    {
+      "name": "Fiery Paneer With Crackling Spinach",
+      "price": 480,
+      "foodType": "veg"
+    },
+    {
+      "name": "Greeny Pesto Paneer",
+      "price": 490,
+      "foodType": "veg"
+    },
+    {
+      "name": "Peri Peri Mozzarella Sticks",
+      "price": 480,
+      "foodType": "veg"
+    },
+    {
+      "name": "Jalapeño Cheese Fritters",
+      "price": 450,
+      "foodType": "veg"
+    },
+    {
+      "name": "Crispy Lotus Stem",
+      "price": 410,
+      "foodType": "veg"
+    },
+    {
+      "name": "Cheesy Veggie",
+      "price": 410,
+      "foodType": null
+    },
+    {
+      "name": "Caramelised Onion & Mushroom",
+      "price": 410,
+      "foodType": null
+    }
+  ]
+}

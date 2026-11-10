@@ -1,0 +1,151 @@
+{
+  "fingerprint": "33cc0fc5d9dd4141",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:03:28.208Z",
+  "durationMs": 17601,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Burger",
+          "items": [
+            {
+              "name": "Mexican King Burger",
+              "printedDescription": "The Ultimate Burger Packed With Tsunami Of Flavor & Succulence, It's A Combination Of Patty, Veggies And ZORKO Special Sauces. Crowned As ZORKO'S Best Seller.",
+              "price": 89,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 89 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Spicy Salsa Barbeque Burger",
+              "printedDescription": "Burger With Veg Patty, Fresh Veggies, Spicy BBQ Salsa & ZORKO Special Sauces.",
+              "price": 79,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 79 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Korean Burger",
+              "printedDescription": "Burger With Veg Patty, Fresh Veggies, ZORKO Special Sauces & Spicy Korean Sauce",
+              "price": 69,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 69 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Double Tikki Burger",
+              "printedDescription": "Burger Elevated With Two Vegetable Patty With Veggies & Creamy Sauces.",
+              "price": 79,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 79 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Classic OG Burger",
+              "printedDescription": "Burger Layered With Vegetable Patty, Veggies & ZORKO Special Sauces.",
+              "price": 49,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 49 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Royal Paneer Grilled Burger",
+              "printedDescription": "A Delightful, Flavorful & Creamy Burger Layered With Freshly Grilled Paneer Covered With ZORKO Special Sauces & Veggies.",
+              "price": 139,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 139 / Add Cheese Slice +15",
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Fries",
+          "items": [
+            {
+              "name": "Peri Peri French Fries",
+              "printedDescription": "With Cheese Dip. Fries Seasoned With Salt & Tossed With Peri Peri Powder.",
+              "price": 99,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 99 / Cheesy +40",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Salted French Fries",
+              "printedDescription": "With Cheese Dip. Batons of Potato Fried Until Golden Brown And Seasoned With Salt.",
+              "price": 79,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 79 / Cheesy +40",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Korean Cheesy Fries",
+              "printedDescription": "Crispy Fries Loaded With Korean Sauce & Rich Orange Cheese Sauce For A Spicy, Cheesy Kick.",
+              "price": 149,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Sizzling Italian Fries",
+              "printedDescription": "Sizzling Fries Topped With Cheese Sauce, ZORKO'S Special Sauces, Jalapeños, Paprika, Olives & Cheese.",
+              "price": 159,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            }
+          ]
+        },
+        {
+          "name": "Wraps",
+          "items": [
+            {
+              "name": "Mexican Salsa Wrap",
+              "printedDescription": "Grilled Tortilla Rolled With Fresh Tomato Salsa, Exotic Veggies, Potato Patty, Special Sauces & Crispy Nachos.",
+              "price": 129,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 129 / Add Cheese +30",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Classic Veg Wrap",
+              "printedDescription": "Tortilla Wrapped With Veg Patty, Fresh Veggies, ZORKO Special Sauces Loaded With Corn, Olive, Jalapeno & Red Paprika.",
+              "price": 109,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 109 / Add Cheese +30",
+              "suggestedDescription": null
+            },
+            {
+              "name": "Grilled Paneer Wrap",
+              "printedDescription": "Grilled Paneer Tossed In ZORKO Exotic Sauce Accompanied With Fresh Veggies & Spices.",
+              "price": 149,
+              "foodType": null,
+              "foodTypeSource": "unsure",
+              "sizeOptionsText": "Regular 149 / Add Cheese +30",
+              "suggestedDescription": null
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 4486,
+      "outputTokens": 2192
+    },
+    "stopReason": "end_turn"
+  }
+}

@@ -1,0 +1,366 @@
+{
+  "fingerprint": "0b0a7945aeff0925",
+  "model": "claude-opus-5-5",
+  "extractedAt": "2026-11-10T06:04:01.453Z",
+  "durationMs": 33240,
+  "result": {
+    "ok": true,
+    "extraction": {
+      "isMenu": true,
+      "categories": [
+        {
+          "name": "Veg Curries of North india",
+          "items": [
+            {
+              "name": "Kadai Paneer",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cubes tossed with capsicum and onion in a spiced kadai masala."
+            },
+            {
+              "name": "Paneer Butter Masala",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cubes simmered in a rich, mildly spiced tomato gravy."
+            },
+            {
+              "name": "Paneer Tikka Masala",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Grilled paneer tikka pieces cooked in a spiced onion-tomato masala."
+            },
+            {
+              "name": "Paneer Lababdar",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer in a rich, tangy tomato and onion gravy."
+            },
+            {
+              "name": "Mutter Paneer",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer and green peas cooked in a spiced tomato gravy."
+            },
+            {
+              "name": "Paneer Reshmi",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Palak Paneer",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cubes in a smooth, spiced spinach gravy."
+            },
+            {
+              "name": "Methi Chaman",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Kashmiri-style paneer cooked with fenugreek and spinach greens."
+            },
+            {
+              "name": "Pudina Paneer Kali Mirch",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cooked in a mint and black pepper flavoured gravy."
+            },
+            {
+              "name": "Shahi Paneer",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer in a rich, mildly spiced royal-style gravy."
+            },
+            {
+              "name": "Sham Savera",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Spinach koftas stuffed with paneer, served in a tomato gravy."
+            },
+            {
+              "name": "Paneer Shahi Korma",
+              "printedDescription": null,
+              "price": 575,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cooked in a rich, aromatic korma gravy."
+            },
+            {
+              "name": "Paneer Bhurji",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Scrambled paneer cooked with onions, tomatoes and spices."
+            },
+            {
+              "name": "Paneer Hyderabadi",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Paneer cooked in a spiced Hyderabadi-style gravy."
+            },
+            {
+              "name": "Paneer Pasanda",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Stuffed paneer slices served in a rich, mildly spiced gravy."
+            },
+            {
+              "name": "Malai Kofta",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Soft paneer and potato dumplings in a rich, smooth gravy."
+            },
+            {
+              "name": "Veg. Kofta",
+              "printedDescription": null,
+              "price": 499,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mixed vegetable dumplings simmered in a spiced curry."
+            },
+            {
+              "name": "Beetroot Kofta Curry",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Beetroot dumplings simmered in a spiced curry."
+            },
+            {
+              "name": "Soya Chaap Hyderabadi",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Soya chaap cooked in a spiced Hyderabadi-style gravy."
+            },
+            {
+              "name": "Veg Keema Curry (Nutrilla)",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Minced soya granules cooked keema-style with onions, tomatoes and spices."
+            },
+            {
+              "name": "Soya Tikka Masala",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Grilled soya tikka cooked in a spiced onion-tomato masala."
+            },
+            {
+              "name": "Mushroom Do Piyaza",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mushrooms cooked with plenty of onions in a spiced masala."
+            },
+            {
+              "name": "Kadai Mushroom",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mushrooms tossed with capsicum and onion in a spiced kadai masala."
+            },
+            {
+              "name": "Dhingri Mutter Hara Pyaaz",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mushrooms, green peas and spring onions cooked in a spiced gravy."
+            },
+            {
+              "name": "Khumbh Kaju Mutter",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mushrooms and green peas cooked in a rich, mildly spiced gravy."
+            },
+            {
+              "name": "Mutter Methi Malai",
+              "printedDescription": null,
+              "price": 550,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Green peas and fenugreek leaves in a smooth, mildly sweet gravy."
+            },
+            {
+              "name": "Boiled Vegetable",
+              "printedDescription": null,
+              "price": 450,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Seasonal vegetables simply boiled and lightly seasoned."
+            },
+            {
+              "name": "Vegetable Shahi Korma",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mixed vegetables cooked in a rich, aromatic korma gravy."
+            },
+            {
+              "name": "Veg Kohla Puri",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mixed vegetables in a fiery Kolhapuri-style masala."
+            },
+            {
+              "name": "Corn Palak",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Sweet corn kernels cooked in a spiced spinach gravy."
+            },
+            {
+              "name": "Banarsi Dum Aloo",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Baby potatoes slow-cooked dum-style in a rich Banarasi gravy."
+            },
+            {
+              "name": "Adarki Kadai Gobhi",
+              "printedDescription": null,
+              "price": 499,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Cauliflower tossed with ginger in a spiced kadai masala."
+            },
+            {
+              "name": "Jeera Aloo",
+              "printedDescription": null,
+              "price": 475,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Potatoes sautéed with cumin seeds and spices."
+            },
+            {
+              "name": "Chole Rawal Pindi",
+              "printedDescription": null,
+              "price": 499,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Rawalpindi-style chickpeas cooked in a dark, tangy spiced masala."
+            },
+            {
+              "name": "Zanat-E-Numa",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": null
+            },
+            {
+              "name": "Veg. Jalfrezi",
+              "printedDescription": null,
+              "price": 525,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Mixed vegetables stir-fried with peppers and onions in a tangy spiced sauce."
+            },
+            {
+              "name": "Mix Vegetable",
+              "printedDescription": null,
+              "price": 499,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Seasonal vegetables cooked together in a spiced curry."
+            },
+            {
+              "name": "Aloo Gobhi",
+              "printedDescription": null,
+              "price": 499,
+              "foodType": "veg",
+              "foodTypeSource": "printed_marker",
+              "sizeOptionsText": null,
+              "suggestedDescription": "Potatoes and cauliflower cooked with onions, tomatoes and spices."
+            }
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 4171,
+      "outputTokens": 4468
+    },
+    "stopReason": "end_turn"
+  }
+}
