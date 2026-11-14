@@ -9,3 +9,6 @@ import type { DraftMenuItem } from "@/types";
 export function draftItemIsReady(item: Pick<DraftMenuItem, "basePrice" | "foodType">): boolean {
   return item.basePrice !== null && item.basePrice > 0 && item.foodType !== null;
 }
+
+/** Most pages (photos or PDFs) one AI menu import accepts. Shared by the dialog and the route. */
+export const MAX_IMPORT_PAGES = 5;

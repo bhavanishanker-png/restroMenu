@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getStaffSession, requireRole } from "@/lib/auth";
@@ -10,19 +11,19 @@ import {
   fileMatchesDeclaredType,
   isAiFeatureEnabled,
 } from "@/lib/ai/guardrails";
-import { reconcileDraft } from "@/lib/ai/menu-onboarding";
+import { extractMenu, type MenuMediaType } from "@/lib/ai/menu-extract";
 import {
-  extractMenu,
-  type ExtractFailureCode,
-  type ExtractResult,
-  type MenuMediaType,
-} from "@/lib/ai/menu-extract";
-import type { MenuDraft } from "@/types";
+  MAX_IMPORT_PAGES,
+  PAGE_FAILURE_MESSAGES,
+  startMenuImport,
+  type PageExtraction,
+} from "@/lib/ai/menu-import-graph";
+import { getMenuImportCheckpointer } from "@/lib/ai/menu-import-checkpointer";
 
-// Reading a multi-page menu can take a while; Vercel's default would cut it off.
+// Pages are read in parallel, so N pages take about as long as the slowest one.
 export const maxDuration = 120;
 
-const ALLOWED_TYPES = new Set([
+const ALLOWED_TYPES = new Set<string>([
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -30,24 +31,18 @@ const ALLOWED_TYPES = new Set([
   "application/pdf",
 ]);
 
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_BYTES_PER_FILE = 10 * 1024 * 1024; // 10 MB
+const MAX_BYTES_TOTAL = 20 * 1024 * 1024; // 20 MB
 
-const EXTRACT_FAILURES: Record<ExtractFailureCode, { message: string; status: number }> = {
-  AI_DECLINED: { message: "The AI couldn't process this file. Try a clearer photo of the menu.", status: 422 },
-  MENU_TOO_LONG: {
-    message: "This menu is too long to read in one go. Upload it a few pages at a time.",
-    status: 422,
-  },
-  PARSE_ERROR: { message: "AI returned malformed data. Please try again.", status: 422 },
-  SCHEMA_ERROR: { message: "AI returned unexpected data. Please try again.", status: 422 },
-  NOT_A_MENU: { message: "That doesn't look like a menu. Upload a photo or PDF of your menu.", status: 422 },
-};
+type Page = { bytes: Uint8Array; mediaType: MenuMediaType };
 
 // ─── POST /api/ai/menu-extract ──────────────────────────────────────────────
 //
-// Returns a reviewed-by-code DRAFT. It never writes the menu: the owner ticks
-// dishes in MenuExtractDialog, which saves them through the normal
-// /api/menu/categories and /api/menu/items routes (and their validation).
+// Starts a menu import (LangGraph thread, see src/lib/ai/menu-import-graph.ts):
+// reads 1–5 pages in parallel, merges them, checks the result in code, then
+// pauses at owner review. Returns the draft and the thread id. It never writes
+// the menu: the owner approves via POST /api/ai/menu-extract/[threadId], and
+// the dialog saves through /api/menu/categories and /api/menu/items.
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const guard = await requireRole(["owner", "manager"]);
@@ -67,7 +62,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return aiErrorResponse("NO_API_KEY", "ANTHROPIC_API_KEY is not configured.", 503);
   }
 
-  // Each import is one large model call; cap it per restaurant and per IP.
+  // One import = up to MAX_IMPORT_PAGES model calls; cap imports per restaurant and IP.
   const limited = await enforceAiRateLimits([
     { key: `ai-import:r:${session.restaurantId}`, limit: 10, windowMs: 60 * 60_000 },
     { key: `ai-import:ip:${clientIp(req.headers)}`, limit: 20, windowMs: 60 * 60_000 },
@@ -81,26 +76,44 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return aiErrorResponse("INVALID_FORM", "Invalid multipart form data.", 400);
   }
 
-  const entry = formData.get("file");
-  if (!(entry instanceof File)) {
+  const files = [...formData.getAll("files"), ...formData.getAll("file")].filter(
+    (entry): entry is File => entry instanceof File
+  );
+  if (files.length === 0) {
     return aiErrorResponse("MISSING_FILE", "No file uploaded.", 400);
   }
-  const file = entry;
-
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return aiErrorResponse("INVALID_TYPE", "Upload a JPG, PNG, WebP, or PDF file.", 400);
-  }
-  if (file.size > MAX_BYTES) {
-    return aiErrorResponse("FILE_TOO_LARGE", "File must be under 10 MB.", 400);
-  }
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!fileMatchesDeclaredType(bytes, file.type)) {
+  if (files.length > MAX_IMPORT_PAGES) {
     return aiErrorResponse(
-      "INVALID_TYPE",
-      "That file isn't a real JPG, PNG, WebP or PDF. Export it again and retry.",
+      "TOO_MANY_FILES",
+      `Upload at most ${MAX_IMPORT_PAGES} pages at a time.`,
       400
     );
+  }
+
+  let totalBytes = 0;
+  const pages: Page[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const label = files.length > 1 ? `Page ${i + 1}: ` : "";
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return aiErrorResponse("INVALID_TYPE", `${label}Upload a JPG, PNG, WebP, or PDF file.`, 400);
+    }
+    if (file.size > MAX_BYTES_PER_FILE) {
+      return aiErrorResponse("FILE_TOO_LARGE", `${label}Each file must be under 10 MB.`, 400);
+    }
+    totalBytes += file.size;
+    if (totalBytes > MAX_BYTES_TOTAL) {
+      return aiErrorResponse("FILE_TOO_LARGE", "All pages together must be under 20 MB.", 400);
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!fileMatchesDeclaredType(bytes, file.type)) {
+      return aiErrorResponse(
+        "INVALID_TYPE",
+        `${label}That file isn't a real JPG, PNG, WebP or PDF. Export it again and retry.`,
+        400
+      );
+    }
+    pages.push({ bytes, mediaType: file.type as MenuMediaType });
   }
 
   const catalog = await fetchMenuCatalog(session.restaurantId);
@@ -108,39 +121,69 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return aiErrorResponse("DB_ERROR", "Couldn't load your current menu. Try again.", 500);
   }
 
-  let result: ExtractResult;
+  let checkpointer;
   try {
-    result = await extractMenu(client, bytes, file.type as MenuMediaType);
+    checkpointer = await getMenuImportCheckpointer();
   } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) {
-      console.error("[menu-extract] Anthropic rate limit:", err.message);
-      return aiErrorResponse("AI_BUSY", "The AI service is busy. Try again in a minute.", 503);
+    console.error("[menu-extract] checkpointer setup failed", err);
+    return aiErrorResponse("DB_ERROR", "Couldn't start the import. Try again.", 500);
+  }
+
+  // Closure over the uploaded bytes: images never enter graph state, so they
+  // are never written to the checkpoint store.
+  const extractPage = async (pageNumber: number): Promise<PageExtraction> => {
+    const page = pages[pageNumber - 1];
+    try {
+      const result = await extractMenu(client, page.bytes, page.mediaType);
+      console.info("[menu-extract]", {
+        restaurantId: session.restaurantId,
+        page: pageNumber,
+        stopReason: result.stopReason,
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+      });
+      if (result.ok) return { page: pageNumber, ok: true, extraction: result.extraction };
+      if (result.detail) console.error(`[menu-extract] page ${pageNumber} ${result.code}:`, result.detail);
+      return { page: pageNumber, ok: false, code: result.code };
+    } catch (err) {
+      if (err instanceof Anthropic.RateLimitError) {
+        console.error(`[menu-extract] page ${pageNumber} Anthropic rate limit:`, err.message);
+        return { page: pageNumber, ok: false, code: "AI_BUSY" };
+      }
+      if (err instanceof Anthropic.APIError) {
+        console.error(`[menu-extract] page ${pageNumber} Anthropic API error ${err.status}:`, err.message);
+      } else {
+        console.error(`[menu-extract] page ${pageNumber} Anthropic call failed:`, err);
+      }
+      return { page: pageNumber, ok: false, code: "AI_ERROR" };
     }
-    if (err instanceof Anthropic.APIError) {
-      console.error(`[menu-extract] Anthropic API error ${err.status}:`, err.message);
-    } else {
-      console.error("[menu-extract] Anthropic call failed:", err);
-    }
+  };
+
+  let result;
+  try {
+    result = await startMenuImport({
+      checkpointer,
+      extractPage,
+      catalog,
+      threadId: randomUUID(),
+      restaurantId: session.restaurantId,
+      pageCount: pages.length,
+    });
+  } catch (err) {
+    console.error("[menu-extract] import graph failed", err);
     return aiErrorResponse("AI_ERROR", "AI extraction failed. Please try again.", 502);
   }
 
-  console.info("[menu-extract]", {
-    restaurantId: session.restaurantId,
-    stopReason: result.stopReason,
-    inputTokens: result.usage.inputTokens,
-    outputTokens: result.usage.outputTokens,
-  });
-
-  if (!result.ok) {
-    if (result.detail) console.error(`[menu-extract] ${result.code}:`, result.detail);
-    const { message, status } = EXTRACT_FAILURES[result.code];
-    return aiErrorResponse(result.code, message, status);
+  if (result.status === "failed") {
+    const first = result.failedPages[0];
+    if (!first) {
+      return aiErrorResponse("NO_ITEMS", "No dishes could be read. Try a sharper, well-lit photo.", 422);
+    }
+    const busy = result.failedPages.every((f) => f.code === "AI_BUSY");
+    const message =
+      pages.length === 1 ? PAGE_FAILURE_MESSAGES[first.code] : `No page could be read. Page ${first.page}: ${first.message}`;
+    return aiErrorResponse(first.code, message, busy ? 503 : 422);
   }
 
-  const draft: MenuDraft = reconcileDraft(result.extraction, catalog);
-  if (draft.totalItems === 0) {
-    return aiErrorResponse("NO_ITEMS", "No dishes could be read. Try a sharper, well-lit photo.", 422);
-  }
-
-  return NextResponse.json({ draft });
+  return NextResponse.json({ pending: result.pending });
 }

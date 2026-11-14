@@ -395,6 +395,54 @@ export type MenuDraft = {
   totalItems: number;
 };
 
+/** Why one uploaded page could not be read. The rest of the import continues. */
+export type MenuImportFailureCode =
+  | 'AI_DECLINED'
+  | 'MENU_TOO_LONG'
+  | 'PARSE_ERROR'
+  | 'SCHEMA_ERROR'
+  | 'NOT_A_MENU'
+  | 'AI_BUSY'
+  | 'AI_ERROR';
+
+export type MenuImportPageFailure = {
+  /** 1-based, as the owner counts pages. */
+  page: number;
+  code: MenuImportFailureCode;
+  message: string;
+};
+
+/** A menu import paused at owner review (a LangGraph thread waiting on an interrupt). */
+export type MenuImportPending = {
+  threadId: string;
+  draft: MenuDraft;
+  pageCount: number;
+  failedPages: MenuImportPageFailure[];
+  createdAt: string;
+};
+
+/**
+ * The owner's choice for one draft dish, sent on resume. Only selected dishes
+ * are sent. `basePrice` / `foodType` fill in what the AI left blank; a value
+ * the AI read from the menu is kept.
+ */
+export type MenuImportItemDecision = {
+  categoryIndex: number;
+  itemIndex: number;
+  basePrice: number | null;
+  foodType: FoodType | null;
+};
+
+/** A draft dish the owner approved and code validated: ready to save. */
+export type ApprovedMenuItem = Omit<DraftMenuItem, 'basePrice' | 'foodType'> & {
+  basePrice: number;
+  foodType: FoodType;
+};
+
+export type ApprovedMenuCategory = Omit<DraftMenuCategory, 'items'> & {
+  items: ApprovedMenuItem[];
+};
+
 export type AssistantChatTurn = {
   role: 'user' | 'assistant';
   content: string;

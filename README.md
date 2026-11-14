@@ -18,7 +18,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 ### Restaurant
 - **Kitchen display** — live order cards, sound alert on new order, one tap to advance status, amber/red urgency timers
 - **Menu manager** — add/edit/delete categories and items, drag to reorder, one-tap availability toggle
-- **AI menu import** — upload a photo or PDF of a printed menu; AI drafts the dishes, flags duplicates and anything it couldn't read, and the owner reviews before anything is saved
+- **AI menu import** — upload up to 5 photos or PDFs of a printed menu; pages are read in parallel, AI drafts the dishes, code flags duplicates and anything it couldn't read, and the owner reviews before anything is saved (close the dialog and continue later)
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
 - **Dashboard** — today's order count, revenue, average ticket
 - **Staff login** — email (owner/manager) or 4-digit PIN (kitchen/waiter)
@@ -43,6 +43,7 @@ How the system works and why. **[Architecture overview →](docs/architecture.md
 | Realtime silently delivered nothing to staff | Tenant-scoped polling; Realtime only nudges | [0007](docs/adr/0007-kitchen-board-polling.md) |
 | Kitchen wifi drops | Optimistic updates, persisted queue, server wins | [0008](docs/adr/0008-offline-kitchen-display.md) |
 | LLMs can be wrong or manipulated | AI drafts and suggests; code validates; humans approve writes | [0009](docs/adr/0009-ai-as-untrusted-component.md) |
+| Multi-page menu import with a human review that can last hours | LangGraph workflow: parallel page reads, checkpointed pause for owner review, server-side validation | [0010](docs/adr/0010-menu-import-langgraph.md) |
 
 ### System at a glance
 
@@ -76,6 +77,7 @@ All UML diagrams, including the kitchen and restaurant-owner flows, are in [uml.
 | Payments | Razorpay |
 | State | Zustand (cart) + TanStack Query (server state) |
 | AI | Claude API (`@anthropic-ai/sdk`) — server-side only |
+| AI orchestration | LangGraph (menu import workflow; Claude still called via the Anthropic SDK) |
 | Error tracking | Sentry |
 | Deployment | Vercel |
 

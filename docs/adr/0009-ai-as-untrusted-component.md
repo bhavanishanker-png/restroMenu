@@ -44,5 +44,5 @@ Where code is more reliable than a model, code does the work: duplicate detectio
 
 ## Where it lives
 
-- `src/lib/ai/guardrails.ts`, `src/lib/ai/menu-onboarding.ts`, `src/lib/ai/menu-assistant.ts`
+- `src/lib/ai/guardrails.ts`, `src/lib/ai/menu-onboarding.ts`, `src/lib/ai/menu-assistant.ts`, `src/lib/ai/menu-import-graph.ts` (import workflow; owner decisions validated in its `validate` step, see [0010](0010-menu-import-langgraph.md))
 - `src/app/api/ai/menu-extract/route.ts`, `src/app/api/ai/menu-chat/route.ts`

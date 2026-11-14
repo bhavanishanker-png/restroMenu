@@ -13,6 +13,7 @@ Each record explains one design decision in QBite: the problem, the options cons
 | [0007](0007-kitchen-board-polling.md) | Kitchen board: polling over realtime | Poll a tenant-scoped server route every 8 s; Realtime only nudges the poll |
 | [0008](0008-offline-kitchen-display.md) | Offline-tolerant kitchen display | Optimistic updates, a localStorage queue, and server-wins conflict handling |
 | [0009](0009-ai-as-untrusted-component.md) | AI as an untrusted component | AI drafts and suggests; code validates everything; humans approve every write |
+| [0010](0010-menu-import-langgraph.md) | Menu import as a LangGraph workflow | Parallel page reads, checkpointed pause for owner review, server-side validation; Claude still called via the Anthropic SDK |
 
 ## Format
 

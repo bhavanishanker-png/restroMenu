@@ -272,3 +272,33 @@ the kitchen display within 2 seconds, and "Mark resolved" removes it.
 T25 Time-based menus · T27 Private routing of sub-3 ratings · T28 Loyalty by phone ·
 T29 Reorder-my-usual · T30 Dead items and turnover reports · T31 WhatsApp bill ·
 T32 Takeaway pre-order with pickup time
+
+---
+
+## AI platform
+
+### - [ ] T33 · Menu import as a LangGraph workflow
+Out of the release order by the owner's decision (2026-11-14). Moves the
+orchestration of AI menu import (`POST /api/ai/menu-extract`) into a LangGraph
+`StateGraph`. Each step still calls Claude through `@anthropic-ai/sdk` via the
+existing `extractMenu`, and checks with the existing `reconcileDraft`, so the
+menu-import eval keeps measuring the shipped code.
+
+Graph: pages fan out to parallel `extract_page` nodes → `merge` → `reconcile`
+→ `review` (interrupt: waits for the owner) → `validate_decisions` → done.
+State is checkpointed in Postgres (schema `langgraph`, not `public`), keyed by a
+thread id bound to the restaurant. Raw page images are never checkpointed.
+Saving still goes through `/api/menu/categories` and `/api/menu/items`.
+
+**Done when:**
+- An owner can upload up to 5 pages (images or PDFs) in one import; pages are
+  extracted in parallel and merged into one draft. A page that fails is reported
+  by number; the rest still import.
+- Closing the dialog after extraction and reopening it offers "Continue your last
+  import" and shows the same draft with no second AI call.
+- A resume request for another restaurant's thread returns 404.
+- Owner decisions on resume are validated in code (only existing draft items;
+  prices 1–99,999; a food type set for every selected dish) before anything is saved.
+- Unit tests cover fan-out/merge, partial page failure, interrupt/resume without
+  re-extraction, the tenant check and decision validation — without calling the API.
+- `npm run eval:menu` still scores the same extraction code.

@@ -16,6 +16,7 @@ import {
   ExtractionSchema,
   type Extraction,
 } from "@/lib/ai/menu-onboarding";
+import type { MenuImportFailureCode } from "@/types";
 
 export type MenuMediaType =
   | "image/jpeg"
@@ -26,12 +27,7 @@ export type MenuMediaType =
 
 export type ExtractUsage = { inputTokens: number; outputTokens: number };
 
-export type ExtractFailureCode =
-  | "AI_DECLINED"
-  | "MENU_TOO_LONG"
-  | "PARSE_ERROR"
-  | "SCHEMA_ERROR"
-  | "NOT_A_MENU";
+export type ExtractFailureCode = Exclude<MenuImportFailureCode, "AI_BUSY" | "AI_ERROR">;
 
 export type ExtractResult =
   | { ok: true; extraction: Extraction; usage: ExtractUsage; stopReason: string | null }
