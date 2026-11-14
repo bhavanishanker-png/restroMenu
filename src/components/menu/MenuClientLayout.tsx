@@ -20,9 +20,21 @@ import {
 } from "@/components/ui/sheet";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
-import type { MenuItem, PublicMenu } from "@/types";
+import type { MenuItem, MenuLocale, PublicMenu } from "@/types";
 
 type ActiveTab = "menu" | "cart" | "requests";
+
+type Locale = "en" | MenuLocale;
+
+// Per-device preference only; the menu renders in English without it.
+const LOCALE_KEY = "qbite:menu-locale";
+
+/** Shows a dish in the chosen language; anything without a translation stays English. */
+function localize(item: MenuItem, locale: Locale): MenuItem {
+  if (locale === "en") return item;
+  const t = (item.translations ?? []).find((tr) => tr.locale === locale);
+  return t ? { ...item, name: t.name, description: t.description ?? item.description } : item;
+}
 
 type Props = { menu: PublicMenu; token: string; assistantEnabled: boolean };
 
@@ -35,6 +47,7 @@ export default function MenuClientLayout({ menu, token, assistantEnabled }: Prop
   const [activeTab, setActiveTab] = useState<ActiveTab>("menu");
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [locale, setLocale] = useState<Locale>("en");
 
   const [navMounted, setNavMounted] = useState(false);
 
@@ -53,6 +66,31 @@ export default function MenuClientLayout({ menu, token, assistantEnabled }: Prop
     setNavMounted(true);
   }, [slug, menu.table, init]);
 
+  // Read after mount so server and first client render match (English).
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(LOCALE_KEY) === "hi") setLocale("hi");
+    } catch {
+      // Storage blocked: stay in English.
+    }
+  }, []);
+
+  const hasHindi = useMemo(
+    () => menu.categories.some((c) => c.items.some((i) => (i.translations ?? []).some((t) => t.locale === "hi"))),
+    [menu.categories]
+  );
+  const activeLocale: Locale = hasHindi ? locale : "en";
+
+  function toggleLocale() {
+    const next: Locale = activeLocale === "hi" ? "en" : "hi";
+    setLocale(next);
+    try {
+      window.localStorage.setItem(LOCALE_KEY, next);
+    } catch {
+      // Not remembered; still switches for this visit.
+    }
+  }
+
   const cartCount = navMounted ? lines.reduce((sum, l) => sum + l.quantity, 0) : 0;
 
   const isFiltering = Boolean(search || vegOnly || bestsellersOnly || under200);
@@ -67,16 +105,16 @@ export default function MenuClientLayout({ menu, token, assistantEnabled }: Prop
           if (under200 && item.basePrice >= 200) return false;
           if (search) {
             const q = search.toLowerCase();
-            return (
-              item.name.toLowerCase().includes(q) ||
-              (item.description?.toLowerCase().includes(q) ?? false)
+            // English and Hindi both match, whichever language is showing.
+            return [item.name, item.description, ...(item.translations ?? []).flatMap((t) => [t.name, t.description])].some(
+              (text) => text?.toLowerCase().includes(q) ?? false
             );
           }
           return true;
-        }),
+        }).map((item) => localize(item, activeLocale)),
       }))
       .filter((cat) => cat.items.length > 0);
-  }, [menu.categories, search, vegOnly, bestsellersOnly, under200]);
+  }, [menu.categories, search, vegOnly, bestsellersOnly, under200, activeLocale]);
 
   const isMenuTab = activeTab === "menu";
   const inGroupSession = navMounted && Boolean(sessionId);
@@ -89,9 +127,13 @@ export default function MenuClientLayout({ menu, token, assistantEnabled }: Prop
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" lang={activeLocale === "hi" ? "hi" : undefined}>
       {/* Fixed top bar */}
-      <MenuHeader restaurant={menu.restaurant} table={menu.table} />
+      <MenuHeader
+        restaurant={menu.restaurant}
+        table={menu.table}
+        language={hasHindi ? { locale: activeLocale, onToggle: toggleLocale } : undefined}
+      />
 
       {/* Group order banner — shown when in a session */}
       {inGroupSession && joinCode && (

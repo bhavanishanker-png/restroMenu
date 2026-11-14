@@ -377,3 +377,38 @@ create policy "staff read own record"
 alter publication supabase_realtime add table orders;
 alter publication supabase_realtime add table order_items;
 alter publication supabase_realtime add table service_requests;
+
+-- ============================================================
+-- DISH TRANSLATIONS (migration 010, task T34)
+-- ============================================================
+
+create table menu_item_translations (
+  id            uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants(id) on delete cascade,
+  item_id       uuid not null references menu_items(id) on delete cascade,
+  locale        text not null check (locale in ('hi')),
+  name          text not null check (char_length(name) between 1 and 200),
+  description   text check (char_length(description) <= 500),
+  source        text not null default 'ai' check (source in ('ai', 'owner')),
+  updated_at    timestamptz not null default now(),
+  unique (item_id, locale)
+);
+
+create index idx_menu_item_translations_restaurant on menu_item_translations (restaurant_id);
+
+alter table menu_item_translations enable row level security;
+
+create policy "public read translations"
+  on menu_item_translations for select using (true);
+
+create policy "staff manage translations"
+  on menu_item_translations for all using (is_staff_of(restaurant_id));
+
+-- ============================================================
+-- LANGGRAPH CHECKPOINTS (migration 009, tasks T33/T34)
+-- Paused AI workflows. Tables are created by the app (PostgresSaver.setup()).
+-- Never add this schema to the API's exposed schemas.
+-- ============================================================
+
+create schema if not exists langgraph;
+revoke all on schema langgraph from anon, authenticated;

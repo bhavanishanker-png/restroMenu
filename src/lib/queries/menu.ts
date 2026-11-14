@@ -5,7 +5,7 @@ import { getStaffSession } from "@/lib/auth";
 import { format, getDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { createServerClient } from "@/lib/supabase/server";
-import { toAddonGroup, toRestaurant, toRestaurantSettings } from "@/lib/mappers";
+import { toAddonGroup, toMenuItemTranslation, toRestaurant, toRestaurantSettings } from "@/lib/mappers";
 import type {
   MenuCategory,
   MenuCategoryWithItems,
@@ -46,6 +46,7 @@ type RawMenuItem = {
   is_active: boolean;
   item_variants: DbItemVariant[];
   item_addon_groups: RawItemAddonGroup[];
+  menu_item_translations?: { locale: string; name: string; description: string | null; source: string }[];
 };
 
 type RawCategory = DbMenuCategory & { menu_items: RawMenuItem[] };
@@ -85,6 +86,7 @@ function mapMenuItem(raw: RawMenuItem): MenuItem {
         return Array.isArray(jt.addon_groups) ? jt.addon_groups : [jt.addon_groups];
       })
       .map((g) => toAddonGroup(g as DbAddonGroup)),
+    translations: (raw.menu_item_translations ?? []).flatMap(toMenuItemTranslation),
   };
 }
 
@@ -140,6 +142,8 @@ function isCategoryAvailableNow(
 // cached — only a successful result or a genuine "not found".
 
 const MENU_CACHE_SECONDS = 60;
+/** Part of the cache key; see getMenuData. v2: items carry `translations` (T34). */
+const MENU_CACHE_VERSION = "public-menu:v2";
 const RESTAURANT_SLUGS_TAG = "restaurant-slugs";
 
 export function menuCacheTag(restaurantId: string): string {
@@ -222,6 +226,7 @@ async function loadMenuData(restaurantId: string): Promise<CachedMenuData | null
         base_price, cost_price, food_type, spice_level, prep_minutes, tax_rate,
         kitchen_station, tags, is_available, sort_order, is_active,
         item_variants(id, item_id, name, price_delta, is_default, sort_order),
+        menu_item_translations(locale, name, description, source),
         item_addon_groups(
           addon_groups(
             id, restaurant_id, name, min_select, max_select,
@@ -287,7 +292,10 @@ const getRestaurantIdBySlug = cache((slug: string) =>
 );
 
 const getMenuData = cache((restaurantId: string) =>
-  unstable_cache(() => loadMenuData(restaurantId), ["public-menu", restaurantId], {
+  // Bump the version when CachedMenuData changes shape: Next's Data Cache
+  // outlives deploys, and an entry written by older code (e.g. before
+  // `translations` existed) would otherwise be served to new code.
+  unstable_cache(() => loadMenuData(restaurantId), [MENU_CACHE_VERSION, restaurantId], {
     revalidate: MENU_CACHE_SECONDS,
     tags: [menuCacheTag(restaurantId)],
   })()

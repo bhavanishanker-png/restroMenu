@@ -79,6 +79,8 @@ export type ReviewInterrupt = { kind: "menu_review"; errors: string[] };
 const replace = <T>(_prev: T, next: T): T => next;
 
 const ImportState = Annotation.Root({
+  /** Which workflow wrote this thread, so a dish-writing thread id can't be resumed here. */
+  workflow: Annotation<"menu_import">(),
   restaurantId: Annotation<string>(),
   createdAt: Annotation<string>(),
   pageCount: Annotation<number>(),
@@ -300,6 +302,7 @@ async function loadThread(
   const snapshot = await graph.getState(threadConfig(threadId));
   const values = snapshot.values as Partial<ImportStateValues>;
 
+  if (values.workflow !== "menu_import") return { kind: "missing" };
   if (!values.restaurantId || values.restaurantId !== restaurantId) return { kind: "missing" };
 
   if (values.createdAt && now - Date.parse(values.createdAt) > IMPORT_TTL_MS) {
@@ -343,6 +346,7 @@ export async function startMenuImport(
   const graph = buildMenuImportGraph(deps);
   await graph.invoke(
     {
+      workflow: "menu_import",
       restaurantId: deps.restaurantId,
       createdAt: new Date(deps.now ?? Date.now()).toISOString(),
       pageCount: deps.pageCount,

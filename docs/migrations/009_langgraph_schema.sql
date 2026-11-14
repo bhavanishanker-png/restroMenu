@@ -1,6 +1,6 @@
 -- 009 — Schema for LangGraph checkpoints (paused AI menu imports, task T33).
 --
--- The checkpointer (src/lib/ai/menu-import-checkpointer.ts) creates its own
+-- The checkpointer (src/lib/ai/workflow-checkpointer.ts) creates its own
 -- tables inside this schema on first use (PostgresSaver.setup()), but it does
 -- not create the schema itself.
 --

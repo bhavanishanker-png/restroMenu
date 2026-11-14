@@ -18,7 +18,7 @@ import {
   startMenuImport,
   type PageExtraction,
 } from "@/lib/ai/menu-import-graph";
-import { getMenuImportCheckpointer } from "@/lib/ai/menu-import-checkpointer";
+import { getWorkflowCheckpointer } from "@/lib/ai/workflow-checkpointer";
 
 // Pages are read in parallel, so N pages take about as long as the slowest one.
 export const maxDuration = 120;
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let checkpointer;
   try {
-    checkpointer = await getMenuImportCheckpointer();
+    checkpointer = await getWorkflowCheckpointer();
   } catch (err) {
     console.error("[menu-extract] checkpointer setup failed", err);
     return aiErrorResponse("DB_ERROR", "Couldn't start the import. Try again.", 500);

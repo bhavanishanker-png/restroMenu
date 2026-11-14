@@ -43,6 +43,26 @@ describe("containsHealthClaim", () => {
     expect(containsHealthClaim("Smoky cottage cheese grilled in a tandoor")).toBe(false);
     expect(containsHealthClaim("Vegetarian thali with dal and rice")).toBe(false);
   });
+
+  it("flags the same claims written in Hindi", () => {
+    for (const text of [
+      "यह ग्लूटेन-फ्री है",
+      "एलर्जी वालों के लिए सुरक्षित",
+      "पूरी तरह वीगन",
+      "एक हेल्दी विकल्प",
+      "स्वास्थ्यवर्धक और पौष्टिक",
+      "शुगर फ्री मिठाई",
+      "जैन विधि से बना",
+    ]) {
+      expect(containsHealthClaim(text), text).toBe(true);
+    }
+  });
+
+  it("does not flag ordinary Hindi descriptions", () => {
+    expect(containsHealthClaim("तंदूर में भुना हुआ पनीर")).toBe(false);
+    expect(containsHealthClaim("दाल और चावल के साथ शाकाहारी थाली")).toBe(false);
+    expect(containsHealthClaim("पनीर टिक्का")).toBe(false);
+  });
 });
 
 describe("wrapUntrusted", () => {

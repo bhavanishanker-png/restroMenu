@@ -7,7 +7,7 @@ import {
   getPendingMenuImport,
   resumeMenuImport,
 } from "@/lib/ai/menu-import-graph";
-import { getMenuImportCheckpointer } from "@/lib/ai/menu-import-checkpointer";
+import { getWorkflowCheckpointer } from "@/lib/ai/workflow-checkpointer";
 import type { StaffSession } from "@/types";
 
 // ─── /api/ai/menu-extract/[threadId] ────────────────────────────────────────
@@ -65,7 +65,7 @@ async function authorise(params: Params["params"]): Promise<Context> {
 
 async function checkpointerOrError() {
   try {
-    return { ok: true as const, checkpointer: await getMenuImportCheckpointer() };
+    return { ok: true as const, checkpointer: await getWorkflowCheckpointer() };
   } catch (err) {
     console.error("[menu-extract/thread] checkpointer setup failed", err);
     return {

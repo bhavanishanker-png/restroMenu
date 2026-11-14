@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import type { Restaurant, RestaurantSettings, RestaurantTable } from "@/types";
+import type { MenuLocale, Restaurant, RestaurantSettings, RestaurantTable } from "@/types";
 
 type Props = {
   restaurant: Restaurant & { settings: RestaurantSettings };
   table: Pick<RestaurantTable, "id" | "label"> | null;
+  /** Shown only when the restaurant has translations. */
+  language?: { locale: "en" | MenuLocale; onToggle: () => void };
 };
 
 /**
@@ -18,7 +20,7 @@ type Props = {
  * gone and the header is server-rendered. Same fix as the one applied to
  * LoginForm.
  */
-export function MenuHeader({ restaurant, table }: Props) {
+export function MenuHeader({ restaurant, table, language }: Props) {
   return (
     <header className="glass-strong fixed inset-x-0 top-0 z-30 flex h-[64px] items-center gap-3 border-x-0 border-t-0 px-margin-mobile">
       {/* Logo */}
@@ -72,6 +74,18 @@ export function MenuHeader({ restaurant, table }: Props) {
             {table.label}
           </span>
         </span>
+      )}
+
+      {/* Language switch: labelled with the language it switches TO, in that language. */}
+      {language && (
+        <button
+          type="button"
+          onClick={language.onToggle}
+          aria-label={language.locale === "hi" ? "Show menu in English" : "मेन्यू हिंदी में दिखाएँ (Show menu in Hindi)"}
+          className="grid h-11 min-w-11 shrink-0 place-items-center rounded-full border border-outline-variant px-2.5 text-[0.8125rem] font-semibold text-on-surface transition-colors hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {language.locale === "hi" ? "EN" : <span lang="hi">हिं</span>}
+        </button>
       )}
 
       <ThemeToggle className="-mr-1.5 h-11 w-11 shrink-0" />

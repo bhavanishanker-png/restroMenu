@@ -56,7 +56,7 @@ The diner chat assistant stays on the Anthropic SDK's tool runner. It is a short
 ## Where it lives
 
 - `src/lib/ai/menu-import-graph.ts`: graph, `mergeExtractions`, `validateDecisions`, start/get/resume/discard
-- `src/lib/ai/menu-import-checkpointer.ts`: Postgres or in-memory checkpointer
+- `src/lib/ai/workflow-checkpointer.ts`: Postgres or in-memory checkpointer
 - `src/app/api/ai/menu-extract/route.ts` (start) and `src/app/api/ai/menu-extract/[threadId]/route.ts` (get, resume, discard)
 - `src/components/menu-manager/MenuExtractDialog.tsx`
 - `docs/migrations/009_langgraph_schema.sql`

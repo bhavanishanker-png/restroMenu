@@ -177,6 +177,19 @@ export type MenuItem = {
   isActive: boolean;
   variants: ItemVariant[];
   addonGroups: AddonGroup[];
+  /** Name and description in other languages. Empty when none exist. */
+  translations: MenuItemTranslation[];
+};
+
+/** Languages a dish can be translated into. Widen together with the DB check constraint. */
+export type MenuLocale = 'hi';
+
+export type MenuItemTranslation = {
+  locale: MenuLocale;
+  name: string;
+  description: string | null;
+  /** Who wrote it. AI text was approved by the owner before it was saved. */
+  source: 'ai' | 'owner';
 };
 
 export type MenuCategoryWithItems = MenuCategory & { items: MenuItem[] };
@@ -441,6 +454,54 @@ export type ApprovedMenuItem = Omit<DraftMenuItem, 'basePrice' | 'foodType'> & {
 
 export type ApprovedMenuCategory = Omit<DraftMenuCategory, 'items'> & {
   items: ApprovedMenuItem[];
+};
+
+// ---------------------------------------------------------------- AI dish writing (T34)
+
+/**
+ * Why a dish needs the owner's attention after the AI pass:
+ * - health_claim: every attempt still made a diet/allergy/health claim, so
+ *   the English description was dropped (never saved with the claim).
+ * - ai_failed: the AI call failed for this dish; nothing was written.
+ */
+export type DishWritingFlag = 'health_claim' | 'ai_failed';
+
+/** One dish after the AI pass, waiting for owner review. */
+export type DishWritingResult = {
+  itemId: string;
+  name: string;
+  category: string;
+  /** What the dish has today. AI writes an English description only when this is empty. */
+  currentDescription: string | null;
+  /** Suggested English description; null when the dish already has one, or none passed the checks. */
+  descriptionEn: string | null;
+  nameHi: string | null;
+  descriptionHi: string | null;
+  /** AI calls used (1 = passed first time; more = rewritten after a guardrail failed). */
+  attempts: number;
+  flags: DishWritingFlag[];
+};
+
+/** A dish-writing run paused at owner review (a LangGraph thread waiting on an interrupt). */
+export type MenuWritingPending = {
+  threadId: string;
+  dishes: DishWritingResult[];
+  createdAt: string;
+};
+
+/** The owner's final text for one dish, sent on resume. Only dishes to save are sent. */
+export type DishWritingDecision = {
+  itemId: string;
+  /** English description to save; null keeps the dish's current one. */
+  descriptionEn: string | null;
+  nameHi: string;
+  descriptionHi: string | null;
+};
+
+/** A dish's text after code validation: ready to save. */
+export type ApprovedDishText = DishWritingDecision & {
+  /** 'owner' when the owner changed the AI's Hindi text before approving. */
+  hiSource: 'ai' | 'owner';
 };
 
 export type AssistantChatTurn = {

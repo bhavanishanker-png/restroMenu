@@ -1,9 +1,10 @@
 /**
- * Where paused menu imports (LangGraph checkpoints) are stored. SERVER-ONLY.
+ * Where paused AI workflows (LangGraph checkpoints) are stored: menu import
+ * (T33) and dish writing (T34). SERVER-ONLY.
  *
  *  - DATABASE_URL set → Postgres (the Supabase database), in the `langgraph`
  *    schema. Not `public`: Supabase exposes `public` through its REST API to
- *    anyone with the anon key, and these rows hold restaurants' draft menus.
+ *    anyone with the anon key, and these rows hold restaurants' draft menus and dish text.
  *    Create the schema once with docs/migrations/009_langgraph_schema.sql.
  *  - DATABASE_URL unset → in-memory. Fine for local dev and tests. On
  *    serverless, a paused import then lives only in the instance that started
@@ -22,7 +23,7 @@ type Holder = { saver: BaseCheckpointSaver; ready: Promise<void> };
 
 // On globalThis so Next's dev hot reload doesn't drop paused imports.
 const globalForCheckpointer = globalThis as typeof globalThis & {
-  __qbiteMenuImportCheckpointer?: Holder;
+  __qbiteWorkflowCheckpointer?: Holder;
 };
 
 function create(): Holder {
@@ -34,23 +35,23 @@ function create(): Holder {
     return { saver, ready };
   }
   console.warn(
-    "[menu-import] DATABASE_URL is not set: paused imports are kept in memory and " +
+    "[workflow] DATABASE_URL is not set: paused AI workflows are kept in memory and " +
       "may expire between serverless instances."
   );
   return { saver: new MemorySaver(), ready: Promise.resolve() };
 }
 
-export async function getMenuImportCheckpointer(): Promise<BaseCheckpointSaver> {
-  let holder = globalForCheckpointer.__qbiteMenuImportCheckpointer;
+export async function getWorkflowCheckpointer(): Promise<BaseCheckpointSaver> {
+  let holder = globalForCheckpointer.__qbiteWorkflowCheckpointer;
   if (!holder) {
     holder = create();
-    globalForCheckpointer.__qbiteMenuImportCheckpointer = holder;
+    globalForCheckpointer.__qbiteWorkflowCheckpointer = holder;
   }
   try {
     await holder.ready;
   } catch (err) {
     // Don't cache a failed setup: the next request retries it.
-    globalForCheckpointer.__qbiteMenuImportCheckpointer = undefined;
+    globalForCheckpointer.__qbiteWorkflowCheckpointer = undefined;
     throw err;
   }
   return holder.saver;

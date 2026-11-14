@@ -14,6 +14,7 @@ import type {
   MenuCategory,
   MenuCategoryWithItems,
   MenuItem,
+  MenuItemTranslation,
   Order,
   OrderItem,
   OrderStatus,
@@ -35,6 +36,7 @@ import type {
   DbAddon,
   DbAddonGroup,
   DbMenuItem,
+  DbMenuItemTranslation,
   DbMenuCategory,
   DbOrder,
   DbOrderItem,
@@ -186,7 +188,21 @@ export function toMenuItem(r: DbMenuItem): MenuItem {
       if (!group) return [];
       return (Array.isArray(group) ? group : [group]).map(toAddonGroup);
     }),
+    translations: (r.menu_item_translations ?? []).flatMap(toMenuItemTranslation),
   };
+}
+
+/** Rows with a locale this build doesn't know are skipped, not shown in the wrong language. */
+export function toMenuItemTranslation(r: Pick<DbMenuItemTranslation, "locale" | "name" | "description" | "source">): MenuItemTranslation[] {
+  if (r.locale !== "hi") return [];
+  return [
+    {
+      locale: r.locale,
+      name: r.name,
+      description: r.description,
+      source: r.source === "owner" ? "owner" : "ai",
+    },
+  ];
 }
 
 export function toMenuCategory(r: DbMenuCategory): MenuCategory {

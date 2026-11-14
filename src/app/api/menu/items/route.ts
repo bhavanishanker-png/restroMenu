@@ -19,7 +19,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   let query = supabase
     .from("menu_items")
-    .select("*, item_variants(*), addon_groups:item_addon_groups(group_id, addon_groups(*, addons(*)))")
+    .select("*, item_variants(*), addon_groups:item_addon_groups(group_id, addon_groups(*, addons(*))), menu_item_translations(locale, name, description, source)")
     .eq("restaurant_id", session!.restaurantId)
     .eq("is_active", true)
     .order("sort_order", { ascending: true });

@@ -14,11 +14,13 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 - Checkout: name + phone, then Cash or Razorpay
 - Live order status tracker: Placed → Accepted → Preparing → Ready → Served
 - **AI menu assistant** — ask "something spicy and veg?" or "कुछ मीठा?" and get tappable dish suggestions, in the diner's own language
+- **हिंदी menu** — one tap switches the menu to Hindi wherever the restaurant has translations
 
 ### Restaurant
 - **Kitchen display** — live order cards, sound alert on new order, one tap to advance status, amber/red urgency timers
 - **Menu manager** — add/edit/delete categories and items, drag to reorder, one-tap availability toggle
 - **AI menu import** — upload up to 5 photos or PDFs of a printed menu; pages are read in parallel, AI drafts the dishes, code flags duplicates and anything it couldn't read, and the owner reviews before anything is saved (close the dialog and continue later)
+- **AI descriptions & Hindi** — AI writes missing English descriptions and translates dish names and descriptions into Hindi; anything with a health or allergy claim is rewritten or dropped; the owner reviews before saving
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
 - **Dashboard** — today's order count, revenue, average ticket
 - **Staff login** — email (owner/manager) or 4-digit PIN (kitchen/waiter)
@@ -44,6 +46,7 @@ How the system works and why. **[Architecture overview →](docs/architecture.md
 | Kitchen wifi drops | Optimistic updates, persisted queue, server wins | [0008](docs/adr/0008-offline-kitchen-display.md) |
 | LLMs can be wrong or manipulated | AI drafts and suggests; code validates; humans approve writes | [0009](docs/adr/0009-ai-as-untrusted-component.md) |
 | Multi-page menu import with a human review that can last hours | LangGraph workflow: parallel page reads, checkpointed pause for owner review, server-side validation | [0010](docs/adr/0010-menu-import-langgraph.md) |
+| AI-written text must never make a health claim, in any language | Guardrail check is a graph edge: failing text is rewritten (max 3 calls), then dropped and flagged; translations in their own table | [0011](docs/adr/0011-ai-dish-writing-and-translations.md) |
 
 ### System at a glance
 
@@ -121,6 +124,8 @@ Without `ANTHROPIC_API_KEY` the app works normally: the **Ask AI** button is hid
 In the Supabase SQL editor, run in order:
 1. `docs/schema.sql` — creates all tables, RLS policies, functions
 2. `docs/seed.sql` — seeds one demo restaurant (`test-kitchen`) with tables, categories, and menu items
+
+Already set up from an earlier version? Run the files in `docs/migrations/` you haven't run yet, in number order (009 and 010 are the AI workflow ones).
 
 ### 4. Run
 

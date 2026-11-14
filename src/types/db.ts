@@ -124,6 +124,19 @@ export type DbMenuItem = {
   // DbAddonGroup itself. PostgREST returns the embedded to-one as an object,
   // but has historically returned an array, so both are accepted.
   addon_groups: DbItemAddonGroupJoin[];
+  // Present only when the select embeds menu_item_translations.
+  menu_item_translations?: DbMenuItemTranslation[];
+};
+
+export type DbMenuItemTranslation = {
+  id: string;
+  restaurant_id: string;
+  item_id: string;
+  locale: string;
+  name: string;
+  description: string | null;
+  source: string;
+  updated_at: string;
 };
 
 export type DbItemAddonGroupJoin = {

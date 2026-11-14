@@ -29,11 +29,12 @@ import { checkRateLimit } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------- kill switch
 
-export type AiFeature = "menu_onboarding" | "menu_assistant";
+export type AiFeature = "menu_onboarding" | "menu_assistant" | "menu_writing";
 
 const FEATURE_ENV: Record<AiFeature, string> = {
   menu_onboarding: "AI_MENU_ONBOARDING_ENABLED",
   menu_assistant: "AI_MENU_ASSISTANT_ENABLED",
+  menu_writing: "AI_MENU_WRITING_ENABLED",
 };
 
 /** On unless the env var is explicitly "false", so turning a feature off is one config change. */
@@ -131,8 +132,16 @@ export function fileMatchesDeclaredType(bytes: Uint8Array, declaredType: string)
 const HEALTH_CLAIM_RE =
   /\b(gluten[\s-]?free|nut[\s-]?free|peanut[\s-]?free|dairy[\s-]?free|lactose[\s-]?free|egg[\s-]?free|sugar[\s-]?free|allerg(?:y|ies|en|ens|ic)|vegan|keto|diabetic|low[\s-]?(?:fat|calorie|carb|sodium)|healthy|nutritious|halal|kosher|jain)\b/i;
 
+/**
+ * The same claims in Hindi (Devanagari and common English loanwords). `\b` does
+ * not work for Devanagari, so this list uses no word boundaries; every term is
+ * specific enough that a substring match is not a false alarm in a dish name.
+ */
+const HEALTH_CLAIM_HI_RE =
+  /(ग्लूटेन|एलर्जी|एलर्जिक|वीगन|हेल्दी|स्वास्थ्यवर्धक|स्वास्थ्यप्रद|पौष्टिक|शुगर[\s-]?फ्री|चीनी[\s-]?रहित|डायबिटिक|मधुमेह|कीटो|लो[\s-]?कैलोरी|कम[\s-]?कैलोरी|हलाल|कोशेर|मूंगफली[\s-]?रहित|डेयरी[\s-]?फ्री|जैन)/;
+
 export function containsHealthClaim(text: string): boolean {
-  return HEALTH_CLAIM_RE.test(text);
+  return HEALTH_CLAIM_RE.test(text) || HEALTH_CLAIM_HI_RE.test(text);
 }
 
 export const ALLERGY_NOTE =

@@ -277,7 +277,7 @@ T32 Takeaway pre-order with pickup time
 
 ## AI platform
 
-### - [ ] T33 · Menu import as a LangGraph workflow
+### - [x] T33 · Menu import as a LangGraph workflow
 Out of the release order by the owner's decision (2026-11-14). Moves the
 orchestration of AI menu import (`POST /api/ai/menu-extract`) into a LangGraph
 `StateGraph`. Each step still calls Claude through `@anthropic-ai/sdk` via the
@@ -302,3 +302,47 @@ Saving still goes through `/api/menu/categories` and `/api/menu/items`.
 - Unit tests cover fan-out/merge, partial page failure, interrupt/resume without
   re-extraction, the tenant check and decision validation — without calling the API.
 - `npm run eval:menu` still scores the same extraction code.
+
+---
+
+### - [x] T34 · AI dish descriptions and Hindi translation (LangGraph)
+Out of the release order by the owner's decision (2026-11-14); a Release 3 AI item.
+Data model (owner's choice): a `menu_item_translations` table
+(`restaurant_id`, `item_id`, `locale`, `name`, `description`, `source`), unique
+per (item, locale), so more languages need no migration. Only `hi` for now.
+
+Graph: selected dishes fan out (bounded concurrency) to a per-dish subgraph:
+`write` (one Claude call: English description if missing + Hindi name and
+description) → `check` (guardrails) → back to `write` with feedback, at most 2
+retries → else flag for the owner. Then `review` (interrupt) → `validate` → done.
+The route, not the graph, writes the approved text, scoped by restaurant.
+
+**Done when:**
+- An owner selects up to 40 dishes; the server loads them itself (client ids only).
+- An AI description containing a health/allergy claim is rewritten, at most twice,
+  then left blank and flagged; it is never saved with the claim.
+- The owner reviews English and Hindi side by side, can edit or untick, and can
+  close and continue later with no second AI call.
+- Approved text is saved (`menu_items.description`, `menu_item_translations`) with
+  `restaurant_id` on every query; the customer menu cache is cleared.
+- Diners can switch the menu to हिंदी; dishes without Hindi fall back to English.
+- Kill switch `AI_MENU_WRITING_ENABLED`; rate limited per restaurant.
+- Unit tests cover fan-out, the retry loop, give-up flagging, pause/resume,
+  validation and the tenant check, without calling the API.
+
+---
+
+### - [ ] T35 · Owner Q&A agent over MCP (read-only)
+Out of the release order by the owner's decision (2026-11-14).
+An MCP server at `/api/mcp` that owners connect from Claude Desktop. Auth: a
+personal access token created in the dashboard (shown once, stored hashed,
+revocable, scoped to one restaurant and role). Tools are read-only:
+`get_today_sales`, `list_orders`, `get_top_items`, `get_dead_items`.
+
+**Done when:**
+- An owner can create, see (prefix only) and revoke tokens; a kitchen or waiter
+  role cannot create one.
+- Every tool resolves `restaurant_id` from the token, never from tool input.
+- A revoked or wrong token gets 401; no tool can write.
+- Rate limited per token; token use is logged (counts, not content).
+- Tests cover token hashing/verification, revocation and tenant scoping of each tool.

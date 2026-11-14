@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { CategoryList } from "./CategoryList";
 import { ItemList } from "./ItemList";
 import { MenuExtractDialog } from "./MenuExtractDialog";
+import { MenuWritingDialog } from "./MenuWritingDialog";
 import { MsIcon } from "./MsIcon";
 
 type CategoryWithCount = MenuCategory & { itemCount: number };
@@ -29,6 +30,7 @@ export function MenuManager({ initialCategories, addonGroups }: Props) {
     initialCategories[0]?.id ?? null
   );
   const [extractOpen, setExtractOpen] = useState(false);
+  const [writingOpen, setWritingOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   // When the manage sheet is opened from the "no categories" CTA, it should
   // open straight into the add-category input.
@@ -98,8 +100,9 @@ export function MenuManager({ initialCategories, addonGroups }: Props) {
               onChange={handleCategoriesChange}
             />
           </div>
-          <div className="shrink-0 border-t border-outline-variant p-3">
+          <div className="shrink-0 space-y-2 border-t border-outline-variant p-3">
             <AiImportCard onClick={() => setExtractOpen(true)} />
+            {totalDishes > 0 && <AiWritingCard onClick={() => setWritingOpen(true)} />}
           </div>
         </aside>
 
@@ -159,13 +162,21 @@ export function MenuManager({ initialCategories, addonGroups }: Props) {
               defaultAdding={manageStartsAdding}
             />
           </div>
-          <div className="shrink-0 border-t border-outline-variant p-3">
+          <div className="shrink-0 space-y-2 border-t border-outline-variant p-3">
             <AiImportCard
               onClick={() => {
                 setManageOpen(false);
                 setExtractOpen(true);
               }}
             />
+            {totalDishes > 0 && (
+              <AiWritingCard
+                onClick={() => {
+                  setManageOpen(false);
+                  setWritingOpen(true);
+                }}
+              />
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -178,11 +189,44 @@ export function MenuManager({ initialCategories, addonGroups }: Props) {
           window.location.reload();
         }}
       />
+
+      <MenuWritingDialog
+        open={writingOpen}
+        categories={categories}
+        onClose={() => setWritingOpen(false)}
+        onSaved={() => {
+          setWritingOpen(false);
+          window.location.reload();
+        }}
+      />
     </>
   );
 }
 
 // ---------------------------------------------------------------- pieces
+
+/** Second AI entry point: descriptions + Hindi for dishes already on the menu. */
+function AiWritingCard({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-low p-3 text-left transition-colors duration-fast hover:border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-brand-border bg-brand-subtle text-brand-text">
+        <MsIcon name="translate" size={22} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-on-surface">Descriptions &amp; Hindi</span>
+        <span className="block text-xs text-on-surface-variant">AI writes, you approve</span>
+      </span>
+      <MsIcon
+        name="arrow_forward"
+        className="text-brand-text transition-transform duration-fast group-hover:translate-x-0.5"
+      />
+    </button>
+  );
+}
 
 function AiImportCard({ onClick }: { onClick: () => void }) {
   return (
