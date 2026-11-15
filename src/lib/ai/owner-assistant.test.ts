@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { buildOwnerAssistantTools } from "./owner-assistant";
+import { buildOwnerAssistantTools, buildSources, type OwnerToolCall } from "./owner-assistant";
 import { sanitizeChatHistory } from "./guardrails";
 import { buildOwnerMcpServer } from "@/lib/mcp/owner-server";
 import { OWNER_TOOL_ERROR, OWNER_TOOL_NAMES } from "@/lib/mcp/owner-tools";
@@ -42,9 +42,9 @@ describe("assistant tools", () => {
     }
   });
 
-  it("run against the data they were bound to, fenced as data, and record which ran", async () => {
-    const used: string[] = [];
-    const tools = buildOwnerAssistantTools(ctx(fakeData()), used);
+  it("run against the data they were bound to, fenced as data, and record each call", async () => {
+    const calls: OwnerToolCall[] = [];
+    const tools = buildOwnerAssistantTools(ctx(fakeData()), calls);
     const sales = tools.find((t) => t.name === "get_today_sales");
     if (!sales) throw new Error("missing tool");
 
@@ -54,7 +54,8 @@ describe("assistant tools", () => {
     expect(text.startsWith("<restaurant_data>")).toBe(true);
     const payload = JSON.parse(text.replace(/^<restaurant_data>\n/, "").replace(/\n<\/restaurant_data>$/, ""));
     expect(payload).toMatchObject({ restaurant: "Test Kitchen", orders: 1, revenue: 200, cancelledOrders: 1 });
-    expect(used).toEqual(["get_today_sales"]);
+    expect(calls.map((c) => c.name)).toEqual(["get_today_sales"]);
+    expect(calls[0].value).toMatchObject({ orders: 1, revenue: 200 }); // kept for the grounding check
   });
 
   it("strip a restaurant id smuggled into the arguments", () => {
@@ -98,5 +99,30 @@ describe("sanitizeChatHistory (shared by the diner and owner chats)", () => {
   it("caps very long messages", () => {
     const history = sanitizeChatHistory([{ role: "user", content: "x".repeat(5000) }]);
     expect(history?.[0].content.length).toBeLessThanOrEqual(500);
+  });
+});
+
+describe("buildSources (the 'based on' line, built in code)", () => {
+  it("labels each call with a checkable fact and the page to check it on", () => {
+    const sources = buildSources([
+      { name: "get_today_sales", args: {}, value: { orders: 4 } },
+      { name: "get_today_sales", args: { daysAgo: 1 }, value: { orders: 1 } },
+      { name: "list_orders", args: { status: "active" }, value: { count: 3 } },
+      { name: "get_top_items", args: { days: 30 }, value: { days: 30 } },
+      { name: "get_dead_items", args: {}, value: { days: 14, count: 35 } },
+    ]);
+    expect(sources).toEqual([
+      { label: "Today's sales", detail: "4 orders", href: "/dashboard/reports" },
+      { label: "Yesterday's sales", detail: "1 order", href: "/dashboard/reports" },
+      { label: "Recent orders", detail: "3 shown", href: "/dashboard/orders" },
+      { label: "Best sellers · last 30 days", detail: null, href: "/dashboard/reports" },
+      { label: "Unsold dishes · last 14 days", detail: "35 found", href: "/dashboard/menu" },
+    ]);
+  });
+
+  it("lists a repeated call once, and nothing when no tool ran", () => {
+    const call = { name: "list_orders", args: {}, value: { count: 2 } };
+    expect(buildSources([call, call])).toHaveLength(1);
+    expect(buildSources([])).toEqual([]);
   });
 });

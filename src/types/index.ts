@@ -544,3 +544,23 @@ export type AccessTokenPrincipal = {
   role: Extract<StaffRole, 'owner' | 'manager'>;
   scopes: AccessTokenScope[];
 };
+
+// ---------------------------------------------------------------- owner Ask AI (T36, T37)
+
+/** What an Ask AI answer was based on, built in code from the tools it called. */
+export type OwnerChatSource = {
+  label: string;
+  /** Short fact from the data, e.g. "4 orders". */
+  detail: string | null;
+  /** Dashboard page where the owner can check it. */
+  href: string;
+};
+
+export type OwnerChatReply = {
+  reply: string;
+  sources: OwnerChatSource[];
+  /** true when every figure in the reply matched the data (T37). */
+  verified: boolean;
+  /** Figures that still didn't match after one regeneration; shown with a warning. */
+  unverifiedFigures: string[];
+};

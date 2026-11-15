@@ -12,8 +12,10 @@ import {
 } from "@/lib/ai/guardrails";
 import { runOwnerAssistant } from "@/lib/ai/owner-assistant";
 import { supabaseOwnerData } from "@/lib/mcp/owner-data";
+import type { OwnerChatReply } from "@/types";
 
-export const maxDuration = 60;
+// Up to two full tool loops (an answer plus one regeneration if a figure fails the check).
+export const maxDuration = 90;
 
 // History is client-supplied and untrusted: bounded here, sanitised by
 // sanitizeChatHistory. The tools only ever read this restaurant's data.
@@ -75,11 +77,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       restaurantId: session.restaurantId,
       turns: history.length,
       tools: result.toolsUsed,
+      attempts: result.attempts,
+      verified: result.verified,
+      unverifiedCount: result.unverifiedFigures.length,
       stopReason: result.stopReason,
       inputTokens: result.usage.input,
       outputTokens: result.usage.output,
     });
-    return NextResponse.json({ reply: result.reply });
+    const body: OwnerChatReply = {
+      reply: result.reply,
+      sources: result.sources,
+      verified: result.verified,
+      unverifiedFigures: result.unverifiedFigures,
+    };
+    return NextResponse.json(body);
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
       console.error("[owner-chat] Anthropic rate limit:", err.message);

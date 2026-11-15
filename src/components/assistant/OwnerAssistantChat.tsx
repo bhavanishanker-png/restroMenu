@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { AssistantChatTurn } from "@/types";
+import Link from "next/link";
+import type { AssistantChatTurn, OwnerChatReply } from "@/types";
+
+/** A chat turn as the page keeps it: assistant turns also carry what the answer was based on. */
+type Turn = AssistantChatTurn & { meta?: Omit<OwnerChatReply, "reply"> };
 
 type ApiError = { error?: { message?: string } };
 
@@ -35,7 +39,7 @@ function Icon({ name, size = 20, className }: { name: string; size?: number; cla
  * but can't change anything. Talks to POST /api/ai/owner-chat.
  */
 export function OwnerAssistantChat({ enabled }: { enabled: boolean }) {
-  const [turns, setTurns] = useState<AssistantChatTurn[]>([]);
+  const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -48,7 +52,7 @@ export function OwnerAssistantChat({ enabled }: { enabled: boolean }) {
   async function ask(question: string) {
     const text = question.trim();
     if (!text || pending) return;
-    const next: AssistantChatTurn[] = [...turns, { role: "user" as const, content: text }].slice(-MAX_TURNS_KEPT);
+    const next: Turn[] = [...turns, { role: "user" as const, content: text }].slice(-MAX_TURNS_KEPT);
     setTurns(next);
     setInput("");
     setError("");
@@ -57,15 +61,24 @@ export function OwnerAssistantChat({ enabled }: { enabled: boolean }) {
       const res = await fetch("/api/ai/owner-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next }),
+        // Only role and text go back to the server; sources stay on the page.
+        body: JSON.stringify({ messages: next.map((t) => ({ role: t.role, content: t.content })) }),
       });
-      const json = (await res.json()) as ApiError & { reply?: string };
+      const json = (await res.json()) as ApiError & Partial<OwnerChatReply>;
       if (!res.ok || !json.reply) {
         setError(json.error?.message ?? "The assistant couldn't answer. Try again.");
         return;
       }
-      const reply = json.reply;
-      setTurns((prev) => [...prev, { role: "assistant" as const, content: reply }].slice(-MAX_TURNS_KEPT));
+      const turn: Turn = {
+        role: "assistant",
+        content: json.reply,
+        meta: {
+          sources: json.sources ?? [],
+          verified: json.verified === true,
+          unverifiedFigures: json.unverifiedFigures ?? [],
+        },
+      };
+      setTurns((prev) => [...prev, turn].slice(-MAX_TURNS_KEPT));
     } catch (err) {
       console.error("[owner-chat] request failed", err);
       setError("Network error. Check your connection and try again.");
@@ -136,9 +149,12 @@ export function OwnerAssistantChat({ enabled }: { enabled: boolean }) {
               <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-subtle text-brand-text">
                 <Icon name="auto_awesome" size={16} />
               </span>
-              <p className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-surface-container px-4 py-2.5 text-sm text-on-surface">
-                {t.content}
-              </p>
+              <div className="min-w-0 max-w-[90%] space-y-1.5">
+                <p className="whitespace-pre-wrap rounded-2xl rounded-bl-md bg-surface-container px-4 py-2.5 text-sm text-on-surface">
+                  {t.content}
+                </p>
+                {t.meta && <AnswerFooter meta={t.meta} />}
+              </div>
             </div>
           )
         )}
@@ -206,6 +222,48 @@ export function OwnerAssistantChat({ enabled }: { enabled: boolean }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Under each answer: what it was based on (built in code from the tool calls,
+ * each linking to the page to check it), and whether every figure matched the
+ * data (T37). An unverified figure is named, never hidden behind a tick.
+ */
+function AnswerFooter({ meta }: { meta: Omit<OwnerChatReply, "reply"> }) {
+  return (
+    <div className="space-y-1.5 px-1">
+      {!meta.verified && meta.unverifiedFigures.length > 0 && (
+        <p className="flex items-start gap-1.5 rounded-xl border border-warning/40 bg-warning-container/50 px-3 py-2 text-xs text-on-warning-container" role="status">
+          <Icon name="warning" size={16} className="mt-px shrink-0" />
+          <span>
+            Couldn&apos;t check {meta.unverifiedFigures.join(", ")} against your data. Confirm in{" "}
+            <Link href="/dashboard/reports" className="font-semibold underline">Sales reports</Link>.
+          </span>
+        </p>
+      )}
+      {meta.sources.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-on-surface-variant">
+          {meta.verified && (
+            <span className="inline-flex items-center gap-1 font-semibold text-on-success-container">
+              <Icon name="verified" size={14} /> Figures checked against your data ·
+            </span>
+          )}
+          <span>Based on:</span>
+          {meta.sources.map((s) => (
+            <Link
+              key={s.label + (s.detail ?? "")}
+              href={s.href}
+              className="inline-flex min-h-[32px] items-center gap-1 rounded-full border border-outline-variant bg-surface-container-lowest px-2.5 hover:border-brand-border hover:text-brand-text"
+            >
+              {s.label}
+              {s.detail && <span className="text-on-surface-variant">· {s.detail}</span>}
+              <Icon name="arrow_outward" size={12} />
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -369,3 +369,27 @@ technical users. One set of read-only tool definitions serves both.
   offers example questions.
 - Unit tests cover the shared tool definitions, the tool set given to the
   assistant, and history sanitising, without calling the API.
+
+---
+
+### - [ ] T37 · Grounded answers for Ask AI (no made-up numbers)
+Owner's decision (2026-11-15). RAG was considered and rejected for this: the
+data is structured, and the tools already return exact figures. What remains is
+the model mis-stating, inventing or mis-computing numbers, so code checks them.
+
+**Done when:**
+- Every figure in an Ask AI reply is checked in code against what the tools
+  returned (plus the user's own question, and differences / percentage changes
+  between tool figures, recomputed with pricing.ts). Dates and times are ignored.
+- A reply with an unverified figure is regenerated once with that figure as
+  feedback; if it still fails, the reply is shown with a clear warning naming the
+  figure and pointing to Sales reports. A figure is never shown as verified when
+  it isn't.
+- Each reply lists what it was based on (e.g. "Today's sales · 4 orders"), linked
+  to the dashboard page where the owner can check it, with a "checked against
+  your data" mark when every figure verified.
+- The assistant says "QBite doesn't track that yet" for things with no data
+  (profit, costs, stock, staff hours, customer details, reviews) instead of
+  guessing; a reply with figures but no tool data fails the check.
+- Unit tests cover number extraction, date/time skipping, derived figures,
+  the retry decision and the source labels, without calling the API.
