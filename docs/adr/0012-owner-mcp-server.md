@@ -49,3 +49,20 @@ The SDK's web-standard transport (`Request` in, `Response` out) in stateless JSO
 - `src/app/api/mcp/route.ts`, `src/app/api/settings/access-tokens/…`
 - `src/components/settings/AccessTokensCard.tsx`
 - `docs/migrations/011_staff_access_tokens.sql`
+
+## Update — T36: the same tools inside the dashboard
+
+**Context.** After T35 shipped, the owner pointed out that restaurant owners mostly use the Claude or ChatGPT websites, or their phone. Claude on the web and ChatGPT connect to MCP servers through OAuth sign-in and can't reach a token-protected server. Installing Claude Desktop and editing a config file is too much to ask of most owners.
+
+**Decision.** The owner Q&A also lives **inside the QBite dashboard** ("Ask AI", `/dashboard/assistant`). MCP stays for technical users.
+
+- **One definition, two ways in.** The four tools are defined once in `src/lib/mcp/owner-tools.ts`. The MCP server exposes them over MCP. The dashboard assistant (`src/lib/ai/owner-assistant.ts`) gives them to Claude through the Anthropic SDK's tool runner, like the diner menu assistant. A test checks both expose the same names and descriptions.
+- **Scope comes from the staff session.** There are no tokens: the owner is already signed in, and `supabaseOwnerData(session.restaurantId)` binds the data before the model sees any tool.
+- **The same guardrails** as the diner chat: client history is capped and sanitised (`sanitizeChatHistory`, now shared by both chats), tool results are fenced as data, internal errors are hidden from the model, the loop is capped (6 rounds, 45 s), rate limits apply per staff member and restaurant, there's a kill switch (`AI_OWNER_ASSISTANT_ENABLED`), and logs record counts and token usage only.
+- Owners and managers only; other roles are redirected or get 403.
+
+**Consequences.**
+- ✅ Every owner can use it on a phone, with nothing to install and no extra AI subscription.
+- ✅ The two ways in can't drift: same definitions, same data layer, same "no customer PII" rule.
+- ⚠️ The restaurant pays for the model calls (rate-limited). With MCP, the owner's own AI subscription pays.
+- 📌 OAuth for claude.ai web and ChatGPT connectors remains an option if owners ask for it.

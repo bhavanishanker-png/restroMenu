@@ -46,7 +46,10 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   },
   {
     title: "Insights",
-    items: [{ href: "/dashboard/reports", label: "Sales reports", icon: "monitoring", roles: MANAGERS }],
+    items: [
+      { href: "/dashboard/reports", label: "Sales reports", icon: "monitoring", roles: MANAGERS },
+      { href: "/dashboard/assistant", label: "Ask AI", icon: "auto_awesome", roles: MANAGERS },
+    ],
   },
   {
     title: "Account",

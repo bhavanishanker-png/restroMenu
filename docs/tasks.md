@@ -346,3 +346,26 @@ revocable, scoped to one restaurant and role). Tools are read-only:
 - A revoked or wrong token gets 401; no tool can write.
 - Rate limited per token; token use is logged (counts, not content).
 - Tests cover token hashing/verification, revocation and tenant scoping of each tool.
+
+---
+
+### - [ ] T36 · Owner AI assistant in the dashboard
+Owner's decision (2026-11-15) after T35: restaurant owners mostly use the
+Claude/ChatGPT websites or their phone, not desktop apps with config files, so
+the same owner Q&A goes inside the QBite dashboard. MCP (T35) stays for
+technical users. One set of read-only tool definitions serves both.
+
+**Done when:**
+- An "Ask AI" page in the dashboard (owners and managers; others are redirected)
+  answers questions like "How were sales today?" using the four read-only tools.
+- The tools are defined once (`src/lib/mcp/owner-tools.ts`) and used by both the
+  MCP server and the dashboard chat; MCP behaviour and tests are unchanged.
+- The restaurant comes from the staff session, never from the request.
+- Client-sent chat history is capped and treated as untrusted; tool results are
+  fenced as data; no customer names or phone numbers are available to the model.
+- Kill switch `AI_OWNER_ASSISTANT_ENABLED`; rate limited per staff member and
+  restaurant; logs record counts and token usage, never the conversation.
+- Works at 375px with 44px tap targets; skeleton while thinking; empty state
+  offers example questions.
+- Unit tests cover the shared tool definitions, the tool set given to the
+  assistant, and history sanitising, without calling the API.

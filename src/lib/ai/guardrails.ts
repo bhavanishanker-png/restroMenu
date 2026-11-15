@@ -26,16 +26,18 @@
  */
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import type { AssistantChatTurn } from "@/types";
 
 // ---------------------------------------------------------------- kill switch
 
-export type AiFeature = "menu_onboarding" | "menu_assistant" | "menu_writing" | "owner_mcp";
+export type AiFeature = "menu_onboarding" | "menu_assistant" | "menu_writing" | "owner_mcp" | "owner_assistant";
 
 const FEATURE_ENV: Record<AiFeature, string> = {
   menu_onboarding: "AI_MENU_ONBOARDING_ENABLED",
   menu_assistant: "AI_MENU_ASSISTANT_ENABLED",
   menu_writing: "AI_MENU_WRITING_ENABLED",
   owner_mcp: "AI_OWNER_MCP_ENABLED",
+  owner_assistant: "AI_OWNER_ASSISTANT_ENABLED",
 };
 
 /** On unless the env var is explicitly "false", so turning a feature off is one config change. */
@@ -89,6 +91,28 @@ export function sanitizeUserText(raw: string, maxChars: number): string {
     .replace(/[ \t]{3,}/g, "  ")
     .trim()
     .slice(0, maxChars);
+}
+
+/**
+ * Client-supplied chat history is untrusted. Keeps the last N turns, sanitises
+ * and caps each one, and makes sure it starts and ends with a user turn.
+ * Returns null when nothing usable is left. Shared by the diner and owner chats.
+ */
+export function sanitizeChatHistory(turns: AssistantChatTurn[]): AssistantChatTurn[] | null {
+  const cleaned = turns
+    .slice(-AI_LIMITS.chatHistoryTurns)
+    .map((t) => ({
+      role: t.role,
+      content: sanitizeUserText(
+        t.content,
+        t.role === "user" ? AI_LIMITS.chatMessageChars : AI_LIMITS.chatHistoryAssistantChars
+      ),
+    }))
+    .filter((t) => t.content.length > 0);
+
+  while (cleaned.length > 0 && cleaned[0].role !== "user") cleaned.shift();
+  if (cleaned.length === 0 || cleaned[cleaned.length - 1].role !== "user") return null;
+  return cleaned;
 }
 
 /**

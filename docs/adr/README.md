@@ -15,7 +15,7 @@ Each record explains one design decision in QBite: the problem, the options cons
 | [0009](0009-ai-as-untrusted-component.md) | AI as an untrusted component | AI drafts and suggests; code validates everything; humans approve every write |
 | [0010](0010-menu-import-langgraph.md) | Menu import as a LangGraph workflow | Parallel page reads, checkpointed pause for owner review, server-side validation; Claude still called via the Anthropic SDK |
 | [0011](0011-ai-dish-writing-and-translations.md) | AI dish writing and translations | Translations table; per-dish LangGraph subgraph whose guardrail check loops back to rewrite; owner approves; route saves |
-| [0012](0012-owner-mcp-server.md) | Owner Q&A over MCP | Personal access tokens (hashed, verified every request); 4 read-only tools; restaurant from the token by construction; no customer PII |
+| [0012](0012-owner-mcp-server.md) | Owner Q&A over MCP | Personal access tokens (hashed, verified every request); 4 read-only tools; restaurant from the token by construction; no customer PII ; T36: same tools in a dashboard "Ask AI" chat |
 
 ## Format
 

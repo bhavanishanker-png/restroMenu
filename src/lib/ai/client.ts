@@ -10,6 +10,7 @@ export const AI_MODELS = {
   menuOnboarding: "claude-opus-5-5",
   menuAssistant: "claude-opus-5-5",
   menuWriting: "claude-opus-5-5",
+  ownerAssistant: "claude-opus-5-5",
 } as const;
 
 /**

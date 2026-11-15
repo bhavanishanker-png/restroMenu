@@ -23,7 +23,8 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 - **AI descriptions & Hindi** — AI writes missing English descriptions and translates dish names and descriptions into Hindi; anything with a health or allergy claim is rewritten or dropped; the owner reviews before saving
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
 - **Dashboard** — today's order count, revenue, average ticket
-- **Ask Claude about your restaurant (MCP)** — create a personal access token in Settings and connect Claude Desktop or Claude Code; read-only tools for sales, orders, best sellers and dishes that don't sell
+- **Ask AI** — owners ask "How were sales today?" or "Which dishes didn't sell?" right in the dashboard, on any phone; read-only
+- **Ask Claude about your restaurant (MCP)** — create a personal access token in Settings and connect Claude Desktop or Claude Code; read-only tools for sales, orders, best sellers and dishes that don't sell (same tools, for technical users)
 - **Staff login** — email (owner/manager) or 4-digit PIN (kitchen/waiter)
 
 ### Platform

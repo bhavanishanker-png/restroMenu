@@ -9,10 +9,10 @@ import {
   clientIp,
   enforceAiRateLimits,
   isAiFeatureEnabled,
-  sanitizeUserText,
+  sanitizeChatHistory,
 } from "@/lib/ai/guardrails";
 import { runMenuAssistant } from "@/lib/ai/menu-assistant";
-import type { AssistantChatTurn, AssistantReply } from "@/types";
+import type { AssistantReply } from "@/types";
 
 export const maxDuration = 60;
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const { slug, token } = parsed.data;
 
-  const history = toHistory(parsed.data.messages);
+  const history = sanitizeChatHistory(parsed.data.messages);
   if (!history) {
     return aiErrorResponse("VALIDATION_ERROR", "Type a question about the menu.", 400);
   }
@@ -120,25 +120,4 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       502
     );
   }
-}
-
-/**
- * Last N turns, sanitised, starting with a diner turn and ending with one.
- * Returns null if nothing usable is left.
- */
-function toHistory(turns: AssistantChatTurn[]): AssistantChatTurn[] | null {
-  const cleaned = turns
-    .slice(-AI_LIMITS.chatHistoryTurns)
-    .map((t) => ({
-      role: t.role,
-      content: sanitizeUserText(
-        t.content,
-        t.role === "user" ? AI_LIMITS.chatMessageChars : AI_LIMITS.chatHistoryAssistantChars
-      ),
-    }))
-    .filter((t) => t.content.length > 0);
-
-  while (cleaned.length > 0 && cleaned[0].role !== "user") cleaned.shift();
-  if (cleaned.length === 0 || cleaned[cleaned.length - 1].role !== "user") return null;
-  return cleaned;
 }

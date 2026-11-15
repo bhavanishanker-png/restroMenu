@@ -1,50 +1,30 @@
 /**
- * The owner Q&A MCP server (T35): four read-only tools over one restaurant's
- * data. SERVER-ONLY.
+ * The owner Q&A MCP server (T35): the four read-only owner tools over one
+ * restaurant's data. SERVER-ONLY.
+ *
+ * The tools themselves are defined once in owner-tools.ts and shared with the
+ * dashboard "Ask AI" chat (T36); this file only exposes them over MCP.
  *
  * Built fresh for every HTTP request (stateless Streamable HTTP), for the
- * principal resolved from that request's access token. The tools close over
- * `data`, which is already bound to principal.restaurantId; none of their
- * input schemas has a restaurant field, and the SDK strips unknown arguments,
- * so tool input can't select another restaurant.
- *
- * Read-only by design (owner's choice, ADR 0009): every tool is marked
- * readOnlyHint, and OwnerData has no write methods at all.
+ * principal resolved from that request's access token. `data` is already
+ * bound to principal.restaurantId; no input schema has a restaurant field,
+ * and the SDK strips unknown arguments, so tool input can't select another
+ * restaurant. Read-only by design (ADR 0009, 0012).
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
-import { formatMoney } from "@/lib/pricing";
-import { startOfRestaurantDay } from "@/lib/restaurant-time";
-import { findDeadItems, rankTopItems, summarizeSales } from "@/lib/mcp/owner-stats";
+import * as z from "zod/v4";
+import {
+  OWNER_TOOL_ERROR,
+  getDeadItems,
+  getTodaySales,
+  getTopItems,
+  listOrders,
+  type OwnerTool,
+  type OwnerToolContext,
+} from "@/lib/mcp/owner-tools";
 import type { OwnerData } from "@/lib/mcp/owner-data";
-import type { AccessTokenPrincipal, OrderStatus } from "@/types";
-
-const ACTIVE_STATUSES: OrderStatus[] = ["placed", "accepted", "preparing", "ready"];
-
-function result(value: unknown): CallToolResult {
-  return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
-}
-
-/** Runs one tool: logs counts and timing (never the data), turns failures into a tool error. */
-async function run(
-  principal: AccessTokenPrincipal,
-  tool: string,
-  fn: () => Promise<unknown>
-): Promise<CallToolResult> {
-  const started = Date.now();
-  try {
-    const value = await fn();
-    console.info("[mcp]", { restaurantId: principal.restaurantId, tokenId: principal.tokenId, tool, ok: true, ms: Date.now() - started });
-    return result(value);
-  } catch (err) {
-    console.error("[mcp]", { restaurantId: principal.restaurantId, tokenId: principal.tokenId, tool, ok: false }, err);
-    return {
-      isError: true,
-      content: [{ type: "text", text: "QBite couldn't load that data just now. Try again in a moment." }],
-    };
-  }
-}
+import type { AccessTokenPrincipal } from "@/types";
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
 
@@ -62,107 +42,34 @@ export function buildOwnerMcpServer(
         "These tools cannot change anything; to change the menu or orders, use the QBite dashboard.",
     }
   );
+  const ctx: OwnerToolContext = { data, now };
 
-  server.registerTool(
-    "get_today_sales",
-    {
-      title: "Sales for a day",
-      description:
-        "Orders, revenue and average order value for one business day. daysAgo 0 = today so far, 1 = yesterday, up to 90.",
-      inputSchema: { daysAgo: z.number().int().min(0).max(90).optional().describe("0 = today (default), 1 = yesterday") },
-      annotations: READ_ONLY,
-    },
-    async ({ daysAgo = 0 }) =>
-      run(principal, "get_today_sales", async () => {
-        const tz = await data.timezone();
-        const at = now();
-        const from = startOfRestaurantDay(tz, at, daysAgo);
-        const to = daysAgo === 0 ? at : startOfRestaurantDay(tz, at, daysAgo - 1);
-        const s = summarizeSales(await data.ordersBetween(from.toISOString(), to.toISOString()));
-        return {
-          restaurant: await data.restaurantName(),
-          day: daysAgo === 0 ? "today (so far)" : `${daysAgo} day(s) ago`,
-          timezone: tz,
-          orders: s.orders,
-          revenue: s.revenue,
-          revenueFormatted: formatMoney(s.revenue),
-          averageOrderValue: s.averageOrderValue,
-          averageOrderValueFormatted: formatMoney(s.averageOrderValue),
-          cancelledOrders: s.cancelledOrders,
-        };
-      })
-  );
+  /** Registers one shared tool: logs counts and timing (never the data), turns failures into a tool error. */
+  function expose(tool: OwnerTool<z.ZodRawShape>) {
+    server.registerTool(
+      tool.name,
+      { title: tool.title, description: tool.description, inputSchema: tool.input, annotations: READ_ONLY },
+      // The SDK has already validated `args`; parsing again with the tool's own
+      // schema gives a typed value without a cast, and costs microseconds.
+      async (args: unknown): Promise<CallToolResult> => {
+        const started = Date.now();
+        const log = { restaurantId: principal.restaurantId, tokenId: principal.tokenId, tool: tool.name };
+        try {
+          const value = await tool.run(ctx, z.object(tool.input).parse(args));
+          console.info("[mcp]", { ...log, ok: true, ms: Date.now() - started });
+          return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
+        } catch (err) {
+          console.error("[mcp]", { ...log, ok: false }, err);
+          return { isError: true, content: [{ type: "text", text: OWNER_TOOL_ERROR }] };
+        }
+      }
+    );
+  }
 
-  server.registerTool(
-    "list_orders",
-    {
-      title: "Recent orders",
-      description:
-        "The most recent orders, newest first, with table, status, total and items. " +
-        "status: 'active' (not yet served), a specific status, or 'all'. Customer names and phone numbers are not included.",
-      inputSchema: {
-        status: z
-          .enum(["active", "all", "placed", "accepted", "preparing", "ready", "served", "cancelled"])
-          .optional()
-          .describe("Default 'all'"),
-        limit: z.number().int().min(1).max(50).optional().describe("Default 20, max 50"),
-      },
-      annotations: READ_ONLY,
-    },
-    async ({ status = "all", limit = 20 }) =>
-      run(principal, "list_orders", async () => {
-        const statuses: OrderStatus[] | null =
-          status === "all" ? null : status === "active" ? ACTIVE_STATUSES : [status];
-        const orders = await data.recentOrders(statuses, limit);
-        return {
-          count: orders.length,
-          orders: orders.map((o) => ({ ...o, totalFormatted: formatMoney(o.total) })),
-        };
-      })
-  );
-
-  server.registerTool(
-    "get_top_items",
-    {
-      title: "Best-selling dishes",
-      description: "Dishes ranked by quantity sold over the last N days (cancelled orders excluded).",
-      inputSchema: {
-        days: z.number().int().min(1).max(90).optional().describe("Default 7"),
-        limit: z.number().int().min(1).max(20).optional().describe("Default 10"),
-      },
-      annotations: READ_ONLY,
-    },
-    async ({ days = 7, limit = 10 }) =>
-      run(principal, "get_top_items", async () => {
-        const tz = await data.timezone();
-        const from = startOfRestaurantDay(tz, now(), days - 1);
-        const { lines, truncated } = await data.soldLinesSince(from.toISOString());
-        return {
-          days,
-          truncated,
-          items: rankTopItems(lines, limit).map((i) => ({ ...i, revenueFormatted: formatMoney(i.revenue) })),
-        };
-      })
-  );
-
-  server.registerTool(
-    "get_dead_items",
-    {
-      title: "Dishes that didn't sell",
-      description: "Dishes on the current menu that sold nothing in the last N days.",
-      inputSchema: { days: z.number().int().min(1).max(90).optional().describe("Default 14") },
-      annotations: READ_ONLY,
-    },
-    async ({ days = 14 }) =>
-      run(principal, "get_dead_items", async () => {
-        const tz = await data.timezone();
-        const from = startOfRestaurantDay(tz, now(), days - 1);
-        const [items, sold] = await Promise.all([data.activeItems(), data.soldLinesSince(from.toISOString())]);
-        const dead = findDeadItems(items, sold.lines);
-        return { days, menuSize: items.length, count: dead.length, truncated: sold.truncated, items: dead };
-      })
-  );
-
+  expose(getTodaySales);
+  expose(listOrders);
+  expose(getTopItems);
+  expose(getDeadItems);
   return server;
 }
 
