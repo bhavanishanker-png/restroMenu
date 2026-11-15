@@ -518,3 +518,29 @@ export type AssistantReply = {
   reply: string;
   suggestions: AssistantSuggestion[];
 };
+
+// ---------------------------------------------------------------- owner MCP access tokens (T35)
+
+export type AccessTokenScope = 'read';
+
+/** A personal access token as shown in the dashboard. The secret is never included. */
+export type AccessToken = {
+  id: string;
+  name: string;
+  /** First characters of the token, e.g. "qbt_8f3kX2a1", so the owner can tell tokens apart. */
+  prefix: string;
+  scopes: AccessTokenScope[];
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdBy: { staffId: string; name: string | null };
+};
+
+/** Who an MCP request is acting as, resolved from a token on every request. */
+export type AccessTokenPrincipal = {
+  tokenId: string;
+  staffId: string;
+  restaurantId: string;
+  role: Extract<StaffRole, 'owner' | 'manager'>;
+  scopes: AccessTokenScope[];
+};

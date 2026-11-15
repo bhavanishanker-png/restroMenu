@@ -23,6 +23,7 @@ A multi-tenant web app where customers scan a QR code at their table, browse the
 - **AI descriptions & Hindi** — AI writes missing English descriptions and translates dish names and descriptions into Hindi; anything with a health or allergy claim is rewritten or dropped; the owner reviews before saving
 - **Table manager** — QR standee PDF generator (branded, table-numbered)
 - **Dashboard** — today's order count, revenue, average ticket
+- **Ask Claude about your restaurant (MCP)** — create a personal access token in Settings and connect Claude Desktop or Claude Code; read-only tools for sales, orders, best sellers and dishes that don't sell
 - **Staff login** — email (owner/manager) or 4-digit PIN (kitchen/waiter)
 
 ### Platform
@@ -47,6 +48,7 @@ How the system works and why. **[Architecture overview →](docs/architecture.md
 | LLMs can be wrong or manipulated | AI drafts and suggests; code validates; humans approve writes | [0009](docs/adr/0009-ai-as-untrusted-component.md) |
 | Multi-page menu import with a human review that can last hours | LangGraph workflow: parallel page reads, checkpointed pause for owner review, server-side validation | [0010](docs/adr/0010-menu-import-langgraph.md) |
 | AI-written text must never make a health claim, in any language | Guardrail check is a graph edge: failing text is rewritten (max 3 calls), then dropped and flagged; translations in their own table | [0011](docs/adr/0011-ai-dish-writing-and-translations.md) |
+| Let owners ask an AI app about their restaurant, safely | MCP server with hashed personal tokens re-checked every request; read-only tools; tenant from the token; no customer PII | [0012](docs/adr/0012-owner-mcp-server.md) |
 
 ### System at a glance
 
@@ -80,7 +82,8 @@ All UML diagrams, including the kitchen and restaurant-owner flows, are in [uml.
 | Payments | Razorpay |
 | State | Zustand (cart) + TanStack Query (server state) |
 | AI | Claude API (`@anthropic-ai/sdk`) — server-side only |
-| AI orchestration | LangGraph (menu import workflow; Claude still called via the Anthropic SDK) |
+| AI orchestration | LangGraph (menu import and dish-writing workflows; Claude still called via the Anthropic SDK) |
+| AI integrations | MCP server (`@modelcontextprotocol/sdk`, Streamable HTTP) for owners |
 | Error tracking | Sentry |
 | Deployment | Vercel |
 
@@ -125,7 +128,7 @@ In the Supabase SQL editor, run in order:
 1. `docs/schema.sql` — creates all tables, RLS policies, functions
 2. `docs/seed.sql` — seeds one demo restaurant (`test-kitchen`) with tables, categories, and menu items
 
-Already set up from an earlier version? Run the files in `docs/migrations/` you haven't run yet, in number order (009 and 010 are the AI workflow ones).
+Already set up from an earlier version? Run the files in `docs/migrations/` you haven't run yet, in number order (009–011 are the AI ones).
 
 ### 4. Run
 

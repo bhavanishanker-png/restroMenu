@@ -332,7 +332,7 @@ The route, not the graph, writes the approved text, scoped by restaurant.
 
 ---
 
-### - [ ] T35 · Owner Q&A agent over MCP (read-only)
+### - [x] T35 · Owner Q&A agent over MCP (read-only)
 Out of the release order by the owner's decision (2026-11-14).
 An MCP server at `/api/mcp` that owners connect from Claude Desktop. Auth: a
 personal access token created in the dashboard (shown once, stored hashed,

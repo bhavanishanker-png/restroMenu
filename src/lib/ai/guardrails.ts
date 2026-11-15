@@ -29,12 +29,13 @@ import { checkRateLimit } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------- kill switch
 
-export type AiFeature = "menu_onboarding" | "menu_assistant" | "menu_writing";
+export type AiFeature = "menu_onboarding" | "menu_assistant" | "menu_writing" | "owner_mcp";
 
 const FEATURE_ENV: Record<AiFeature, string> = {
   menu_onboarding: "AI_MENU_ONBOARDING_ENABLED",
   menu_assistant: "AI_MENU_ASSISTANT_ENABLED",
   menu_writing: "AI_MENU_WRITING_ENABLED",
+  owner_mcp: "AI_OWNER_MCP_ENABLED",
 };
 
 /** On unless the env var is explicitly "false", so turning a feature off is one config change. */

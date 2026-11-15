@@ -8,6 +8,8 @@
  */
 
 import type {
+  AccessToken,
+  AccessTokenScope,
   Addon,
   AddonGroup,
   FoodType,
@@ -44,6 +46,7 @@ import type {
   DbRestaurantSettings,
   DbRestaurantTable,
   DbStaff,
+  DbStaffAccessToken,
   DbTableSession,
 } from "@/types/db";
 
@@ -294,5 +297,24 @@ export function toServiceRequest(r: {
     type: r.type as ServiceRequestType,
     status: r.status as ServiceRequest["status"],
     createdAt: r.created_at,
+  };
+}
+
+// ---------------------------------------------------------------- access tokens
+
+/** Maps a token row for display. `token_hash` is deliberately not carried over. */
+export function toAccessToken(
+  r: Omit<DbStaffAccessToken, "token_hash">,
+  creatorName: string | null
+): AccessToken {
+  return {
+    id: r.id,
+    name: r.name,
+    prefix: r.token_prefix,
+    scopes: (r.scopes ?? []).filter((s): s is AccessTokenScope => s === "read"),
+    createdAt: r.created_at,
+    lastUsedAt: r.last_used_at,
+    revokedAt: r.revoked_at,
+    createdBy: { staffId: r.staff_id, name: creatorName },
   };
 }

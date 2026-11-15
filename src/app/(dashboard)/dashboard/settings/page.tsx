@@ -3,6 +3,8 @@ import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { toRestaurantSettings } from "@/lib/mappers";
 import { SettingsForm } from "@/components/settings/SettingsForm";
+import { AccessTokensCard } from "@/components/settings/AccessTokensCard";
+import { AI_ACCESS_SECTION_ID } from "@/components/settings/section-ids";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import type { DbRestaurantSettings } from "@/types/db";
 
@@ -49,7 +51,18 @@ export default async function SettingsPage() {
             : "Profile, ordering rules, charges and payment methods."
         }
       />
-      <SettingsForm settings={settings} restaurantName={restaurantName} logoUrl={logoUrl} />
+      <SettingsForm
+        settings={settings}
+        restaurantName={restaurantName}
+        logoUrl={logoUrl}
+        extraSection={{
+          id: AI_ACCESS_SECTION_ID,
+          icon: "smart_toy",
+          title: "AI access",
+          summary: "Connect Claude (MCP)",
+          node: <AccessTokensCard />,
+        }}
+      />
     </div>
   );
 }

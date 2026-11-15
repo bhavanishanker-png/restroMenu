@@ -412,3 +412,25 @@ create policy "staff manage translations"
 
 create schema if not exists langgraph;
 revoke all on schema langgraph from anon, authenticated;
+
+-- ============================================================
+-- PERSONAL ACCESS TOKENS (migration 011, task T35)
+-- Owner MCP server auth. Only the hash is stored. Server-only: RLS on, no policies.
+-- ============================================================
+
+create table staff_access_tokens (
+  id            uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants(id) on delete cascade,
+  staff_id      uuid not null references staff(id) on delete cascade,
+  name          text not null check (char_length(name) between 1 and 60),
+  token_prefix  text not null,
+  token_hash    text not null unique,
+  scopes        text[] not null default '{read}',
+  created_at    timestamptz not null default now(),
+  last_used_at  timestamptz,
+  revoked_at    timestamptz
+);
+
+create index idx_staff_access_tokens_restaurant on staff_access_tokens (restaurant_id);
+
+alter table staff_access_tokens enable row level security;

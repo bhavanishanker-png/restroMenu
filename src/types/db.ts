@@ -188,3 +188,16 @@ export type DbOrderItem = {
   status: string;
   ordered_by: string | null;
 };
+
+export type DbStaffAccessToken = {
+  id: string;
+  restaurant_id: string;
+  staff_id: string;
+  name: string;
+  token_prefix: string;
+  token_hash: string;
+  scopes: string[];
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+};

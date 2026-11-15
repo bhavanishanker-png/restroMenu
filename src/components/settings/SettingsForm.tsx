@@ -16,6 +16,12 @@ type Props = {
   settings: RestaurantSettings;
   restaurantName?: string;
   logoUrl: string | null;
+  /**
+   * Extra sections rendered in the same column, after Payments, that save on
+   * their own (not via the save bar), e.g. AI access tokens. Rendering them
+   * here keeps them inside the padding that clears the fixed save bar.
+   */
+  extraSection?: { id: string; icon: string; title: string; summary: string; node: ReactNode };
 };
 
 type FormState = {
@@ -179,7 +185,7 @@ function SwitchRow({
   );
 }
 
-export function SettingsForm({ settings: initial, restaurantName, logoUrl: initialLogoUrl }: Props) {
+export function SettingsForm({ settings: initial, restaurantName, logoUrl: initialLogoUrl, extraSection }: Props) {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(initialLogoUrl);
@@ -409,6 +415,21 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
                 </li>
               );
             })}
+            {extraSection && (
+              <li className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById(extraSection.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="relative flex min-h-11 w-full items-center gap-3 rounded-full border border-outline-variant bg-surface-container-lowest px-3.5 text-left text-on-surface-variant transition-colors duration-fast hover:text-on-surface lg:rounded-xl lg:border-transparent lg:bg-transparent lg:px-3 lg:py-2.5 lg:hover:bg-surface-container"
+                >
+                  <Icon name={extraSection.icon} size={20} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block whitespace-nowrap text-[14px] font-semibold">{extraSection.title}</span>
+                    <span className="hidden truncate text-[13px] text-on-surface-variant lg:block">{extraSection.summary}</span>
+                  </span>
+                </button>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -750,6 +771,7 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
             )}
           </div>
         </SettingsSection>
+        {extraSection?.node}
         </div>
       </div>
 
