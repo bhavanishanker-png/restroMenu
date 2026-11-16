@@ -8,6 +8,7 @@ import { ORDER_STATUS_ICONS } from "@/lib/order-status";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
 import { OrderTimeline } from "./OrderTimeline";
+import { SplitBill } from "./SplitBill";
 import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@/types";
 
 type Props = {
@@ -407,6 +408,9 @@ export function OrderTrackerClient({
           </div>
         </dl>
       </section>
+
+      {/* Split bill (T38): per-person UPI QRs. Hides itself once paid without a split. */}
+      {!cancelled && <SplitBill orderId={orderId} onPaid={() => void refresh()} />}
     </div>
   );
 }

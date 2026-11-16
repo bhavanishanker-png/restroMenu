@@ -393,3 +393,28 @@ the model mis-stating, inventing or mis-computing numbers, so code checks them.
   guessing; a reply with figures but no tool data fails the check.
 - Unit tests cover number extraction, date/time skipping, derived figures,
   the retry decision and the source labels, without calling the API.
+
+---
+
+### - [ ] T38 · Split the bill with per-person UPI QR codes
+Owner's decision (2026-11-16). One guest splits an unpaid order's bill on the
+order tracker, equally (2–10 people) or by custom amounts. Each person gets a
+fixed-amount, single-use Razorpay UPI QR and pays by scanning it with their own
+phone. All money goes to the platform Razorpay account for now; routing to each
+restaurant is a later decision.
+
+**Done when:**
+- Share amounts are computed server-side in pricing.ts and always add up to the
+  order total to the paisa; custom amounts that don't add up are rejected.
+- Each share's QR is fixed-amount and single-use, and expires after 60 minutes
+  with a "show a new QR" option.
+- The signature-verified `qr_code.credited` webhook marks the share paid
+  (idempotent); when paid shares cover the total, the order becomes `paid`.
+- The guest sees each share's status update within a few seconds, and progress
+  as "₹X of ₹Y paid". The split can be cancelled until the first share is paid,
+  and is locked after that.
+- Staff see the shares in the order detail sheet and can mark a share as paid
+  in cash, which closes its QR.
+- Full online payment is refused while a split is active, and a full payment
+  that arrives anyway cancels the open shares.
+- Unit tests cover the split maths.

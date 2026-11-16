@@ -193,3 +193,60 @@ export function splitGst(taxTotal: number, interState = false) {
   const half = roundMoney(taxTotal / 2);
   return { igst: 0, cgst: half, sgst: roundMoney(taxTotal - half) };
 }
+
+// ---------------------------------------------------------------- split bill
+
+/** Most people one bill can be split between (one QR each). */
+export const MAX_SPLIT_SHARES = 10;
+/** Razorpay's smallest payable amount is ₹1, so no share may be smaller. */
+export const MIN_SHARE_AMOUNT = 1;
+
+/**
+ * Split a total into `count` equal shares that add up to it exactly.
+ * Works in whole paise; the leftover paise go one each to the first shares,
+ * so ₹1000 / 3 is [333.34, 333.33, 333.33].
+ */
+export function splitEqually(total: number, count: number): number[] {
+  if (!Number.isInteger(count) || count < 1) {
+    throw new RangeError('splitEqually: count must be a positive integer');
+  }
+  const totalPaise = toPaise(total);
+  const base = Math.floor(totalPaise / count);
+  const extra = totalPaise - base * count;
+  return Array.from({ length: count }, (_, i) => (base + (i < extra ? 1 : 0)) / 100);
+}
+
+/**
+ * What is left to assign after some shares have been entered, in rupees.
+ * Negative when the entered shares are more than the total.
+ */
+export function remainingAfterShares(total: number, shares: readonly number[]): number {
+  let paise = toPaise(total);
+  for (const s of shares) paise -= toPaise(s);
+  return paise / 100;
+}
+
+/** True when the shares add up to the total exactly, to the paisa. */
+export function sharesMatchTotal(total: number, shares: readonly number[]): boolean {
+  return toPaise(remainingAfterShares(total, shares)) === 0;
+}
+
+export type ShareProgress = {
+  /** Sum of the paid shares. */
+  paid: number;
+  /** Still owed, never below 0. */
+  remaining: number;
+  fullyPaid: boolean;
+};
+
+/** How much of a split bill has been paid. */
+export function shareProgress(total: number, paidShares: readonly number[]): ShareProgress {
+  const paid = sumMoney(paidShares);
+  const remainingPaise = Math.max(0, toPaise(total) - toPaise(paid));
+  return { paid, remaining: remainingPaise / 100, fullyPaid: remainingPaise === 0 };
+}
+
+/** Paid share of the bill as a 0–100 percentage, for a progress bar. */
+export function sharePaidPercent(total: number, paidShares: readonly number[]): number {
+  return Math.min(100, percentOf(sumMoney(paidShares), total));
+}

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Fetch the order to get its total.
   const { data: order, error } = await supabase
     .from("orders")
-    .select("id, total, status, payment_status")
+    .select("id, restaurant_id, total, status, payment_status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -83,6 +83,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (order.status === "cancelled") {
     return NextResponse.json(
       { error: { code: "ORDER_CANCELLED", message: "This order was cancelled, so it can't be paid." } },
+      { status: 409 }
+    );
+  }
+
+  // A split bill (T38) is being paid share by share; paying the whole bill
+  // here as well would charge the table twice.
+  const { count: openShares, error: sharesError } = await supabase
+    .from("order_payment_shares")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", order.restaurant_id)
+    .eq("order_id", orderId)
+    .neq("status", "cancelled");
+  if (sharesError) {
+    console.error("[payments/razorpay] split share lookup", sharesError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Could not start payment. Please try again." } },
+      { status: 500 }
+    );
+  }
+  if ((openShares ?? 0) > 0) {
+    return NextResponse.json(
+      { error: { code: "SPLIT_ACTIVE", message: "This bill is split. Each person pays their share from the order page." } },
       { status: 409 }
     );
   }

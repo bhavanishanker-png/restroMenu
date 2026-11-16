@@ -171,6 +171,24 @@ export type DbOrder = {
   served_at: string | null;
 };
 
+export type DbPaymentShare = {
+  id: string;
+  restaurant_id: string;
+  order_id: string;
+  position: number;
+  label: string;
+  amount: number;
+  status: string;
+  method: string | null;
+  razorpay_qr_id: string | null;
+  qr_image_url: string | null;
+  qr_expires_at: string | null;
+  razorpay_payment_id: string | null;
+  marked_by: string | null;
+  paid_at: string | null;
+  created_at: string;
+};
+
 export type DbOrderItem = {
   id: string;
   order_id: string;

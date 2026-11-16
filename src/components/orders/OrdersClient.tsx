@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/pricing";
+import { SplitSharesPanel } from "./SplitSharesPanel";
 import { ORDER_STATUS_STYLES, ORDER_STATUS_LABELS, ORDER_STATUS_ICONS } from "@/lib/order-status";
 import { cn } from "@/lib/utils";
 import type { Order, OrderItem, OrderStatus, OrderType, PaymentStatus } from "@/types";
@@ -274,6 +275,9 @@ function OrderDetailSheet({
               </div>
             </div>
           </div>
+
+          {/* Split bill shares, if the guests split it (T38). */}
+          <SplitSharesPanel orderId={order.id} />
 
           {/* Line items — snapshots from order_items, never re-priced. */}
           <div>

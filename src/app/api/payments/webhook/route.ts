@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createServerClient } from "@/lib/supabase/server";
+import { toPaise } from "@/lib/pricing";
+import { cancelPendingShares, getRazorpay, settleOrderFromShares } from "@/lib/payment-shares";
+import type { DbPaymentShare } from "@/types/db";
 
 // POST /api/payments/webhook
 // Razorpay calls this after payment events. Once verified, returns 200 for
@@ -55,6 +58,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     (event.payload as Record<string, unknown>)?.payment as Record<string, unknown>
   )?.entity as Record<string, unknown> | undefined;
 
+  // Split bill (T38): a guest paid their share by scanning its QR.
+  if (eventType === "qr_code.credited") {
+    const qrCode = (
+      (event.payload as Record<string, unknown>)?.qr_code as Record<string, unknown>
+    )?.entity as Record<string, unknown> | undefined;
+    return handleShareCredited(qrCode?.id, payment);
+  }
+
   // Always acknowledge unknown events.
   if (!payment || (eventType !== "payment.captured" && eventType !== "payment.failed")) {
     return NextResponse.json({ ok: true });
@@ -75,7 +86,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // This makes the handler idempotent: a replay finds the already-updated row.
   const { data: order, error: lookupError } = await supabase
     .from("orders")
-    .select("id, payment_status")
+    .select("id, restaurant_id, payment_status")
     .or(`payment_ref.eq.${razorpayOrderId},payment_ref.eq.${razorpayPaymentId}`)
     .maybeSingle();
 
@@ -117,6 +128,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 500 }
       );
     }
+
+    // The whole bill was paid in one go, so any split shares still open must
+    // not take more money. Best effort: the payment is already recorded, and
+    // a failure here is logged rather than retried.
+    const cancelled = await cancelPendingShares(supabase, getRazorpay(), order.restaurant_id as string, order.id as string);
+    if (!cancelled.ok) console.error("Webhook: couldn't cancel open split shares for paid order", order.id);
   } else if (eventType === "payment.failed") {
     const { error } = await supabase
       .from("orders")
@@ -132,5 +149,92 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
+  return NextResponse.json({ ok: true });
+}
+
+// ---------------------------------------------------------------- split bill share
+
+/**
+ * qr_code.credited → mark that share paid, then mark the order paid if the
+ * paid shares now cover it. Idempotent: the update only matches a share that
+ * isn't paid yet, and settling twice writes the same values.
+ *
+ * A share that was cancelled (the split was redone just as someone scanned)
+ * is still recorded as paid: the money really arrived, so it must count, and
+ * the log line lets the owner refund any overpayment.
+ */
+async function handleShareCredited(
+  qrId: unknown,
+  payment: Record<string, unknown> | undefined
+): Promise<NextResponse> {
+  const paymentId = payment?.id;
+  if (typeof qrId !== "string" || typeof paymentId !== "string") {
+    console.error("Webhook: qr_code.credited without a QR or payment id");
+    return NextResponse.json({ ok: true });
+  }
+
+  const supabase = createServerClient();
+
+  // The restaurant is unknown until the share is found by its unique QR id.
+  const { data: row, error: lookupError } = await supabase
+    .from("order_payment_shares")
+    .select("id, restaurant_id, order_id, amount, status")
+    .eq("razorpay_qr_id", qrId)
+    .maybeSingle();
+  if (lookupError) {
+    console.error("Webhook: share lookup failed", lookupError);
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Share lookup failed." } },
+      { status: 500 }
+    );
+  }
+  if (!row) {
+    // Money arrived for a QR we no longer track (e.g. replaced just as it was
+    // paid). Never silent: this needs a manual refund or reconciliation.
+    console.error("Webhook: UNMATCHED split-bill QR payment — reconcile manually", { qrId, paymentId });
+    return NextResponse.json({ ok: true });
+  }
+
+  const share = row as Pick<DbPaymentShare, "id" | "restaurant_id" | "order_id" | "amount" | "status">;
+  if (share.status === "cancelled") {
+    console.error("Webhook: payment for a CANCELLED split share — recorded; check for overpayment", { shareId: share.id, paymentId });
+  }
+  if (typeof payment?.amount === "number" && payment.amount !== toPaise(Number(share.amount))) {
+    console.error("Webhook: split share paid a different amount than expected", {
+      shareId: share.id,
+      expectedPaise: toPaise(Number(share.amount)),
+      paidPaise: payment.amount,
+    });
+  }
+
+  if (share.status !== "paid") {
+    const { error } = await supabase
+      .from("order_payment_shares")
+      .update({
+        status: "paid",
+        method: "upi",
+        razorpay_payment_id: paymentId,
+        paid_at: new Date().toISOString(),
+      })
+      .eq("restaurant_id", share.restaurant_id)
+      .eq("id", share.id)
+      .neq("status", "paid");
+    if (error) {
+      console.error("Webhook: failed to mark split share paid", error);
+      return NextResponse.json(
+        { error: { code: "DB_ERROR", message: "Failed to record share payment." } },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Runs on replays too, so a settle that failed last time is retried.
+  const settled = await settleOrderFromShares(supabase, share.restaurant_id, share.order_id);
+  if (!settled.ok) {
+    return NextResponse.json(
+      { error: { code: "DB_ERROR", message: "Failed to settle the order." } },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

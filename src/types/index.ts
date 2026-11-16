@@ -308,6 +308,43 @@ export type OrderWithItems = Order & {
   estimatedReadyAt?: string | null;
 };
 
+// ---------------------------------------------------------------- split bill (T38)
+
+export type PaymentShareStatus = 'pending' | 'paid' | 'cancelled';
+export type PaymentShareMethod = 'upi' | 'cash';
+
+/** One person's share of a split bill. Mirrors order_payment_shares. */
+export type PaymentShare = {
+  id: string;
+  restaurantId: string;
+  orderId: string;
+  position: number;
+  label: string;
+  amount: number;
+  status: PaymentShareStatus;
+  method: PaymentShareMethod | null;
+  razorpayQrId: string | null;
+  qrImageUrl: string | null;
+  qrExpiresAt: string | null;
+  razorpayPaymentId: string | null;
+  markedBy: string | null;
+  paidAt: string | null;
+  createdAt: string;
+};
+
+/** GET/POST /api/orders/[orderId]/split response. */
+export type SplitBillState = {
+  orderTotal: number;
+  paymentStatus: PaymentStatus;
+  /** Active (non-cancelled) shares, by position. Empty when the bill isn't split. */
+  shares: PaymentShare[];
+  paid: number;
+  remaining: number;
+  paidPercent: number;
+  /** False when Razorpay isn't configured — QR codes can't be made. */
+  onlineAvailable: boolean;
+};
+
 export type OrderEvent = {
   id: string;
   orderId: string;

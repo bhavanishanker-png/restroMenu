@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Order } from "@/types";
+import type { Order, PaymentShare } from "@/types";
 
 /** Order IDs are UUIDs; anything else cannot exist, so it is a 404, not a DB error. */
 export const orderIdSchema = z.string().uuid();
@@ -21,4 +21,12 @@ export function toGuestOrder(order: Order): Order {
     paymentRef: null,
     notes: null,
   };
+}
+
+/**
+ * A split-bill share as the public tracker may see it. The Razorpay payment
+ * ID and the staff member who took cash are not for anyone holding the link.
+ */
+export function toGuestPaymentShare(share: PaymentShare): PaymentShare {
+  return { ...share, razorpayPaymentId: null, markedBy: null };
 }

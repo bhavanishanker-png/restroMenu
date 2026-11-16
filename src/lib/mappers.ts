@@ -22,6 +22,9 @@ import type {
   OrderStatus,
   OrderType,
   PaymentMethod,
+  PaymentShare,
+  PaymentShareMethod,
+  PaymentShareStatus,
   PaymentStatus,
   Restaurant,
   RestaurantSettings,
@@ -42,6 +45,7 @@ import type {
   DbMenuCategory,
   DbOrder,
   DbOrderItem,
+  DbPaymentShare,
   DbRestaurant,
   DbRestaurantSettings,
   DbRestaurantTable,
@@ -257,6 +261,26 @@ export function toOrder(r: DbOrder): Order {
     acceptedAt: r.accepted_at,
     readyAt: r.ready_at,
     servedAt: r.served_at,
+  };
+}
+
+export function toPaymentShare(r: DbPaymentShare): PaymentShare {
+  return {
+    id: r.id,
+    restaurantId: r.restaurant_id,
+    orderId: r.order_id,
+    position: r.position,
+    label: r.label,
+    amount: Number(r.amount),
+    status: r.status as PaymentShareStatus,
+    method: r.method as PaymentShareMethod | null,
+    razorpayQrId: r.razorpay_qr_id,
+    qrImageUrl: r.qr_image_url,
+    qrExpiresAt: r.qr_expires_at,
+    razorpayPaymentId: r.razorpay_payment_id,
+    markedBy: r.marked_by,
+    paidAt: r.paid_at,
+    createdAt: r.created_at,
   };
 }
 

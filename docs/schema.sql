@@ -434,3 +434,37 @@ create table staff_access_tokens (
 create index idx_staff_access_tokens_restaurant on staff_access_tokens (restaurant_id);
 
 alter table staff_access_tokens enable row level security;
+
+-- ============================================================
+-- SPLIT BILL (T38) — see migrations/012_order_payment_shares.sql
+-- ============================================================
+
+create table order_payment_shares (
+  id                  uuid primary key default gen_random_uuid(),
+  restaurant_id       uuid not null references restaurants(id) on delete cascade,
+  order_id            uuid not null references orders(id) on delete cascade,
+  position            int  not null check (position between 1 and 10),
+  label               text not null check (char_length(label) between 1 and 40),
+  amount              numeric(10,2) not null check (amount >= 1),
+  status              text not null default 'pending'
+                        check (status in ('pending','paid','cancelled')),
+  method              text check (method in ('upi','cash')),
+  razorpay_qr_id      text unique,
+  qr_image_url        text,
+  qr_expires_at       timestamptz,
+  razorpay_payment_id text unique,
+  marked_by           uuid references staff(id) on delete set null,
+  paid_at             timestamptz,
+  created_at          timestamptz not null default now()
+);
+
+create index idx_order_payment_shares_order on order_payment_shares (restaurant_id, order_id);
+
+-- One active share per position: two guests splitting the same bill at the
+-- same moment can't both create a set — the second insert fails and is told
+-- to refresh.
+create unique index order_payment_shares_active_position
+  on order_payment_shares (order_id, position)
+  where status <> 'cancelled';
+
+alter table order_payment_shares enable row level security;
