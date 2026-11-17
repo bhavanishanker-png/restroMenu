@@ -6,6 +6,7 @@ import { priceCart, buildLineId, toPaise } from "@/lib/pricing";
 import { toOrder, toRestaurantSettings } from "@/lib/mappers";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { broadcastKitchenUpdate } from "@/lib/realtime";
 import type { CartLine, FoodType } from "@/types";
 import type { DbOrder, DbRestaurantSettings } from "@/types/db";
 import { startOfRestaurantDay } from "@/lib/restaurant-time";
@@ -522,6 +523,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const response: Record<string, unknown> = { order: toOrder(createdOrder as DbOrder) };
   if (razorpayPayload) response.razorpay = razorpayPayload;
+
+  // Push the new order to the kitchen display (best-effort; the board poll is
+  // the safety net). Awaited so the serverless function doesn't exit first.
+  await broadcastKitchenUpdate(restaurantId, "order");
 
   return NextResponse.json(response, { status: 201 });
 }

@@ -133,7 +133,10 @@ type BoardResponse = {
   serviceRequests: ServiceRequest[];
 };
 
-const POLL_MS = 8_000;
+// Realtime broadcast is the primary, sub-second refresh path (see the Board
+// sync effect). This poll is only a safety net for a dropped broadcast or a
+// tablet that was asleep, so it can be slow.
+const POLL_MS = 60_000;
 const REALTIME_DEBOUNCE_MS = 300;
 
 /**
@@ -278,15 +281,19 @@ export function KitchenDisplay({
 
   // ---- Board sync ----
   //
-  // Polling is the transport that actually works here. The browser holds the
-  // anon key, and the `orders` RLS policy resolves staff through `auth.uid()`
-  // — which a signed-cookie session never sets — so `postgres_changes`
-  // delivers nothing to this screen and the board silently froze at whatever
-  // the server rendered. /api/kitchen/board reads with the service role and
-  // scopes to the caller's own restaurant.
+  // Primary path: a Supabase Realtime **broadcast**. The server sends a tiny
+  // "board_changed" nudge to `kitchen:<restaurantId>` whenever an order or
+  // service request changes (see src/lib/realtime.ts); on that nudge this
+  // screen refetches /api/kitchen/board. Broadcast is used instead of
+  // `postgres_changes` because the browser holds the anon key and the `orders`
+  // RLS policy resolves staff through `auth.uid()` — which a signed-cookie
+  // session never sets — so row-change events deliver nothing here. A broadcast
+  // channel is not row-RLS filtered, so the nudge arrives; it carries no order
+  // data, and the actual board still comes back through the service-role route.
   //
-  // The Realtime subscription is kept as a latency win: when it does fire it
-  // only nudges the same poll, so it can never be the sole path to a refresh.
+  // Safety net: a slow poll (POLL_MS) still runs, so a dropped broadcast or a
+  // tablet waking from sleep can never leave the board permanently stale. The
+  // board read is always the same authorized server route, never the client DB.
   useEffect(() => {
     let cancelled = false;
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -350,26 +357,7 @@ export function KitchenDisplay({
 
     const channel = supabase
       .channel(`kitchen:${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        scheduleNudge
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "service_requests",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        scheduleNudge
-      )
+      .on("broadcast", { event: "board_changed" }, scheduleNudge)
       .subscribe();
 
     // A tablet that has been asleep is the most likely thing to be stale.

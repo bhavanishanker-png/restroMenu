@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession, requireRole } from "@/lib/auth";
 import { canTransition } from "@/types";
 import type { OrderStatus } from "@/types";
+import { broadcastKitchenUpdate } from "@/lib/realtime";
 
 const schema = z.object({
   status: z.enum(["accepted", "preparing", "ready", "served", "cancelled"]),
@@ -123,6 +124,10 @@ export async function PATCH(
   if (eventError) {
     console.error("[status] event insert failed:", eventError);
   }
+
+  // Push the status change to the kitchen display (best-effort; board poll is
+  // the safety net). Awaited so the serverless function doesn't exit first.
+  await broadcastKitchenUpdate(session!.restaurantId, "order");
 
   return NextResponse.json({ ok: true });
 }

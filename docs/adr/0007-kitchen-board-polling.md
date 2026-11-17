@@ -32,8 +32,25 @@ Option 4, keeping Realtime as an accelerator:
 - ⚠️ **Load grows with open screens, not with orders.** Each screen makes 7.5 requests a minute. 1,000 restaurants with one kitchen screen each is about **125 requests/second** of steady database reads before any customer traffic. This is the first thing to fix at scale. Options, in order: skip the query when nothing changed (an `updated_at` or version check), cache the board for a second or two per restaurant, then push changes over Server-Sent Events from a server that holds the service role.
 - 📌 Lesson: an auth design decision (custom cookie sessions) had a non-obvious effect on a different subsystem (Realtime + RLS). The failure was silent, so it's documented here and in the code next to the poll.
 
+## Update (2026-11-17) — server-pushed broadcast replaces the dead subscription
+
+The `postgres_changes` subscription in Option 4 never fired (same RLS reason as above), so the 8 s poll was doing all the work. We replaced it with a working push without touching the auth model, moving a step toward the SSE plan:
+
+- The server sends a Supabase Realtime **broadcast** to `kitchen:<restaurantId>` whenever an order is created, an order's status changes, or a service request is created or resolved. It is one stateless HTTP POST to the Realtime broadcast endpoint — no websocket to hold open in a serverless function. See `src/lib/realtime.ts` (`broadcastKitchenUpdate`).
+- A **broadcast** channel is **not** row-RLS filtered, so the cookie-authenticated anon client receives it — which is exactly what `postgres_changes` could not do. The message carries **no order data**, only a `board_changed` nudge; the board itself is still refetched through the authorized service-role route, so nothing sensitive crosses a public channel.
+- The poll is **demoted to a 60 s safety net** for a dropped broadcast or a tablet waking from sleep. It is no longer the primary path.
+
+Consequence changes:
+- ✅ New orders now appear in **well under a second** on a healthy connection, not up to 8 s.
+- ✅ Steady-state read load drops sharply: screens refetch on *change*, not on a timer. The ~125 reads/s figure below now applies only to the slow safety-net poll (1 req/min/screen ≈ **~17 reads/s** at 1,000 screens), plus one broadcast POST per order/status change.
+- ⚠️ Broadcast is best-effort by design: it never throws and never blocks an order write. Correctness still rests on the server route + safety-net poll, not on the broadcast arriving.
+
+This is the honest basis for describing the kitchen display as **real-time using Supabase Realtime**: the transport is Supabase Realtime (broadcast), with secure server-side reads.
+
 ## Where it lives
 
 - `src/app/api/kitchen/board/route.ts`
 - `src/lib/queries/kitchen.ts` — `fetchKitchenBoard`
-- `src/components/kitchen/KitchenDisplay.tsx` — polling, Realtime nudge, stale-response guard
+- `src/lib/realtime.ts` — `broadcastKitchenUpdate`, the server push
+- `src/app/api/orders/route.ts`, `src/app/api/orders/[orderId]/status/route.ts`, `src/app/api/service-requests/route.ts` — broadcast emitters
+- `src/components/kitchen/KitchenDisplay.tsx` — broadcast subscription, safety-net poll, stale-response guard

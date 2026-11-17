@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getStaffSession, requireRole } from "@/lib/auth";
+import { broadcastKitchenUpdate } from "@/lib/realtime";
 
 const schema = z.object({
   restaurantSlug: z.string().min(1),
@@ -93,6 +94,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // Push the new request to the kitchen display (best-effort; board poll is
+  // the safety net). Awaited so the serverless function doesn't exit first.
+  await broadcastKitchenUpdate(restaurant.id, "service_request");
+
   return NextResponse.json({ id: inserted.id }, { status: 201 });
 }
 
@@ -144,6 +149,9 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       { status: 404 }
     );
   }
+
+  // A resolved request should leave the kitchen panel on other screens too.
+  await broadcastKitchenUpdate(session!.restaurantId, "service_request");
 
   return NextResponse.json({ ok: true });
 }
