@@ -215,29 +215,22 @@ export function OrderTrackerClient({
     }
   };
 
-  // Accelerator: Supabase Realtime via postgres_changes. It only fires where
-  // migration 003_order_tracker_realtime.sql has been applied — without it,
-  // RLS filters every event out. The socket still reports SUBSCRIBED in that
-  // case, so `socketActive` is not evidence that events are arriving and the
-  // poll below must run regardless.
+  // Primary path: a Supabase Realtime broadcast. The server pushes an
+  // "order_changed" nudge to `order:<orderId>` on every status change and
+  // payment update (see src/lib/realtime.ts); on that nudge we refetch through
+  // the service-role route. Broadcast is used instead of `postgres_changes`
+  // because the diner is anonymous (no Supabase session), so row-change events
+  // are filtered out by RLS and never arrive. A broadcast channel is not
+  // row-RLS filtered, so the nudge gets through; it carries no data, and the
+  // order is refetched by its UUID — the credential the diner already holds.
   useEffect(() => {
     const supabase = createClient();
 
     const channel = supabase
       .channel(`order:${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `id=eq.${orderId}`,
-        },
-        () => {
-          // Re-fetch via API (service role) to get consistent typed data
-          refresh();
-        }
-      )
+      .on("broadcast", { event: "order_changed" }, () => {
+        refresh();
+      })
       .subscribe();
 
     return () => {
@@ -246,12 +239,14 @@ export function OrderTrackerClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
-  // The reliable path: poll while the customer is looking at the page. A diner
-  // watching for "Ready" must never have to pull-to-refresh to find out.
+  // Safety net: a slow poll while the page is visible, in case a broadcast is
+  // dropped or the socket can't connect. The broadcast above is the primary,
+  // sub-second path; this just guarantees a diner watching for "Ready" can
+  // never be left stale for long.
   useEffect(() => {
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") refresh();
-    }, 15_000);
+    }, 30_000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") refresh();

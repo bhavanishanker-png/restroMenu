@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { getStaffSession } from "@/lib/auth";
+import { broadcastOrderUpdate } from "@/lib/realtime";
 import {
   buildSplitState,
   closeQrQuietly,
@@ -78,6 +79,9 @@ export async function POST(
     // GET (tracker or this sheet refreshing) self-heals it, so the tap succeeds.
     console.error("[split cash] settling order failed", orderId);
   }
+
+  // Push the paid share to the other phones at the table (best-effort).
+  await broadcastOrderUpdate(orderId);
 
   const fresh = await loadSplitOrder(supabase, orderId, restaurantId);
   const shares = await loadActiveShares(supabase, restaurantId, orderId);

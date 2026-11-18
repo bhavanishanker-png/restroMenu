@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/ai/guardrails";
 import { toPaymentShare } from "@/lib/mappers";
 import { orderIdSchema, toGuestPaymentShare } from "@/lib/order-privacy";
+import { broadcastOrderUpdate } from "@/lib/realtime";
 import {
   MAX_SPLIT_SHARES,
   MIN_SHARE_AMOUNT,
@@ -225,6 +226,9 @@ export async function POST(
     })
   );
 
+  // Push the new split to the other phones at the table (best-effort).
+  await broadcastOrderUpdate(order.id);
+
   return stateResponse(supabase, order, 201);
 }
 
@@ -251,5 +255,9 @@ export async function DELETE(
 
   const cancelled = await cancelPendingShares(supabase, getRazorpay(), order.restaurantId, order.id);
   if (!cancelled.ok) return fail("DB_ERROR", "Couldn't cancel the split. Try again.", 500);
+
+  // Tell the other phones the split was cancelled (best-effort).
+  await broadcastOrderUpdate(order.id);
+
   return stateResponse(supabase, order);
 }

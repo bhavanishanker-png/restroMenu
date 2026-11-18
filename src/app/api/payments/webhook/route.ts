@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createServerClient } from "@/lib/supabase/server";
 import { toPaise } from "@/lib/pricing";
 import { cancelPendingShares, getRazorpay, settleOrderFromShares } from "@/lib/payment-shares";
+import { broadcastOrderUpdate } from "@/lib/realtime";
 import type { DbPaymentShare } from "@/types/db";
 
 // POST /api/payments/webhook
@@ -134,6 +135,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // a failure here is logged rather than retried.
     const cancelled = await cancelPendingShares(supabase, getRazorpay(), order.restaurant_id as string, order.id as string);
     if (!cancelled.ok) console.error("Webhook: couldn't cancel open split shares for paid order", order.id);
+
+    await broadcastOrderUpdate(order.id as string);
   } else if (eventType === "payment.failed") {
     const { error } = await supabase
       .from("orders")
@@ -147,6 +150,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 500 }
       );
     }
+
+    await broadcastOrderUpdate(order.id as string);
   }
 
   return NextResponse.json({ ok: true });
@@ -236,5 +241,9 @@ async function handleShareCredited(
       { status: 500 }
     );
   }
+
+  // Push the paid share to the other phones at the table (best-effort).
+  await broadcastOrderUpdate(share.order_id);
+
   return NextResponse.json({ ok: true });
 }

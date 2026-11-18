@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createClient } from "@/lib/supabase/client";
 import {
   MAX_SPLIT_SHARES,
   formatMoney,
@@ -100,13 +101,27 @@ export function SplitBill({ orderId, onPaid }: { orderId: string; onPaid: () => 
   const active = (state?.shares.length ?? 0) > 0;
   const settled = state?.paymentStatus === "paid";
 
-  // Poll fast while people are scanning in front of the sheet, slowly
-  // otherwise. Realtime can't reach this table (RLS), so polling is the path.
+  // Primary path: the server broadcasts "order_changed" to order:<orderId> when
+  // a share is created, paid (online webhook or staff cash), or the split is
+  // cancelled (see src/lib/realtime.ts). A broadcast channel isn't RLS-filtered,
+  // so these phones receive it even though postgres_changes couldn't. On a nudge
+  // we refetch the split state, so every phone at the table updates in ~1s.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`order:${orderId}`)
+      .on("broadcast", { event: "order_changed" }, () => { void load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [orderId, load]);
+
+  // Safety net: a slow poll while a split is open and unpaid, in case a
+  // broadcast is dropped. The broadcast above is the primary path.
   useEffect(() => {
     if (!active || settled) return;
     const id = setInterval(() => {
       if (document.visibilityState === "visible") void load();
-    }, open ? 4_000 : 15_000);
+    }, open ? 12_000 : 30_000);
     return () => clearInterval(id);
   }, [active, settled, open, load]);
 

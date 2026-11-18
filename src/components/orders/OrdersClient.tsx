@@ -57,7 +57,7 @@ const PAYMENT_STYLE: Record<PaymentStatus, { label: string; icon: string; classN
 };
 
 const REALTIME_DEBOUNCE_MS = 400;
-const POLL_MS = 15_000;
+const POLL_MS = 30_000;
 const PAGE_LIMIT = 50;
 
 /** Local calendar date as YYYY-MM-DD. Not `toISOString()`: that is the UTC
@@ -424,10 +424,12 @@ export function OrdersClient({ restaurantId }: { restaurantId: string }) {
   // it needs its own refresh loop. Without this the only way to see an order
   // a customer had just placed was to reload the page.
   //
-  // The poll is the reliable half. postgres_changes cannot reach a staff
-  // screen: the browser holds the anon key and the `orders` RLS policy keys
-  // off `auth.uid()`, which a signed-cookie session never sets. The
-  // subscription below stays as a latency win and only nudges the same fetch.
+  // Primary path: the server broadcasts "board_changed" to kitchen:<restaurantId>
+  // on every order change (create + status), so a customer's new order shows
+  // here in ~1s. Broadcast is used instead of postgres_changes, which cannot
+  // reach a staff screen: the browser holds the anon key and the `orders` RLS
+  // policy keys off `auth.uid()`, which a signed-cookie session never sets. The
+  // poll below is only a safety net for a dropped broadcast.
   const refetchRef = useRef<() => void>(() => {});
   refetchRef.current = () => { void fetchOrders(page, true); };
 
@@ -435,24 +437,15 @@ export function OrdersClient({ restaurantId }: { restaurantId: string }) {
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    // One order write fires several events; collapse the burst into one fetch.
+    // One order write fires several nudges; collapse the burst into one fetch.
     const scheduleRefetch = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => refetchRef.current(), REALTIME_DEBOUNCE_MS);
     };
 
     const channel = supabase
-      .channel(`orders-list:${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        scheduleRefetch
-      )
+      .channel(`kitchen:${restaurantId}`)
+      .on("broadcast", { event: "board_changed" }, scheduleRefetch)
       .subscribe();
 
     const poll = setInterval(() => {

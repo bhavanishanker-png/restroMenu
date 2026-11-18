@@ -134,7 +134,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6 p-margin-mobile md:p-margin-desktop">
       {/* Stats and the recent-orders list re-render as customers order. */}
-      <LiveRefresh restaurantId={session.restaurantId} tables={["orders"]} />
+      <LiveRefresh restaurantId={session.restaurantId} />
 
       {/* Header */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

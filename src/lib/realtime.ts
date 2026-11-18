@@ -37,6 +37,49 @@ export function kitchenChannel(restaurantId: string): string {
   return `kitchen:${restaurantId}`;
 }
 
+/** The channel a single diner's order tracker subscribes to. */
+export function orderChannel(orderId: string): string {
+  return `order:${orderId}`;
+}
+
+/**
+ * Nudge one diner's order tracker to refetch — on a status change or a payment
+ * update. Same best-effort semantics as the kitchen broadcast: never throws,
+ * the tracker's slow poll is the safety net. The message carries no order data;
+ * the tracker refetches through the authorized route, keyed by the order UUID
+ * it already holds, so nothing sensitive crosses the channel.
+ */
+export async function broadcastOrderUpdate(orderId: string): Promise<void> {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return;
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/realtime/v1/api/broadcast`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      cache: "no-store",
+      body: JSON.stringify({
+        messages: [
+          {
+            topic: orderChannel(orderId),
+            event: "order_changed",
+            payload: {},
+            private: false,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[realtime] order broadcast returned ${res.status} for ${orderId}`);
+    }
+  } catch (err) {
+    console.error("[realtime] order broadcast failed", err);
+  }
+}
+
 /**
  * Nudge a restaurant's kitchen display to refetch its board. Fire-and-forget
  * from the caller's point of view: it never throws and never rejects.
