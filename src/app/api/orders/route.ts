@@ -121,9 +121,13 @@ const createOrderSchema = z.object({
   orderType: z.enum(["dine_in", "takeaway", "pre_order"]),
   customerName: z.string().min(1, "Name is required").max(100),
   customerPhone: z.string().regex(/^\d{10}$/, "Invalid phone number"),
+  customerEmail: z.string().email("Invalid email").max(254).optional(),
   notes: z.string().max(500).optional(),
   idempotencyKey: z.string().uuid("idempotencyKey must be a UUID"),
   paymentMethod: z.enum(["cash", "razorpay"]),
+  // Gratuity in rupees. Capped to a sane maximum; the server reprices the
+  // rest of the bill but takes the tip as given (clamped to >= 0 in pricing).
+  tip: z.number().min(0).max(100000).optional(),
   // Group ordering fields (optional — absent for solo orders)
   sessionId: z.string().uuid().nullable().optional(),
   orderedBy: z.string().max(100).nullable().optional(),
@@ -395,7 +399,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   const settings = toRestaurantSettings(settingsRaw as DbRestaurantSettings);
-  const bill = priceCart(cartLines, { orderType: body.orderType, settings });
+  const bill = priceCart(cartLines, {
+    orderType: body.orderType,
+    settings,
+    tip: body.tip ?? 0,
+  });
 
   // Build order_items payload: each row is a snapshot.  unit_price comes from
   // bill.lines (server-computed), never from the client request.
@@ -458,6 +466,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       order_type:     body.orderType,
       customer_name:  body.customerName,
       customer_phone: body.customerPhone,
+      customer_email: body.customerEmail ?? "",
       notes:          body.notes ?? "",
       idempotency_key: body.idempotencyKey,
       payment_method: body.paymentMethod,
@@ -466,6 +475,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       service_charge: bill.serviceCharge,
       packing_charge: bill.packingCharge,
       discount:       bill.discount,
+      tip:            bill.tip,
       total:          bill.total,
       items:          itemsPayloadWithOwner,
     },

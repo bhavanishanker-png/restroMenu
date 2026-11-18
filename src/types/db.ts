@@ -153,12 +153,14 @@ export type DbOrder = {
   order_type: string;
   customer_name: string | null;
   customer_phone: string | null;
+  customer_email: string | null;
   status: string;
   subtotal: number;
   tax_total: number;
   service_charge: number;
   packing_charge: number;
   discount: number;
+  tip: number;
   total: number;
   payment_status: string;
   payment_method: string | null;
@@ -169,6 +171,7 @@ export type DbOrder = {
   accepted_at: string | null;
   ready_at: string | null;
   served_at: string | null;
+  bill_emailed_at: string | null;
 };
 
 export type DbPaymentShare = {

@@ -5,10 +5,12 @@ type Props = {
   lines: CartLine[];
   orderType: OrderType;
   settings: Pick<RestaurantSettings, "serviceChargePct" | "packingCharge">;
+  /** Gratuity to fold into the displayed total. Defaults to 0. */
+  tip?: number;
 };
 
-export function BillSummary({ lines, orderType, settings }: Props) {
-  const bill = priceCart(lines, { orderType, settings });
+export function BillSummary({ lines, orderType, settings, tip = 0 }: Props) {
+  const bill = priceCart(lines, { orderType, settings, tip });
 
   return (
     <section
@@ -38,6 +40,7 @@ export function BillSummary({ lines, orderType, settings }: Props) {
         {bill.discount > 0 && (
           <Row label="Discount" value={-bill.discount} className="text-success" />
         )}
+        {bill.tip > 0 && <Row label="Tip" value={bill.tip} />}
 
         <div className="mt-1 flex items-baseline justify-between border-t border-dashed border-outline-variant pt-3">
           <dt className="font-display text-title text-on-surface">To pay</dt>

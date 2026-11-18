@@ -33,6 +33,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "dashboard", exact: true },
       { href: "/dashboard/kitchen", label: "Kitchen display", icon: "display_settings", fullScreen: true },
+      { href: "/dashboard/floor", label: "Floor", icon: "table_restaurant" },
       { href: "/dashboard/orders", label: "Orders", icon: "receipt_long" },
     ],
   },

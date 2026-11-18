@@ -241,6 +241,8 @@ export type PriceBreakdown = {
   serviceCharge: number;
   packingCharge: number;
   discount: number;
+  /** Gratuity, added after tax and never taxed. */
+  tip: number;
   total: number;
   lines: PricedLine[];
 };
@@ -285,12 +287,14 @@ export type Order = {
   orderType: OrderType;
   customerName: string | null;
   customerPhone: string | null;
+  customerEmail: string | null;
   status: OrderStatus;
   subtotal: number;
   taxTotal: number;
   serviceCharge: number;
   packingCharge: number;
   discount: number;
+  tip: number;
   total: number;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod | null;
@@ -300,6 +304,7 @@ export type Order = {
   acceptedAt: string | null;
   readyAt: string | null;
   servedAt: string | null;
+  billEmailedAt: string | null;
 };
 
 export type OrderWithItems = Order & {
@@ -396,9 +401,12 @@ export type CreateOrderRequest = {
   orderType: OrderType;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   notes?: string;
   idempotencyKey: string;
   paymentMethod: PaymentMethod;
+  /** Gratuity in rupees. Server clamps to >= 0 and never taxes it. */
+  tip?: number;
   sessionId?: string | null;
   orderedBy?: string | null;
   items: {

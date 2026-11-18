@@ -149,6 +149,39 @@ export function OrderTrackerClient({
   const clearCart = useCartStore((s) => s.clearCart);
   const cartCleared = useRef(false);
 
+  // ---- email the bill ----
+  const [emailInput, setEmailInput] = useState(initialOrder.customerEmail ?? "");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState<boolean>(!!initialOrder.billEmailedAt);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  async function emailBill() {
+    setEmailError(null);
+    const trimmed = emailInput.trim();
+    if (!trimmed) {
+      setEmailError("Enter an email address.");
+      return;
+    }
+    setEmailSending(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/email-bill`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: { message: string } };
+      if (!res.ok || !json.ok) {
+        setEmailError(json?.error?.message ?? "Couldn't send the email.");
+        return;
+      }
+      setEmailSent(true);
+    } catch {
+      setEmailError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
   // Clear the cart once — the customer has successfully placed their order.
   useEffect(() => {
     if (cartCleared.current) return;
@@ -402,11 +435,62 @@ export function OrderTrackerClient({
           {order.discount > 0 && (
             <BillRow label="Discount" value={`−${formatMoney(order.discount)}`} className="text-success" />
           )}
+          {order.tip > 0 && <BillRow label="Tip" value={formatMoney(order.tip)} />}
           <div className="mt-1 flex items-baseline justify-between border-t border-dashed border-outline-variant pt-3">
             <dt className="font-display text-title text-on-surface">Total</dt>
             <dd className="tabular font-display text-headline-sm text-on-surface">{formatMoney(order.total)}</dd>
           </div>
         </dl>
+
+        {/* Email the bill */}
+        <div className="mt-4 border-t border-dashed border-outline-variant pt-3">
+          {emailSent ? (
+            <div className="flex items-center gap-2 text-body-sm text-success">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">mark_email_read</span>
+              <span className="min-w-0 flex-1 truncate">Bill emailed{emailInput ? ` to ${emailInput}` : ""}.</span>
+              <button
+                type="button"
+                onClick={() => setEmailSent(false)}
+                className="shrink-0 min-h-[44px] px-1 text-body-xs font-semibold text-brand-text"
+              >
+                Resend
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label htmlFor="email-bill" className="flex items-center gap-2 text-body-sm font-semibold text-on-surface">
+                <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 18 }} aria-hidden="true">mail</span>
+                Email me the bill
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="email-bill"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="you@example.com"
+                  aria-invalid={!!emailError}
+                  className="h-11 flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 text-body-sm text-on-surface outline-none transition-[border-color,box-shadow] placeholder:text-on-surface-variant/70 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                />
+                <button
+                  type="button"
+                  onClick={emailBill}
+                  disabled={emailSending}
+                  className="flex h-11 min-w-[88px] items-center justify-center gap-1.5 rounded-xl bg-brand px-3 text-body-sm font-semibold text-brand-foreground transition-transform active:scale-[0.98] disabled:opacity-60"
+                >
+                  {emailSending ? (
+                    <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }} aria-hidden="true">progress_activity</span>
+                  ) : (
+                    "Send"
+                  )}
+                </button>
+              </div>
+              {emailError && <p className="text-body-xs text-error" role="alert">{emailError}</p>}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Split bill (T38): per-person UPI QRs. Hides itself once paid without a split. */}

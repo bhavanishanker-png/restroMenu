@@ -163,6 +163,7 @@ create table orders (
                     check (order_type in ('dine_in','takeaway','pre_order')),
   customer_name   text,
   customer_phone  text,
+  customer_email  text,                                 -- optional, for emailed bill (013)
   status          text not null default 'placed'
                     check (status in ('placed','accepted','preparing','ready','served','cancelled')),
   subtotal        numeric(10,2) not null,
@@ -170,6 +171,7 @@ create table orders (
   service_charge  numeric(10,2) not null default 0,
   packing_charge  numeric(10,2) not null default 0,
   discount        numeric(10,2) not null default 0,
+  tip             numeric(10,2) not null default 0,     -- gratuity, untaxed (013)
   total           numeric(10,2) not null,
   payment_status  text not null default 'pending'
                     check (payment_status in ('pending','paid','failed','refunded')),
@@ -181,6 +183,7 @@ create table orders (
   accepted_at     timestamptz,
   ready_at        timestamptz,
   served_at       timestamptz,
+  bill_emailed_at timestamptz,                           -- set when the bill was emailed (013)
   -- Business day, derived from placed_at. Order numbers reset daily, so
   -- uniqueness must be scoped to the day — a plain
   -- unique (restaurant_id, order_number) collides on day 2. See

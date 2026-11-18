@@ -134,6 +134,7 @@ describe("priceCart", () => {
     expect(result.serviceCharge).toBe(0);
     expect(result.packingCharge).toBe(0);
     expect(result.discount).toBe(0);
+    expect(result.tip).toBe(0);
     expect(result.total).toBe(0);
     expect(result.lines).toHaveLength(0);
   });
@@ -210,6 +211,65 @@ describe("priceCart", () => {
       discount: 200,
     });
     expect(overDiscount.total).toBe(0);
+  });
+
+  it("tip is added after tax and is never itself taxed", () => {
+    // 100 @ 12% tax = 112 before tip. A ₹20 tip must add exactly 20 — not
+    // 20 plus tax on the tip — so the total is 132, and taxTotal stays 12.
+    const line = makeLine({ basePrice: 100, taxRate: 12, quantity: 1 });
+
+    const result = priceCart([line], {
+      orderType: "dine_in",
+      settings: DINE_IN_SETTINGS,
+      tip: 20,
+    });
+
+    expect(result.subtotal).toBe(100);
+    expect(result.taxTotal).toBe(12);
+    expect(result.tip).toBe(20);
+    expect(result.total).toBe(132);
+  });
+
+  it("tip applies on top of a discount, and the floor-at-0 ignores the tip", () => {
+    const line = makeLine({ basePrice: 100, taxRate: 0, quantity: 1 });
+
+    // discount wipes the 100 subtotal to 0, then a 15 tip is added on top.
+    const result = priceCart([line], {
+      orderType: "dine_in",
+      settings: DINE_IN_SETTINGS,
+      discount: 200,
+      tip: 15,
+    });
+
+    expect(result.total).toBe(15);
+    expect(result.tip).toBe(15);
+  });
+
+  it("a negative tip is clamped to 0", () => {
+    const line = makeLine({ basePrice: 100, taxRate: 0, quantity: 1 });
+
+    const result = priceCart([line], {
+      orderType: "dine_in",
+      settings: DINE_IN_SETTINGS,
+      tip: -50,
+    });
+
+    expect(result.tip).toBe(0);
+    expect(result.total).toBe(100);
+  });
+
+  it("tip rounds to the paisa and does not drift the total", () => {
+    const line = makeLine({ basePrice: 100, taxRate: 0, quantity: 1 });
+
+    // 10% of 100 = 10.00 exactly; a fractional tip rounds half-away-from-zero.
+    const result = priceCart([line], {
+      orderType: "dine_in",
+      settings: DINE_IN_SETTINGS,
+      tip: 10.005,
+    });
+
+    expect(result.tip).toBe(10.01);
+    expect(result.total).toBe(110.01);
   });
 
   it("pre_order behaves like takeaway: packing charge applies, service charge does not", () => {

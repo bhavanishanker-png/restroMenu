@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
@@ -9,7 +9,7 @@ import { z } from "zod";
 import { BillSummary } from "@/components/cart/BillSummary";
 import { CartPageSkeleton } from "@/components/cart/CartPageSkeleton";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
-import { formatMoney, priceCart, priceLine } from "@/lib/pricing";
+import { formatMoney, priceCart, priceLine, roundMoney } from "@/lib/pricing";
 import { useCartStore } from "@/store/cart";
 import { cn } from "@/lib/utils";
 import type { OrderType, PaymentMethod, RestaurantSettings } from "@/types";
@@ -21,9 +21,16 @@ const checkoutSchema = z.object({
   customerPhone: z
     .string()
     .regex(/^\d{10}$/, "Enter a valid 10-digit phone number"),
+  // Optional: only used to email the bill. Empty string is allowed.
+  customerEmail: z
+    .union([z.string().email("Enter a valid email"), z.literal("")])
+    .optional(),
   paymentMethod: z.enum(["cash", "razorpay"] as const),
   notes: z.string().max(500).optional(),
 });
+
+/** Gratuity presets, as a percentage of the item subtotal. */
+const TIP_PRESETS = [5, 10, 15] as const;
 
 type CheckoutFields = z.infer<typeof checkoutSchema>;
 
@@ -94,6 +101,29 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
 
   const paymentMethod = watch("paymentMethod");
 
+  // ---- tip (gratuity) ----
+  // Kept in local state, not react-hook-form: it's chosen with buttons, and
+  // the amount sent to the server is derived, not a free-text field.
+  const [tipMode, setTipMode] = useState<"none" | "preset" | "custom">("none");
+  const [tipPct, setTipPct] = useState<number>(10);
+  const [tipCustom, setTipCustom] = useState<string>("");
+
+  // Presets are a % of the item subtotal (pre-tax), which is the familiar base
+  // for a tip. The server reprices everything else but takes the tip as given.
+  const subtotal = useMemo(
+    () => priceCart(lines, { orderType, settings }).subtotal,
+    [lines, orderType, settings]
+  );
+
+  const tip = useMemo(() => {
+    if (tipMode === "preset") return roundMoney((subtotal * tipPct) / 100);
+    if (tipMode === "custom") {
+      const n = Number.parseFloat(tipCustom);
+      return Number.isFinite(n) && n > 0 ? roundMoney(n) : 0;
+    }
+    return 0;
+  }, [tipMode, tipPct, tipCustom, subtotal]);
+
   function ensureRazorpayScript(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (scriptLoadedRef.current || typeof window.Razorpay !== "undefined") {
@@ -157,6 +187,8 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
       notes: data.notes ?? "",
       idempotencyKey,
       paymentMethod: data.paymentMethod as PaymentMethod,
+      ...(data.customerEmail ? { customerEmail: data.customerEmail } : {}),
+      ...(tip > 0 ? { tip } : {}),
       // Group order fields — included only when in a session
       ...(sessionId ? { sessionId, orderedBy: personName ?? data.customerName } : {}),
       items: lines.map((l) => ({
@@ -327,7 +359,7 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
     );
   }
 
-  const total = priceCart(lines, { orderType, settings }).total;
+  const total = priceCart(lines, { orderType, settings, tip }).total;
   const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
   const inputBase =
     "h-12 w-full rounded-xl border bg-surface-container-lowest text-body-md text-on-surface outline-none transition-[border-color,box-shadow] placeholder:text-on-surface-variant/70 focus:border-brand focus:ring-2 focus:ring-brand/30";
@@ -400,6 +432,31 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
             ) : (
               <p id="customerPhone-hint" className="mt-1.5 text-body-xs text-on-surface-variant">
                 Only used for this order. No sign-up, no spam.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-baseline justify-between text-body-sm font-semibold text-on-surface" htmlFor="customerEmail">
+              Email
+              <span className="text-body-xs font-normal text-on-surface-variant">Optional</span>
+            </label>
+            <input
+              id="customerEmail"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="you@example.com — to email your bill"
+              {...register("customerEmail")}
+              aria-invalid={!!errors.customerEmail}
+              aria-describedby={errors.customerEmail ? "customerEmail-error" : "customerEmail-hint"}
+              className={cn(inputBase, "px-3", errors.customerEmail ? "border-error" : "border-outline-variant")}
+            />
+            {errors.customerEmail ? (
+              <FieldError id="customerEmail-error" message={errors.customerEmail.message} />
+            ) : (
+              <p id="customerEmail-hint" className="mt-1.5 text-body-xs text-on-surface-variant">
+                We&rsquo;ll send your bill here. Leave blank to skip.
               </p>
             )}
           </div>
@@ -486,7 +543,18 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
         </ul>
       </FormSection>
 
-      <BillSummary lines={lines} orderType={orderType} settings={settings} />
+      <TipSelector
+        subtotal={subtotal}
+        tipMode={tipMode}
+        tipPct={tipPct}
+        tipCustom={tipCustom}
+        tip={tip}
+        onModeChange={setTipMode}
+        onPctChange={setTipPct}
+        onCustomChange={setTipCustom}
+      />
+
+      <BillSummary lines={lines} orderType={orderType} settings={settings} tip={tip} />
 
       {/* Sticky place order button */}
       <div className="fixed inset-x-0 bottom-0 z-20 space-y-2 border-t border-outline-variant bg-surface-container-lowest/95 px-margin-mobile pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-level-3 backdrop-blur">
@@ -599,6 +667,102 @@ function PaymentOption({
         <span className={cn("h-2.5 w-2.5 rounded-full bg-brand transition-transform", checked ? "scale-100" : "scale-0")} />
       </span>
     </label>
+  );
+}
+
+function TipSelector({
+  subtotal,
+  tipMode,
+  tipPct,
+  tipCustom,
+  tip,
+  onModeChange,
+  onPctChange,
+  onCustomChange,
+}: {
+  subtotal: number;
+  tipMode: "none" | "preset" | "custom";
+  tipPct: number;
+  tipCustom: string;
+  tip: number;
+  onModeChange: (m: "none" | "preset" | "custom") => void;
+  onPctChange: (p: number) => void;
+  onCustomChange: (v: string) => void;
+}) {
+  const chip = (selected: boolean) =>
+    cn(
+      "flex min-h-[44px] flex-1 items-center justify-center rounded-xl border px-2 text-body-sm font-semibold transition-colors",
+      selected
+        ? "border-brand bg-brand-subtle text-brand-text"
+        : "border-outline-variant text-on-surface hover:border-outline/50"
+    );
+
+  return (
+    <section
+      aria-labelledby="tip-heading"
+      className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 shadow-level-1"
+    >
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 id="tip-heading" className="flex items-center gap-2 font-display text-title text-on-surface">
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 20 }} aria-hidden="true">
+            volunteer_activism
+          </span>
+          Add a tip
+        </h2>
+        <span className="text-body-xs text-on-surface-variant">For the staff · optional</span>
+      </div>
+
+      <div className="flex gap-2" role="group" aria-label="Tip amount">
+        <button type="button" className={chip(tipMode === "none")} onClick={() => onModeChange("none")}>
+          No tip
+        </button>
+        {TIP_PRESETS.map((pct) => (
+          <button
+            key={pct}
+            type="button"
+            className={chip(tipMode === "preset" && tipPct === pct)}
+            onClick={() => { onModeChange("preset"); onPctChange(pct); }}
+            aria-pressed={tipMode === "preset" && tipPct === pct}
+          >
+            {pct}%
+          </button>
+        ))}
+        <button
+          type="button"
+          className={chip(tipMode === "custom")}
+          onClick={() => onModeChange("custom")}
+          aria-pressed={tipMode === "custom"}
+        >
+          Custom
+        </button>
+      </div>
+
+      {tipMode === "custom" && (
+        <div className="relative mt-3">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-body-md text-on-surface-variant">
+            ₹
+          </span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="1"
+            value={tipCustom}
+            onChange={(e) => onCustomChange(e.target.value)}
+            placeholder="Enter tip amount"
+            aria-label="Custom tip amount in rupees"
+            className="tabular h-12 w-full rounded-xl border border-outline-variant bg-surface-container-lowest pl-8 pr-3 text-body-md text-on-surface outline-none transition-[border-color,box-shadow] placeholder:text-on-surface-variant/70 focus:border-brand focus:ring-2 focus:ring-brand/30"
+          />
+        </div>
+      )}
+
+      {tip > 0 && (
+        <p className="mt-2 text-body-xs text-on-surface-variant">
+          Adding <span className="font-semibold text-on-surface">{formatMoney(tip)}</span> to your bill
+          {subtotal > 0 && tipMode === "preset" ? ` (${tipPct}% of ${formatMoney(subtotal)})` : ""}. Tip is not taxed.
+        </p>
+      )}
+    </section>
   );
 }
 

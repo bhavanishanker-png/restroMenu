@@ -246,12 +246,14 @@ export function toOrder(r: DbOrder): Order {
     orderType: r.order_type as OrderType,
     customerName: r.customer_name,
     customerPhone: r.customer_phone,
+    customerEmail: r.customer_email,
     status: r.status as OrderStatus,
     subtotal: Number(r.subtotal),
     taxTotal: Number(r.tax_total),
     serviceCharge: Number(r.service_charge),
     packingCharge: Number(r.packing_charge),
     discount: Number(r.discount),
+    tip: Number(r.tip),
     total: Number(r.total),
     paymentStatus: r.payment_status as PaymentStatus,
     paymentMethod: r.payment_method as PaymentMethod | null,
@@ -261,6 +263,7 @@ export function toOrder(r: DbOrder): Order {
     acceptedAt: r.accepted_at,
     readyAt: r.ready_at,
     servedAt: r.served_at,
+    billEmailedAt: r.bill_emailed_at,
   };
 }
 

@@ -116,6 +116,12 @@ export type PriceCartOptions = {
   settings: Pick<RestaurantSettings, 'serviceChargePct' | 'packingCharge'>;
   /** Flat discount amount, already validated. Defaults to 0. */
   discount?: number;
+  /**
+   * Optional gratuity the diner chose. Added AFTER tax and discount and is
+   * never itself taxed — a tip is not a taxable supply. Negative values are
+   * clamped to 0. Defaults to 0.
+   */
+  tip?: number;
 };
 
 /**
@@ -126,11 +132,12 @@ export type PriceCartOptions = {
  *   2. taxTotal      = sum of per-line tax
  *   3. serviceCharge = serviceChargePct % of subtotal (dine-in only, pre-tax base)
  *   4. packingCharge = flat, takeaway and pre-order only
- *   5. total         = subtotal + tax + service + packing − discount, floored at 0
+ *   5. tip           = optional gratuity, added after tax, never taxed
+ *   6. total         = (subtotal + tax + service + packing − discount, floored at 0) + tip
  */
 export function priceCart(
   lines: CartLine[],
-  { orderType, settings, discount = 0 }: PriceCartOptions
+  { orderType, settings, discount = 0, tip = 0 }: PriceCartOptions
 ): PriceBreakdown {
   const priced = lines.map(priceLine);
 
@@ -147,8 +154,11 @@ export function priceCart(
   const packingCharge = isDineIn ? 0 : roundMoney(settings.packingCharge);
 
   const safeDiscount = roundMoney(Math.max(0, discount));
+  const safeTip = roundMoney(Math.max(0, tip));
   const gross = subtotal + taxTotal + serviceCharge + packingCharge;
-  const total = roundMoney(Math.max(0, gross - safeDiscount));
+  // Tip is added after the discounted, taxed gross — it is not discounted and
+  // not taxed. The floor-at-0 applies only to the pre-tip amount.
+  const total = roundMoney(Math.max(0, gross - safeDiscount) + safeTip);
 
   return {
     subtotal,
@@ -156,6 +166,7 @@ export function priceCart(
     serviceCharge,
     packingCharge,
     discount: safeDiscount,
+    tip: safeTip,
     total,
     lines: priced,
   };
