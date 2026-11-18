@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
   Sheet,
   SheetContent,
@@ -213,63 +214,82 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
           {entries.map((entry, i) =>
             entry.role === "user" ? (
               <div key={i} className="flex justify-end">
-                <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-sm text-brand-foreground">
+                <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-sm text-brand-foreground shadow-level-1">
                   {entry.content}
                 </p>
               </div>
             ) : (
-              <div key={i} className="space-y-2">
-                <p className="max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-surface-container px-4 py-2.5 text-sm text-on-surface">
-                  {entry.content}
-                </p>
-                {entry.suggestions.length > 0 && (
-                  <ul className="space-y-2">
-                    {entry.suggestions.map((s) => {
-                      const item = itemsById.get(s.itemId);
-                      if (!item || !item.isAvailable) return null;
-                      return (
-                        <li key={s.itemId}>
-                          <button
-                            type="button"
-                            onClick={() => pick(item)}
-                            className="flex min-h-[56px] w-full items-start gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 text-left transition-colors hover:border-brand-border"
-                          >
-                            <span className="mt-0.5"><FoodTypeMarker type={item.foodType} /></span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-semibold text-on-surface">{item.name}</span>
-                              {s.reason && (
-                                <span className="block text-xs text-on-surface-variant">{s.reason}</span>
-                              )}
-                            </span>
-                            <span className="flex shrink-0 flex-col items-end gap-1">
-                              <span className="text-sm font-semibold tabular-nums text-on-surface">
-                                {item.variants.length > 0 && (
-                                  <span className="mr-0.5 text-xs font-normal text-on-surface-variant">from</span>
-                                )}
-                                {formatMoney(item.basePrice)}
-                              </span>
-                              <span className="flex items-center gap-0.5 text-xs font-semibold text-brand-text">
-                                <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">
-                                  add
+              <div key={i} className="flex items-start gap-2">
+                <AssistantAvatar />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="inline-block max-w-full whitespace-pre-wrap rounded-2xl rounded-tl-md bg-surface-container px-4 py-2.5 text-sm text-on-surface">
+                    {entry.content}
+                  </p>
+                  {entry.suggestions.length > 0 && (
+                    <ul className="space-y-2">
+                      {entry.suggestions.map((s) => {
+                        const item = itemsById.get(s.itemId);
+                        if (!item || !item.isAvailable) return null;
+                        return (
+                          <li key={s.itemId}>
+                            <button
+                              type="button"
+                              onClick={() => pick(item)}
+                              className="group flex min-h-[64px] w-full items-center gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-2.5 text-left shadow-level-1 transition-colors hover:border-brand-border hover:bg-surface-container"
+                            >
+                              {item.imageUrl ? (
+                                <Image
+                                  src={item.imageUrl}
+                                  alt=""
+                                  width={52}
+                                  height={52}
+                                  className="h-[52px] w-[52px] shrink-0 rounded-xl object-cover"
+                                />
+                              ) : (
+                                <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-xl bg-surface-container text-on-surface-variant">
+                                  <span className="material-symbols-outlined" style={{ fontSize: 24 }} aria-hidden="true">restaurant</span>
                                 </span>
-                                Add
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-1.5">
+                                  <FoodTypeMarker type={item.foodType} />
+                                  <span className="truncate font-semibold text-on-surface">{item.name}</span>
+                                </span>
+                                {s.reason && (
+                                  <span className="mt-0.5 line-clamp-2 block text-xs text-on-surface-variant">{s.reason}</span>
+                                )}
                               </span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                              <span className="flex shrink-0 flex-col items-end gap-1">
+                                <span className="text-sm font-semibold tabular-nums text-on-surface">
+                                  {item.variants.length > 0 && (
+                                    <span className="mr-0.5 text-xs font-normal text-on-surface-variant">from</span>
+                                  )}
+                                  {formatMoney(item.basePrice)}
+                                </span>
+                                <span className="flex items-center gap-0.5 rounded-full bg-brand-subtle px-2 py-0.5 text-xs font-semibold text-brand-text transition-colors group-hover:bg-brand group-hover:text-brand-foreground">
+                                  <span className="material-symbols-outlined" style={{ fontSize: 15 }} aria-hidden="true">add</span>
+                                  Add
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               </div>
             )
           )}
 
           {/* Skeleton reply while the assistant works, not a spinner. */}
           {pending && (
-            <div className="space-y-2" aria-busy="true" aria-label="Assistant is typing">
-              <Skeleton className="h-10 w-3/4 rounded-2xl" />
-              <Skeleton className="h-14 w-full rounded-2xl" />
+            <div className="flex items-start gap-2" aria-busy="true" aria-label="Assistant is typing">
+              <AssistantAvatar />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-10 w-3/4 rounded-2xl rounded-tl-md" />
+                <Skeleton className="h-16 w-full rounded-2xl" />
+              </div>
             </div>
           )}
 
@@ -321,5 +341,19 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Small sparkle avatar marking an assistant turn, so the chat reads as a conversation. */
+function AssistantAvatar() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-subtle text-brand-text"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1" }}>
+        auto_awesome
+      </span>
+    </span>
   );
 }

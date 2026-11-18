@@ -22,11 +22,11 @@ const REQUEST_META: Record<ServiceRequestType, { label: string; icon: string }> 
   bill: { label: "Bill", icon: "receipt_long" },
 };
 
-const STATUS_META: Record<FloorOrder["status"], { label: string; className: string }> = {
-  placed: { label: "New", className: "bg-brand-subtle text-brand-text" },
-  accepted: { label: "Accepted", className: "bg-surface-container-high text-on-surface" },
-  preparing: { label: "Preparing", className: "bg-surface-container-high text-on-surface" },
-  ready: { label: "Ready", className: "bg-success/15 text-success" },
+const STATUS_META: Record<FloorOrder["status"], { label: string; icon: string; className: string }> = {
+  placed: { label: "New", icon: "fiber_new", className: "bg-brand-subtle text-brand-text" },
+  accepted: { label: "Accepted", icon: "done", className: "bg-surface-container-high text-on-surface" },
+  preparing: { label: "Preparing", icon: "local_fire_department", className: "bg-surface-container-high text-on-surface" },
+  ready: { label: "Ready", icon: "check_circle", className: "bg-success/15 text-success" },
 };
 
 function minutesSince(iso: string, now: number): number {
@@ -165,14 +165,21 @@ export function FloorView({ restaurantId, initial }: Props) {
   }
 
   const openRequestCount = requests.length;
+  const activeCount = orderByTable.size;
+  const idleCount = Math.max(0, tables.length - activeCount);
 
   return (
     <div className="px-margin-mobile pb-8 pt-2">
-      <div className="mb-3 flex items-center gap-2 text-body-sm text-on-surface-variant" aria-live="polite">
-        <span className={cn("inline-block h-2 w-2 rounded-full", openRequestCount > 0 ? "bg-brand animate-pulse" : "bg-outline")} aria-hidden="true" />
-        {openRequestCount > 0
-          ? `${openRequestCount} open request${openRequestCount === 1 ? "" : "s"} on the floor`
-          : "No open requests"}
+      {/* Summary bar */}
+      <div className="mb-4 flex flex-wrap items-center gap-2" aria-live="polite">
+        <StatChip
+          icon="notifications_active"
+          label={openRequestCount > 0 ? `${openRequestCount} request${openRequestCount === 1 ? "" : "s"}` : "No requests"}
+          tone={openRequestCount > 0 ? "brand" : "muted"}
+          pulse={openRequestCount > 0}
+        />
+        <StatChip icon="restaurant" label={`${activeCount} active`} tone="default" />
+        <StatChip icon="table_restaurant" label={`${idleCount} open`} tone="muted" />
       </div>
 
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -181,68 +188,123 @@ export function FloorView({ restaurantId, initial }: Props) {
           const tableRequests = requestsByTable.get(table.id) ?? [];
           const elapsed = order ? minutesSince(order.placedAt, now) : 0;
           const hasRequest = tableRequests.length > 0;
+          const late = !!order && elapsed >= 25;
+          const aging = !!order && elapsed >= 15 && elapsed < 25;
 
           const border = hasRequest
-            ? "border-brand ring-2 ring-brand/30"
-            : order && elapsed >= 25
+            ? "border-brand ring-2 ring-brand/25"
+            : late
               ? "border-error"
-              : order && elapsed >= 15
+              : aging
                 ? "border-warning"
-                : "border-outline-variant";
+                : order
+                  ? "border-outline"
+                  : "border-outline-variant";
 
           return (
             <li
               key={table.id}
               className={cn(
-                "flex min-h-[132px] flex-col rounded-2xl border bg-surface-container-lowest p-3 shadow-level-1 transition-colors",
-                border
+                "flex min-h-[140px] flex-col overflow-hidden rounded-2xl border bg-surface-container-lowest shadow-level-1 transition-colors",
+                border,
+                !order && !hasRequest && "opacity-75"
               )}
             >
-              <div className="flex items-baseline justify-between">
-                <span className="font-display text-title text-on-surface">{table.label}</span>
+              {/* Header */}
+              <div className="flex items-start justify-between px-3 pt-3">
+                <span className="font-display text-headline-sm leading-none text-on-surface">{table.label}</span>
                 {table.seats > 0 && (
-                  <span className="flex items-center gap-0.5 text-body-xs text-on-surface-variant">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden="true">group</span>
+                  <span className="flex items-center gap-0.5 rounded-full bg-surface-container px-1.5 py-0.5 text-[11px] text-on-surface-variant">
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }} aria-hidden="true">group</span>
                     {table.seats}
                   </span>
                 )}
               </div>
 
-              {order ? (
-                <div className="mt-2 space-y-1">
-                  <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-body-xs font-semibold", STATUS_META[order.status].className)}>
-                    {STATUS_META[order.status].label}
-                  </span>
-                  <p className="tabular text-body-xs text-on-surface-variant">
-                    {order.orderNumber} · {elapsed} min
+              {/* Status */}
+              <div className="px-3 pt-2">
+                {order ? (
+                  <div className="space-y-1.5">
+                    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", STATUS_META[order.status].className)}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 13 }} aria-hidden="true">{STATUS_META[order.status].icon}</span>
+                      {STATUS_META[order.status].label}
+                    </span>
+                    <p className="flex items-center gap-1 text-body-xs text-on-surface-variant">
+                      <span className="tabular">{order.orderNumber}</span>
+                      <span aria-hidden="true">·</span>
+                      <span
+                        className={cn(
+                          "tabular inline-flex items-center gap-0.5 font-medium",
+                          late ? "text-error" : aging ? "text-warning" : "text-on-surface-variant"
+                        )}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 13 }} aria-hidden="true">schedule</span>
+                        {elapsed}m
+                      </span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1 text-body-xs text-on-surface-variant">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-outline" aria-hidden="true" />
+                    Open
                   </p>
-                </div>
-              ) : (
-                <p className="mt-2 text-body-xs text-on-surface-variant">No active order</p>
-              )}
+                )}
+              </div>
 
+              {/* Requests */}
               {hasRequest && (
-                <ul className="mt-auto flex flex-col gap-1 pt-2">
+                <ul className="mt-auto flex flex-col gap-1 p-2 pt-2.5">
                   {tableRequests.map((r) => (
                     <li key={r.id}>
                       <button
                         type="button"
                         onClick={() => void resolveRequest(r.id)}
-                        className="flex min-h-[36px] w-full items-center gap-1.5 rounded-lg bg-brand-subtle px-2 text-left text-body-xs font-semibold text-brand-text transition-colors hover:bg-brand/20"
+                        className="group flex min-h-[40px] w-full items-center gap-1.5 rounded-lg bg-brand-subtle px-2 text-left text-body-xs font-semibold text-brand-text transition-colors hover:bg-brand hover:text-brand-foreground"
                         aria-label={`Clear ${REQUEST_META[r.type].label} request for ${table.label}`}
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">{REQUEST_META[r.type].icon}</span>
                         <span className="flex-1">{REQUEST_META[r.type].label}</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">check</span>
+                        <span className="grid h-5 w-5 place-items-center rounded-full bg-brand/15 transition-colors group-hover:bg-brand-foreground/20">
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden="true">check</span>
+                        </span>
                       </button>
                     </li>
                   ))}
                 </ul>
               )}
+
+              {!hasRequest && <div className="flex-1" />}
             </li>
           );
         })}
       </ul>
     </div>
+  );
+}
+
+function StatChip({
+  icon,
+  label,
+  tone,
+  pulse = false,
+}: {
+  icon: string;
+  label: string;
+  tone: "brand" | "default" | "muted";
+  pulse?: boolean;
+}) {
+  const toneCls =
+    tone === "brand"
+      ? "border-brand-border bg-brand-subtle text-brand-text"
+      : tone === "default"
+        ? "border-outline-variant bg-surface-container-lowest text-on-surface"
+        : "border-outline-variant bg-surface-container-lowest text-on-surface-variant";
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-body-xs font-semibold", toneCls)}>
+      <span className={cn("material-symbols-outlined", pulse && "animate-pulse")} style={{ fontSize: 15 }} aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </span>
   );
 }
