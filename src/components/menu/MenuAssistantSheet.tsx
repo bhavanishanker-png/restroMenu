@@ -42,6 +42,14 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const hydratedRef = useRef(false);
+
+  // Persist the conversation per table so it survives leaving the menu (to the
+  // cart, checkout, order tracker) and coming back. sessionStorage, not
+  // localStorage: it's scoped to this dining session and clears when the tab
+  // closes. Keyed by slug + table so a different table never shows stale chat.
+  const storageKey = `qbite:menu-chat:${menu.restaurant.slug}:${token}`;
+  const MAX_STORED = 50;
 
   // Suggestions arrive as ids; cards render from the menu the page already
   // has, so names, markers and prices always come from the database.
@@ -50,6 +58,33 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
     for (const cat of menu.categories) for (const item of cat.items) map.set(item.id, item);
     return map;
   }, [menu.categories]);
+
+  // Hydrate once on mount. Done in an effect (not a useState initializer) so
+  // server and client first render agree — sessionStorage doesn't exist on the
+  // server. Wrapped in try/catch: storage can throw in private mode.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatEntry[];
+        if (Array.isArray(parsed) && parsed.length > 0) setEntries(parsed);
+      }
+    } catch {
+      /* ignore unreadable storage */
+    }
+    hydratedRef.current = true;
+  }, [storageKey]);
+
+  // Persist on change. Only writes once hydrated and non-empty, so the initial
+  // empty render can never clobber a saved conversation.
+  useEffect(() => {
+    if (!hydratedRef.current || entries.length === 0) return;
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(entries.slice(-MAX_STORED)));
+    } catch {
+      /* storage full or blocked — the chat still works in memory */
+    }
+  }, [entries, storageKey]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -105,6 +140,17 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
     onSelectItem(item);
   }
 
+  function newChat() {
+    setEntries([]);
+    setInput("");
+    setError(null);
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -112,16 +158,30 @@ export function MenuAssistantSheet({ open, onOpenChange, menu, token, onSelectIt
         className="flex h-[85svh] flex-col overflow-hidden rounded-t-3xl bg-surface p-0"
       >
         <SheetHeader className="border-b border-outline-variant px-5 pb-3 pt-5 text-left">
-          <SheetTitle className="flex items-center gap-2 font-display text-headline-sm">
-            <span
-              className="material-symbols-outlined text-brand-text"
-              style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}
-              aria-hidden="true"
-            >
-              auto_awesome
-            </span>
-            Ask about the menu
-          </SheetTitle>
+          <div className="flex items-start justify-between gap-2">
+            <SheetTitle className="flex items-center gap-2 font-display text-headline-sm">
+              <span
+                className="material-symbols-outlined text-brand-text"
+                style={{ fontSize: 22, fontVariationSettings: "'FILL' 1" }}
+                aria-hidden="true"
+              >
+                auto_awesome
+              </span>
+              Ask about the menu
+            </SheetTitle>
+            {entries.length > 0 && (
+              <button
+                type="button"
+                onClick={newChat}
+                className="mr-7 flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-outline-variant px-3 text-body-xs font-semibold text-on-surface-variant transition-colors hover:border-brand-border hover:text-brand-text"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">
+                  add_comment
+                </span>
+                New chat
+              </button>
+            )}
+          </div>
           <SheetDescription className="text-body-sm">
             Tell me what you feel like. I&apos;ll suggest dishes — you choose what to add.
           </SheetDescription>
