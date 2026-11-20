@@ -220,7 +220,7 @@ export function LoginForm({ defaultSlug, nextPath = "/dashboard" }: { defaultSlu
           </span>
         </div>
         <div className="min-w-0">
-          <h1 className="font-display text-[24px] font-bold leading-tight text-on-surface">Sign in to QBite</h1>
+          <h1 className="font-display text-headline-md text-on-surface">Sign in to QBite</h1>
           <p className="text-body-sm text-on-surface-variant">Your restaurant workspace</p>
         </div>
       </div>

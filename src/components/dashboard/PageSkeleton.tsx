@@ -30,7 +30,7 @@ export function StatCardsSkeleton({ count = 4 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="flex flex-col gap-xs rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1"
+          className="flex flex-col gap-xs rounded-2xl border border-outline-variant bg-surface-container-lowest p-4 shadow-level-1 md:p-5"
         >
           <Skeleton className="h-3.5 w-24" />
           <Skeleton className="mt-2 h-9 w-20" />
@@ -44,7 +44,7 @@ export function StatCardsSkeleton({ count = 4 }: { count?: number }) {
 /** A bordered card wrapping evenly spaced rows — lists and tables alike. */
 export function TableSkeleton({ rows = 8 }: { rows?: number }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-level-1">
+    <div className="overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-level-1">
       <div className="border-b border-outline-variant px-md py-sm">
         <Skeleton className="h-4 w-32" />
       </div>
@@ -75,7 +75,7 @@ export function CardGridSkeleton({
 
 export function ChartSkeleton() {
   return (
-    <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1">
+    <div className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-md shadow-level-1">
       <Skeleton className="h-4 w-36" />
       <Skeleton className="mt-4 h-52 w-full" />
     </div>
@@ -85,7 +85,7 @@ export function ChartSkeleton() {
 /** Standard padded body for a dashboard route below its header. */
 export function PageBody({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-lg p-margin-mobile md:p-margin-desktop">
+    <div className="flex flex-col gap-4 px-margin-mobile py-5 md:px-margin-desktop">
       {children}
     </div>
   );

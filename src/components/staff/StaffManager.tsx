@@ -436,7 +436,7 @@ export function StaffManager({ initialStaff, canManage, currentStaffId }: Props)
   const teamIsEmpty = staff.every((s) => s.role === "owner");
 
   return (
-    <div className="flex flex-col gap-4 p-margin-mobile md:p-5">
+    <div className="flex flex-col gap-4 px-margin-mobile py-5 md:px-margin-desktop">
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 shadow-level-1 sm:flex-row sm:items-center">
         <div
@@ -456,7 +456,7 @@ export function StaffManager({ initialStaff, canManage, currentStaffId }: Props)
                 className={cn(
                   "flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors duration-fast",
                   active
-                    ? "border-primary bg-primary text-primary-foreground"
+                    ? "border-brand bg-brand text-brand-foreground shadow-glow"
                     : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-outline hover:text-on-surface"
                 )}
               >

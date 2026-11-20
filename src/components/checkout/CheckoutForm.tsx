@@ -565,7 +565,7 @@ export function CheckoutForm({ slug, token, tableLabel, orderType, settings }: P
           className="flex h-14 w-full items-center justify-between gap-2 rounded-xl bg-brand px-4 text-brand-foreground shadow-glow transition-[transform,opacity] active:scale-[0.99] disabled:opacity-70"
         >
           <span className="flex flex-col items-start leading-tight">
-            <span className="tabular font-display text-[1.0625rem] font-semibold">{formatMoney(total)}</span>
+            <span className="tabular font-display text-title font-semibold">{formatMoney(total)}</span>
             <span className="tabular text-[0.75rem] opacity-85">
               {itemCount} {itemCount === 1 ? "item" : "items"} · {paymentMethod === "razorpay" ? "pay online" : "pay at table"}
             </span>

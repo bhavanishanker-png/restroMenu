@@ -89,7 +89,7 @@ export function MenuItemCard({ item, onAdd }: Props) {
           <SpiceLevel level={item.spiceLevel} />
         </span>
 
-        <span className="line-clamp-2 text-[0.9375rem] font-semibold leading-snug text-on-surface">
+        <span className="line-clamp-2 text-body-md font-semibold leading-snug text-on-surface">
           {item.name}
         </span>
 

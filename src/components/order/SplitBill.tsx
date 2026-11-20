@@ -285,9 +285,9 @@ function SplitSetup({
   return (
     <div className="space-y-5 pt-2">
       <Tabs value={mode} onValueChange={(v) => setMode(v === "custom" ? "custom" : "equal")}>
-        <TabsList className="grid h-11 w-full grid-cols-2">
-          <TabsTrigger value="equal" className="h-9">Equally</TabsTrigger>
-          <TabsTrigger value="custom" className="h-9">Custom amounts</TabsTrigger>
+        <TabsList className="grid h-[52px] w-full grid-cols-2">
+          <TabsTrigger value="equal" className="h-11">Equally</TabsTrigger>
+          <TabsTrigger value="custom" className="h-11">Custom amounts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="equal" className="space-y-4 pt-4">

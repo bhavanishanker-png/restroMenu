@@ -53,7 +53,7 @@ export function CartBar({ slug, token, orderType, settings }: Props) {
             </span>
           </span>
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="tabular font-display text-[1.0625rem] font-semibold">
+            <span className="tabular font-display text-title font-semibold">
               {formatMoney(total)}
             </span>
             <span className="text-[0.75rem] opacity-85">
@@ -62,7 +62,7 @@ export function CartBar({ slug, token, orderType, settings }: Props) {
           </span>
         </span>
 
-        <span className="flex shrink-0 items-center gap-1 text-[0.9375rem] font-semibold">
+        <span className="flex shrink-0 items-center gap-1 text-body-md font-semibold">
           View cart
           <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
             arrow_forward

@@ -8,7 +8,7 @@ type Props = { params: { orderId: string } };
 
 function TrackerHeader() {
   return (
-    <header className="glass-strong sticky top-0 z-10 flex h-[56px] items-center justify-center gap-2 border-x-0 border-t-0 px-margin-mobile">
+    <header className="glass-strong sticky top-0 z-10 flex h-[64px] items-center justify-center gap-2 border-x-0 border-t-0 px-margin-mobile">
       <span
         className="material-symbols-outlined text-brand-text"
         style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}

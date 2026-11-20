@@ -374,7 +374,7 @@ export function OrderTrackerClient({
                 {/* Snapshot image — what the dish looked like when it was ordered,
                     not whatever menu_items holds today. */}
                 {item.imageUrl && (
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-container-high">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-surface-container-high">
                     <Image
                       src={item.imageUrl}
                       alt=""

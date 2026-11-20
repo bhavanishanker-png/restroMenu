@@ -60,7 +60,7 @@ export function ServiceRequestPanel({ slug, token }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 px-4 py-8">
+    <div className="flex flex-col items-center gap-4 px-margin-mobile py-8">
       <div className="text-center mb-2">
         <p className="font-headline-sm text-on-surface" style={{ fontSize: 20 }}>
           Need something?

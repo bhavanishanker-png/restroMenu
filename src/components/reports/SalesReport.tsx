@@ -151,7 +151,7 @@ function SectionCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-4 md:px-5 md:pt-5">
         <div className="min-w-0">
-          <h2 className="text-[16px] font-semibold text-on-surface">{title}</h2>
+          <h2 className="font-display text-title text-on-surface">{title}</h2>
           {description && <p className="text-body-sm text-on-surface-variant">{description}</p>}
         </div>
         {action}
@@ -290,7 +290,7 @@ export function SalesReport() {
   const firstLoad = loading && data === null;
 
   return (
-    <div className="flex flex-col gap-4 p-margin-mobile md:p-5">
+    <div className="flex flex-col gap-4 px-margin-mobile py-5 md:px-margin-desktop">
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 shadow-level-1">
         <div className="flex flex-wrap items-center gap-2">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { getStaffSession } from "@/lib/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { toOrder } from "@/lib/mappers";
@@ -142,7 +143,7 @@ export default async function DashboardPage() {
           <p className="font-label-bold text-label-bold uppercase text-on-surface-variant">
             {dateLabel}
           </p>
-          <h1 className="mt-1 font-display text-[26px] font-bold leading-tight text-on-surface md:text-[32px]">
+          <h1 className="mt-1 font-display text-headline-lg text-on-surface">
             {greeting(hourInZone(now, timezone))}
             {restaurantRes.data?.name ? (
               <span className="text-on-surface-variant">, {restaurantRes.data.name}</span>
@@ -154,15 +155,14 @@ export default async function DashboardPage() {
             Live — updates automatically as orders come in
           </p>
         </div>
-        <Link
-          href="/dashboard/kitchen"
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 self-start rounded-xl bg-brand px-4 font-semibold text-brand-foreground shadow-level-1 transition-shadow hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background md:self-auto"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
-            display_settings
-          </span>
-          Open kitchen display
-        </Link>
+        <Button variant="brand" size="touch" asChild className="self-start md:self-auto">
+          <Link href="/dashboard/kitchen">
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
+              display_settings
+            </span>
+            Open kitchen display
+          </Link>
+        </Button>
       </header>
 
       {statsFailed && (

@@ -285,7 +285,7 @@ export function ItemEditorSheet({
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
         <SheetHeader className="shrink-0 space-y-1 border-b border-outline-variant bg-surface-container-low px-5 pb-4 pt-5 text-left">
-          <SheetTitle className="truncate pr-10 font-display text-xl">
+          <SheetTitle className="truncate pr-10 font-display text-headline-sm">
             {isEdit ? item.name : "New dish"}
           </SheetTitle>
           <SheetDescription className="flex items-center gap-1.5">

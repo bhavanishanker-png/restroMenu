@@ -63,7 +63,7 @@ export function HourlyChart({ data }: Props) {
     >
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="hourly-chart-heading" className="font-display text-[16px] font-semibold text-on-surface">
+          <h2 id="hourly-chart-heading" className="font-display text-title text-on-surface">
             Orders by hour
           </h2>
           <p className="text-body-sm text-on-surface-variant">

@@ -115,7 +115,7 @@ export function CartPageClient({
               className="flex h-14 w-full items-center justify-between gap-2 rounded-xl bg-brand px-4 text-brand-foreground shadow-glow transition-transform active:scale-[0.99]"
             >
               <span className="flex flex-col items-start leading-tight">
-                <span className="tabular font-display text-[1.0625rem] font-semibold">
+                <span className="tabular font-display text-title font-semibold">
                   {formatMoney(priceCart(lines, { orderType, settings }).total)}
                 </span>
                 <span className="text-[0.75rem] opacity-85">Total incl. taxes</span>

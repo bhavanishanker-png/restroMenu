@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/pricing";
 import { dayKeyInZone } from "@/lib/restaurant-time";
 import {
@@ -62,7 +63,7 @@ export function RecentOrders({ orders, timezone, canManage, failed }: Props) {
     >
       <div className="flex items-center justify-between gap-3 border-b border-outline-variant px-4 py-3 md:px-5">
         <div className="min-w-0">
-          <h2 id="recent-orders-heading" className="font-display text-[16px] font-semibold text-on-surface">
+          <h2 id="recent-orders-heading" className="font-display text-title text-on-surface">
             Recent orders
           </h2>
           <p className="text-body-sm text-on-surface-variant">Latest 10, newest first</p>
@@ -99,22 +100,21 @@ export function RecentOrders({ orders, timezone, canManage, failed }: Props) {
             </span>
           </span>
           <div>
-            <p className="font-display text-[16px] font-semibold text-on-surface">No orders yet</p>
+            <p className="font-display text-title text-on-surface">No orders yet</p>
             <p className="mt-1 max-w-xs text-body-sm text-on-surface-variant">
               {canManage
                 ? "Orders appear here the moment a guest scans a table QR code and checks out."
                 : "Orders appear here as guests place them. The kitchen display shows them live."}
             </p>
           </div>
-          <Link
-            href={canManage ? "/dashboard/tables" : "/dashboard/kitchen"}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand px-4 font-semibold text-brand-foreground shadow-level-1 transition-shadow hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
-              {canManage ? "qr_code_scanner" : "display_settings"}
-            </span>
-            {canManage ? "Print table QR codes" : "Open kitchen display"}
-          </Link>
+          <Button variant="brand" size="touch" asChild>
+            <Link href={canManage ? "/dashboard/tables" : "/dashboard/kitchen"}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
+                {canManage ? "qr_code_scanner" : "display_settings"}
+              </span>
+              {canManage ? "Print table QR codes" : "Open kitchen display"}
+            </Link>
+          </Button>
         </div>
       ) : (
         <ul className="divide-y divide-outline-variant">

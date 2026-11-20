@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import type { Restaurant } from "@/types";
 
 type Props = { initialRestaurants: Restaurant[] };
@@ -118,16 +119,17 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by restaurant name or slug…"
-            className="w-full pl-12 pr-4 h-12 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:outline-none focus:border-brand focus:ring-1 focus:ring-primary transition-all text-on-surface"
+            className="w-full pl-12 pr-4 h-12 bg-surface-container-low border border-outline-variant rounded-lg font-body-md text-body-md focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface"
           />
         </div>
-        <button
+        <Button
+          variant="brand"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-xs bg-primary text-on-primary px-md py-sm rounded-lg font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 hover:-translate-y-[2px] transition-all h-12 whitespace-nowrap sm:order-2"
+          className="h-12 w-full whitespace-nowrap sm:order-2 sm:w-auto"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
           New Restaurant
-        </button>
+        </Button>
       </div>
 
       {/* Table */}
@@ -148,10 +150,20 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-24 text-center font-body-md text-on-surface-variant">
-                    <span className="material-symbols-outlined block mx-auto mb-2" style={{ fontSize: 40 }}>
+                    <span className="material-symbols-outlined mx-auto mb-2 block text-on-surface-variant/50" style={{ fontSize: 40 }}>
                       restaurant
                     </span>
-                    {search ? "No matching restaurants." : "No restaurants yet."}
+                    {search ? (
+                      "No matching restaurants."
+                    ) : (
+                      <span className="flex flex-col items-center gap-3">
+                        <span>No restaurants yet. Create the first one to get started.</span>
+                        <Button variant="brand" onClick={() => setOpen(true)}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+                          New Restaurant
+                        </Button>
+                      </span>
+                    )}
                   </td>
                 </tr>
               )}
@@ -164,10 +176,10 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 >
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary font-headline-sm shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface font-display text-headline-sm shrink-0">
                         {r.name.trim()[0]?.toUpperCase()}
                       </div>
-                      <span className="font-headline-sm text-headline-sm" style={{ fontSize: 16 }}>
+                      <span className="font-display text-title text-on-surface">
                         {r.name}
                       </span>
                     </div>
@@ -183,9 +195,9 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                   </td>
                   <td className="py-4 px-6">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md font-label-bold text-[10px] ${
+                      className={`inline-flex items-center px-2 py-1 rounded-md font-label-bold text-label-bold ${
                         r.isActive
-                          ? "bg-secondary-container text-on-secondary-container"
+                          ? "bg-success-container text-on-success-container"
                           : "bg-error-container text-on-error-container"
                       }`}
                     >
@@ -197,7 +209,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                       href="/login"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-brand-text hover:bg-surface-container-high transition-colors"
                       aria-label={`Open ${r.name} dashboard`}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 20 }}>open_in_new</span>
@@ -234,7 +246,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="e.g. Tandoori Hut"
                 value={form.name}
                 onChange={(e) => setField("name", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -245,7 +257,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 onChange={(e) =>
                   setField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                 }
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
               <p className="font-body-sm text-body-sm text-on-surface-variant">
                 URL: /r/{form.slug || "…"}
@@ -259,7 +271,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 onChange={(e) =>
                   setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
                 }
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -268,7 +280,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="Street, city"
                 value={form.address}
                 onChange={(e) => setField("address", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
 
@@ -281,7 +293,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="e.g. Rajesh Sharma"
                 value={form.ownerName}
                 onChange={(e) => setField("ownerName", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -291,7 +303,7 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="owner@example.com"
                 value={form.ownerEmail}
                 onChange={(e) => setField("ownerEmail", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
             <div className="flex flex-col gap-xs">
@@ -301,17 +313,18 @@ export function AdminRestaurantsClient({ initialRestaurants }: Props) {
                 placeholder="Min 8 characters"
                 value={form.ownerPassword}
                 onChange={(e) => setField("ownerPassword", e.target.value)}
-                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30/50 transition-all text-on-surface outline-none"
+                className="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 font-body-md focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all text-on-surface outline-none"
               />
             </div>
 
-            <button
+            <Button
+              variant="brand"
               onClick={create}
               disabled={saving}
-              className="flex items-center justify-center gap-xs h-12 rounded-lg bg-primary text-on-primary font-label-bold text-label-bold shadow-level-1 hover:bg-primary/90 transition-colors active:translate-y-[2px] disabled:opacity-50 mt-xs"
+              className="mt-xs h-12"
             >
               {saving ? "Creating…" : "Create Restaurant"}
-            </button>
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

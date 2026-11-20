@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FoodTypeMarker } from "@/components/ui/FoodTypeMarker";
 import type { AddonGroup, MenuItem } from "@/types";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 import { ItemEditorSheet } from "./ItemEditorSheet";
 import { CategoryInsights } from "./CategoryInsights";
 import { MsIcon } from "./MsIcon";
@@ -291,6 +292,8 @@ export function ItemList({ categoryId, categoryName, addonGroups, onCountChange,
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<AvailabilityFilter>("all");
+  const [pendingDelete, setPendingDelete] = useState<MenuItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -363,18 +366,27 @@ export function ItemList({ categoryId, categoryName, addonGroups, onCountChange,
     }
   }
 
-  async function handleDelete(item: MenuItem) {
-    if (!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+  function handleDelete(item: MenuItem) {
+    setPendingDelete(item);
+  }
+
+  async function confirmDelete() {
+    const item = pendingDelete;
+    if (!item) return;
+    setDeleting(true);
     const prev = items;
     setItemsAndCount(items.filter((i) => i.id !== item.id));
 
     try {
       const res = await fetch(`/api/menu/items/${item.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPendingDelete(null);
     } catch (err) {
       console.error("[menu] delete failed", err);
       setItemsAndCount(prev);
       toast.error("Failed to delete item.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -620,6 +632,24 @@ export function ItemList({ categoryId, categoryName, addonGroups, onCountChange,
         addonGroups={addonGroups}
         onClose={() => { setEditingItem(null); setCreating(false); }}
         onSaved={handleSaved}
+      />
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        icon="delete"
+        tone="danger"
+        title="Delete this dish?"
+        description={
+          <>
+            <span className="font-medium text-on-surface">{pendingDelete?.name}</span>{" "}
+            will be permanently removed from your menu. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete dish"
+        busyLabel="Deleting…"
+        busy={deleting}
+        onConfirm={confirmDelete}
       />
     </div>
   );

@@ -235,7 +235,7 @@ function OrderDetailSheet({
       <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
         <SheetHeader className="space-y-2 border-b border-outline-variant bg-surface-container-low px-5 pb-4 pt-5 text-left">
           <div className="flex items-center gap-2 pr-8">
-            <SheetTitle className="font-mono text-2xl font-bold">#{order.orderNumber}</SheetTitle>
+            <SheetTitle className="font-mono text-headline-sm font-bold">#{order.orderNumber}</SheetTitle>
             <StatusPill status={order.status} />
           </div>
           <SheetDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -525,7 +525,7 @@ export function OrdersClient({ restaurantId }: { restaurantId: string }) {
   const isFiltered = status !== "all" || search !== "" || activePreset?.label !== "Today";
 
   return (
-    <div className="flex flex-col gap-4 p-5">
+    <div className="flex flex-col gap-4 px-margin-mobile py-5 md:px-margin-desktop">
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 shadow-level-1">
         <div className="flex flex-wrap items-center gap-2">

@@ -191,7 +191,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
                     )}
                   </div>
                   <h2 className="pr-10 font-display text-headline-sm text-on-surface">{item.name}</h2>
-                  <p className="tabular font-display text-[1.0625rem] font-semibold text-on-surface">
+                  <p className="tabular font-display text-title font-semibold text-on-surface">
                     {formatMoney(computeUnitPrice(item.basePrice, priceDelta, selectedAddons))}
                   </p>
                   {item.description && (
@@ -343,7 +343,7 @@ export function ItemDetailSheet({ item, onClose }: Props) {
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">remove</span>
                   </button>
-                  <span className="tabular w-7 text-center font-display text-[1.0625rem] font-semibold text-on-surface" aria-live="polite">
+                  <span className="tabular w-7 text-center font-display text-title font-semibold text-on-surface" aria-live="polite">
                     {quantity}
                   </span>
                   <button

@@ -38,7 +38,7 @@ function ReassurancePanel() {
         </span>
         QBite for staff
       </span>
-      <h2 className="mt-5 font-display text-[40px] font-bold leading-[1.05] tracking-[-0.02em] text-on-surface">
+      <h2 className="mt-5 font-display text-display text-on-surface">
         Run the whole service from one place.
       </h2>
       <p className="mt-3 text-body-md text-on-surface-variant">

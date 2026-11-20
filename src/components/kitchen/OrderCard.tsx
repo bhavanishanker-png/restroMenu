@@ -15,14 +15,16 @@ type Props = {
 type ActionConfig = {
   label: string;
   icon: string;
-  variant: "primary" | "outlined" | "secondary";
 };
 
+// The status-advancing button is the one thing a cook touches, so it reads the
+// SAME on every card in every column — one accented primary, never a weaker
+// outline or muted fill that makes the tap target look different per stage.
 const ACTION_MAP: Partial<Record<OrderStatus, ActionConfig>> = {
-  placed:    { label: "Accept",          icon: "check",                  variant: "primary"   },
-  accepted:  { label: "Start Preparing", icon: "local_fire_department",  variant: "primary"   },
-  preparing: { label: "Mark Ready",      icon: "room_service",           variant: "outlined"  },
-  ready:     { label: "Mark Served",     icon: "done_all",               variant: "secondary" },
+  placed:    { label: "Accept",          icon: "check"                 },
+  accepted:  { label: "Start Preparing", icon: "local_fire_department" },
+  preparing: { label: "Mark Ready",      icon: "room_service"          },
+  ready:     { label: "Mark Served",     icon: "done_all"              },
 };
 
 /** Accepted and preparing share a column, so the card names which it is. */
@@ -81,15 +83,10 @@ const URGENCY_STYLE: Record<
   },
 };
 
-// The advance action is the one thing a cook touches, so it carries the accent
-// and the full 60px kitchen tap target. `hover:bg-primary/90` was a bug:
-// primary-container is a *surface* token, so the button inverted from a solid
-// fill to a dark panel on hover.
-function actionBtnClass(variant: ActionConfig["variant"]): string {
-  if (variant === "primary")  return "bg-brand text-brand-foreground hover:bg-brand/90 hover:shadow-glow";
-  if (variant === "outlined") return "border-2 border-brand text-brand-text hover:bg-brand hover:text-brand-foreground";
-  return "bg-surface-container-highest text-on-surface hover:bg-surface-container-high";
-}
+// One accent fill, 60px tap target, on every advance button. `hover:bg-primary/90`
+// was a bug: primary-container is a *surface* token, so the button inverted from
+// a solid fill to a dark panel on hover — hence the explicit brand fill.
+const ACTION_BTN_CLASS = "bg-brand text-brand-foreground hover:bg-brand/90 hover:shadow-glow";
 
 export function OrderCard({ order, now, isNew, onAdvance }: Props) {
   const elapsed = now === 0 ? 0 : elapsedMinutes(order.placedAt, now);
@@ -98,18 +95,18 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
 
   if (order.status === "served") {
     return (
-      <div className="flex shrink-0 items-center justify-between gap-2 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 opacity-75 transition-opacity hover:opacity-100">
+      <div className="flex shrink-0 items-center justify-between gap-2 rounded-2xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 opacity-75 transition-opacity hover:opacity-100">
         <span className="flex items-baseline gap-2">
-          <span className="font-mono font-bold text-on-surface-variant line-through" style={{ fontSize: 18 }}>
+          <span className="font-mono font-bold text-on-surface-variant line-through" style={{ fontSize: 20 }}>
             #{order.orderNumber}
           </span>
           {order.tableLabel && (
-            <span className="text-on-surface-variant" style={{ fontSize: 15 }}>
+            <span className="text-on-surface-variant" style={{ fontSize: 16 }}>
               {order.tableLabel}
             </span>
           )}
         </span>
-        <span className="flex items-center gap-1 text-success" style={{ fontSize: 15 }}>
+        <span className="flex items-center gap-1 text-success" style={{ fontSize: 16 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
             done_all
           </span>
@@ -144,7 +141,7 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
           </p>
           <span
             className={cn("flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-bold tabular-nums", urgency.pill)}
-            style={{ fontSize: 16 }}
+            style={{ fontSize: 18 }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               {urgency.icon}
@@ -154,7 +151,7 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
           </span>
         </div>
 
-        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-on-surface-variant" style={{ fontSize: 16 }}>
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-on-surface-variant" style={{ fontSize: 18 }}>
           {order.tableLabel && (
             <span className="flex items-center gap-1 font-semibold text-on-surface">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
@@ -185,14 +182,14 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
               <p className="font-bold leading-snug text-on-surface">
                 {item.itemName}
                 {item.variantName && (
-                  <span className="font-normal text-on-surface-variant" style={{ fontSize: 16 }}>
+                  <span className="font-normal text-on-surface-variant" style={{ fontSize: 18 }}>
                     {" "}· {item.variantName}
                   </span>
                 )}
               </p>
 
               {item.addons.length > 0 && (
-                <p className="text-on-surface-variant" style={{ fontSize: 16 }}>
+                <p className="text-on-surface-variant" style={{ fontSize: 18 }}>
                   + {item.addons.map((a) => a.name).join(", ")}
                 </p>
               )}
@@ -200,7 +197,7 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
               {item.notes && (
                 <p
                   className="mt-1 flex items-start gap-1.5 rounded-lg bg-tertiary-container px-2 py-1 font-semibold text-on-tertiary-container"
-                  style={{ fontSize: 16 }}
+                  style={{ fontSize: 18 }}
                 >
                   <span className="material-symbols-outlined mt-px" style={{ fontSize: 18 }} aria-hidden="true">
                     sticky_note_2
@@ -219,8 +216,8 @@ export function OrderCard({ order, now, isNew, onAdvance }: Props) {
           <button
             type="button"
             className={cn(
-              "flex h-[60px] w-full items-center justify-center gap-2 rounded-xl font-headline-sm transition-all active:translate-y-[2px]",
-              actionBtnClass(action.variant)
+              "flex h-[60px] w-full items-center justify-center gap-2 rounded-xl font-headline-sm font-semibold transition-all active:translate-y-[2px]",
+              ACTION_BTN_CLASS
             )}
             style={{ fontSize: 18 }}
             onClick={onAdvance}

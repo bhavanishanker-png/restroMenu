@@ -179,7 +179,7 @@ function Stat({
   return (
     <div className={`rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 ${className ?? ""}`}>
       <dt className="text-[11px] uppercase tracking-wide text-on-surface-variant">{label}</dt>
-      <dd className={`tabular font-display text-[1.0625rem] font-semibold ${toneClass}`}>
+      <dd className={`tabular font-display text-title font-semibold ${toneClass}`}>
         {value}
       </dd>
     </div>

@@ -20,14 +20,14 @@ export default async function AdminRestaurantsPage() {
   const restaurants = (data ?? []).map((r) => toRestaurant(r as DbRestaurant));
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant/30 bg-surface-container-lowest px-md py-sm shadow-level-1 shrink-0">
+    <div className="flex flex-col min-h-dvh bg-surface">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-md border-b border-outline-variant bg-surface-container-low px-margin-mobile py-4 md:px-margin-desktop shrink-0">
         <div>
           <div className="flex items-center gap-sm">
-            <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container font-headline-sm">
+            <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container font-display text-headline-sm">
               Q
             </div>
-            <h1 className="font-headline-md text-primary" style={{ fontSize: 20 }}>
+            <h1 className="font-display text-headline-md text-on-surface">
               QBite Admin
             </h1>
           </div>

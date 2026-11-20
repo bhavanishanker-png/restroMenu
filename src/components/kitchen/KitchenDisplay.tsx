@@ -85,12 +85,13 @@ const COLUMNS: Column[] = [
 
 function columnOrders(all: KitchenOrder[], col: Column): KitchenOrder[] {
   const filtered = all.filter((o) => col.statuses.includes(o.status));
-  if (col.order === "asc") {
-    return [...filtered].sort(
-      (a, b) => new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime()
-    );
-  }
-  return filtered;
+  const dir = col.order === "asc" ? 1 : -1;
+  // Sort explicitly in both directions — the `desc` (Served) column must not
+  // rely on the board API's incidental ordering, and new cards in column 1 need
+  // to land predictably at the top for the slide-in to read.
+  return [...filtered].sort(
+    (a, b) => dir * (new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime())
+  );
 }
 
 // ---------------------------------------------------------------- service request labels
@@ -536,7 +537,7 @@ export function KitchenDisplay({
       {showBanner && (
         <div
           role="status"
-          className="flex items-center justify-center gap-sm border-b border-error/20 bg-error-container px-md py-2 font-label-bold text-on-error-container"
+          className="flex items-center justify-center gap-sm border-b border-warning/30 bg-warning-container px-md py-2 font-label-bold font-semibold text-on-warning-container"
           style={{ fontSize: 16 }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">
@@ -581,7 +582,7 @@ export function KitchenDisplay({
                 {/* Cards */}
                 <div
                   className="kds-column flex flex-1 flex-col gap-3 overflow-y-auto p-3"
-                  style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(89,65,57,0.2) transparent" }}
+                  style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--outline-variant)) transparent" }}
                 >
                   {colOrders.map((order) => (
                     <OrderCard
@@ -602,7 +603,7 @@ export function KitchenDisplay({
                       <p className="font-semibold text-on-surface" style={{ fontSize: 18 }}>
                         {col.empty.title}
                       </p>
-                      <p className="text-on-surface-variant" style={{ fontSize: 15 }}>
+                      <p className="text-on-surface-variant" style={{ fontSize: 18 }}>
                         {col.empty.body}
                       </p>
                     </div>
@@ -637,7 +638,7 @@ export function KitchenDisplay({
                     notifications_none
                   </span>
                   <p className="font-semibold text-on-surface" style={{ fontSize: 18 }}>No pending requests</p>
-                  <p className="text-on-surface-variant" style={{ fontSize: 15 }}>
+                  <p className="text-on-surface-variant" style={{ fontSize: 18 }}>
                     Water, bill and waiter calls from tables appear here.
                   </p>
                 </div>

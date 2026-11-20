@@ -21,6 +21,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/tables/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import type { MenuCategory } from "@/types";
 import { MsIcon } from "./MsIcon";
@@ -196,6 +197,8 @@ export function CategoryList({
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [showAdd, setShowAdd] = useState(defaultAdding);
+  const [pendingDelete, setPendingDelete] = useState<CategoryWithCount | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -250,18 +253,27 @@ export function CategoryList({
     }
   }
 
-  async function handleDelete(cat: CategoryWithCount) {
-    if (!confirm(`Delete category "${cat.name}"? Items will be uncategorised.`)) return;
+  function handleDelete(cat: CategoryWithCount) {
+    setPendingDelete(cat);
+  }
+
+  async function confirmDelete() {
+    const cat = pendingDelete;
+    if (!cat) return;
+    setDeleting(true);
     const prev = categories;
     onChange(prev.filter((c) => c.id !== cat.id));
 
     try {
       const res = await fetch(`/api/menu/categories/${cat.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPendingDelete(null);
     } catch (err) {
       console.error("[categories] delete failed", err);
       onChange(prev);
       toast.error("Failed to delete category.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -362,6 +374,24 @@ export function CategoryList({
           <MsIcon name="add" /> Add category
         </button>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        icon="delete"
+        tone="danger"
+        title="Delete this category?"
+        description={
+          <>
+            <span className="font-medium text-on-surface">{pendingDelete?.name}</span>{" "}
+            will be removed. Its dishes won&apos;t be deleted — they&apos;ll become uncategorised.
+          </>
+        }
+        confirmLabel="Delete category"
+        busyLabel="Deleting…"
+        busy={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

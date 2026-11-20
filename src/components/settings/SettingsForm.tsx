@@ -372,7 +372,7 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
   }
 
   return (
-    <div className="flex flex-col p-margin-mobile pb-36 md:p-5 md:pb-32">
+    <div className="flex flex-col px-margin-mobile pt-5 pb-36 md:px-margin-desktop md:pb-32">
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-8">
         {/* Section menu: a sticky list with a one-line summary per section on
             wide screens, a row of jump chips on phones. */}
@@ -529,7 +529,7 @@ export function SettingsForm({ settings: initial, restaurantName, logoUrl: initi
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-[16px] font-bold text-on-surface">
+                  <span className="block truncate font-display text-title font-bold text-on-surface">
                     {restaurantName ?? "Your restaurant"}
                   </span>
                   <span className="block text-body-xs text-on-surface-variant">Top of the QR menu</span>

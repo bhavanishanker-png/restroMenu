@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function OrderTrackerLoading() {
   return (
     <div className="min-h-screen bg-surface" aria-busy="true" aria-label="Loading your order">
-      <div className="flex h-[56px] items-center justify-center border-b border-outline-variant">
+      <div className="flex h-[64px] items-center justify-center border-b border-outline-variant">
         <Skeleton className="h-5 w-32" />
       </div>
       <div className="mx-auto max-w-md space-y-4 px-margin-mobile pt-4">

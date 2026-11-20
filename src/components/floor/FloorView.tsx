@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ServiceRequest, ServiceRequestType } from "@/types";
 import type { FloorBoard, FloorOrder, FloorTable } from "@/lib/queries/floor";
@@ -156,10 +157,12 @@ export function FloorView({ restaurantId, initial }: Props) {
           <p className="font-display text-headline-sm text-on-surface">No tables yet</p>
           <p className="measure-sm text-body-sm text-on-surface-variant">Add tables to see them on the floor.</p>
         </div>
-        <Link href="/dashboard/tables" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand px-5 font-semibold text-brand-foreground">
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">add</span>
-          Set up tables
-        </Link>
+        <Button variant="brand" size="touch" asChild>
+          <Link href="/dashboard/tables">
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">add</span>
+            Set up tables
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -169,7 +172,7 @@ export function FloorView({ restaurantId, initial }: Props) {
   const idleCount = Math.max(0, tables.length - activeCount);
 
   return (
-    <div className="px-margin-mobile pb-8 pt-2">
+    <div className="px-margin-mobile pb-8 pt-5 md:px-margin-desktop">
       {/* Summary bar */}
       <div className="mb-4 flex flex-wrap items-center gap-2" aria-live="polite">
         <StatChip

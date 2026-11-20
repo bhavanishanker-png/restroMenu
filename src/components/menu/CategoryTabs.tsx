@@ -108,7 +108,7 @@ export function CategoryTabs({ categories }: Props) {
             // Active is signalled three ways: weight, colour and the underline
             // bar — never colour alone.
             className={cn(
-              "relative flex min-h-[44px] shrink-0 items-center gap-1.5 px-2.5 text-[0.9375rem]",
+              "relative flex min-h-[44px] shrink-0 items-center gap-1.5 px-2.5 text-body-md",
               "transition-colors duration-base ease-out-quart",
               active
                 ? "font-semibold text-on-surface"

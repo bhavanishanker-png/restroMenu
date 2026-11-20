@@ -529,7 +529,7 @@ export function TablesManager({ initialTables, restaurantId, restaurantSlug }: P
   const seatCount = tables.reduce((sum, t) => sum + t.seats, 0);
 
   return (
-    <div className="flex flex-col gap-4 p-margin-mobile md:p-5">
+    <div className="flex flex-col gap-4 px-margin-mobile py-5 md:px-margin-desktop">
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-2xl border border-outline-variant bg-surface-container-lowest p-3 shadow-level-1 sm:flex-row sm:items-center">
         <div className="flex flex-wrap items-center gap-2 text-sm">
